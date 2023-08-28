@@ -1012,7 +1012,7 @@ pacman -S mingw-w64-x86_64-toolchain mingw-w64-x86_64-arm-none-eabi-toolchain mi
 
 linux下熟悉的ls/mkdir/find/ld/cat等命令和工具也一应俱全了。
 
-不过，这时配置的build task和其他download task仍然在powershell或cmd中启动，若没有添加环境变量它们无法找到对应的可执行文件，这时候你就要修改`task.json`，将使用的shell改为mingw64即可（若你使用ucrt或clang同理）。
+不过，这时配置的build task和其他download task仍然在powershell或cmd中启动，若没有添加环境变量它们无法找到对应的可执行文件，这时候`，将使用的shell改为mingw64即可（若你使用ucrt或clang同理）。
 
 ## 附录6：Windows修改用户名为英文
 
