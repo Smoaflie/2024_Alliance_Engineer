@@ -411,6 +411,7 @@ BMI088Instance *BMI088Register(BMI088_Init_Config_s *config)
         config->spi_gyro_config.spi_work_mode = SPI_BLOCK_MODE;
         // callbacks are all NULL
     }
+    // TODO:之后找人完成该中断功能
     else if (config->work_mode == BMI088_BLOCK_TRIGGER_MODE)
     {
         config->spi_gyro_config.spi_work_mode = SPI_DMA_MODE; // 如果DMA资源不够,可以用SPI_IT_MODE
