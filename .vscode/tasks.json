@@ -46,6 +46,17 @@
             //     "build task", // 可以添加多个.
             // ]
             // 若使用daplink,则将log任务设置为依赖于jlink launch任务,保证jlink launch任务先于log任务执行
-        }
+        },
+        {
+            "label": "Debug_with_Ozone", //烧录代码后打开调试软件
+            "type": "process",
+            "command": "G:\\robomaster\\environment\\Ozone.exe",
+            "args": [],
+            "problemMatcher": [],
+            // "dependsOn":[
+            //     "build task", // 可以添加多个.
+            // ]
+            // 若使用daplink,则将log任务设置为依赖于jlink launch任务,保证jlink launch任务先于log任务执行
+        },
     ]
 }
