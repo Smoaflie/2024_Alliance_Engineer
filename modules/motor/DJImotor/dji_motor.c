@@ -309,7 +309,7 @@ void DJIMotorControl()
         if (sender_enable_flag[i])
         {
             // TODO:测试调试
-            CANTransmit(&sender_assignment[i], 1);
+            // CANTransmit(&sender_assignment[i], 1);
         }
     }
 }
