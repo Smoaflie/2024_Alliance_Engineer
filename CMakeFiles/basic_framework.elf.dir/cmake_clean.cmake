@@ -245,9 +245,9 @@ file(REMOVE_RECURSE
   "CMakeFiles/basic_framework.elf.dir/modules/vofa/vofa.c.obj"
   "CMakeFiles/basic_framework.elf.dir/modules/vofa/vofa.c.obj.d"
   "CMakeFiles/basic_framework.elf.dir/startup_stm32f407xx.s.obj"
-  "basic_framework.elf"
-  "basic_framework.elf.manifest"
-  "basic_framework.elf.pdb"
+  "build/basic_framework.elf"
+  "build/basic_framework.elf.manifest"
+  "build/basic_framework.elf.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

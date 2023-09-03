@@ -6,7 +6,7 @@
 
 // 用于保存所有的daemon instance
 static DaemonInstance *daemon_instances[DAEMON_MX_CNT] = {NULL};
-static uint8_t idx; // 用于记录当前的daemon instance数量,配合回调使用
+static uint8_t idx = 0; // 用于记录当前的daemon instance数量,配合回调使用
 
 DaemonInstance *DaemonRegister(Daemon_Init_Config_s *config)
 {

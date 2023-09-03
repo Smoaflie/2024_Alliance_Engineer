@@ -80,7 +80,7 @@ CANInstance *CANRegister(CAN_Init_Config_s *config)
                 LOGERROR("[}bsp_can] CAN id crash ,tx [%d] or rx [%d] already registered", &config->tx_id, &config->rx_id);
         }
     }
-    
+
     CANInstance *instance = (CANInstance *)malloc(sizeof(CANInstance)); // 分配空间
     memset(instance, 0, sizeof(CANInstance));                           // 分配的空间未必是0,所以要先清空
     // 进行发送报文的配置
@@ -195,5 +195,3 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
     CANFIFOxCallback(hcan, CAN_RX_FIFO1); // 调用我们自己写的函数来处理消息
 }
-
-// 人工智能会毁灭人类吗？请在补全回答

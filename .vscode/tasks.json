@@ -53,9 +53,9 @@
             "command": "G:\\robomaster\\environment\\Ozone.exe",
             "args": [],
             "problemMatcher": [],
-            // "dependsOn":[
-            //     "build task", // 可以添加多个.
-            // ]
+            "dependsOn": [
+                "CMake", // 可以添加多个.
+            ]
             // 若使用daplink,则将log任务设置为依赖于jlink launch任务,保证jlink launch任务先于log任务执行
         },
         {
