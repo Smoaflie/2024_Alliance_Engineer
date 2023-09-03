@@ -18,7 +18,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # 指定工程名称和语言类型
-project(basic_framework C ASM)
+project(Hero_Chasis_Board C ASM)
 
 # 选择构建类型
 set(CMAKE_BUILD_TYPE Debug) # Debug Release RelWithDebInfo MinSizeRel
