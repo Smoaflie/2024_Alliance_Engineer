@@ -42,7 +42,7 @@ static Subscriber_t *chassis_sub;                   // 用于订阅底盘的控�
 static Chassis_Ctrl_Cmd_s chassis_cmd_recv;         // 底盘接收到的控制命令
 static Chassis_Upload_Data_s chassis_feedback_data; // 底盘回传的反馈数据
 
-static referee_info_t* referee_data; // 用于获取裁判系统的数据
+static referee_info_t *referee_data;       // 用于获取裁判系统的数据
 static Referee_Interactive_info_t ui_data; // UI数据，将底盘中的数据传入此结构体的对应变量中，UI会自动检测是否变化，对应显示UI
 
 static SuperCapInstance *cap;                                       // 超级电容
@@ -68,7 +68,7 @@ void ChassisInit()
                 .IntegralLimit = 3000,
                 .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .MaxOut = 12000,
-            },
+                0},
             .current_PID = {
                 .Kp = 0.5, // 0.4
                 .Ki = 0,   // 0
@@ -103,7 +103,7 @@ void ChassisInit()
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_rb = DJIMotorInit(&chassis_motor_config);
 
-    referee_data = UITaskInit(&huart6,&ui_data); // 裁判系统初始化,会同时初始化UI
+    referee_data = UITaskInit(&huart6, &ui_data); // 裁判系统初始化,会同时初始化UI
 
     SuperCap_Init_Config_s cap_conf = {
         .can_config = {
