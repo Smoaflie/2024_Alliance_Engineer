@@ -53,6 +53,23 @@
             "command": "G:\\robomaster\\environment\\Ozone.exe",
             "args": [],
             "problemMatcher": [],
+            "dependsOn": [
+                "CMake", // 可以添加多个.
+            ]
+            // 若使用daplink,则将log任务设置为依赖于jlink launch任务,保证jlink launch任务先于log任务执行
+        },
+        {
+            "label": "CMake", //烧录代码后打开调试软件
+            "type": "shell",
+            "command": "C:\\cmake-3.20.2-windows-x86_64\\bin\\cmake.EXE",
+            "args": [
+                "./"
+            ],
+            "problemMatcher": [],
+            // "dependsOn":[
+            //     "build task", // 可以添加多个.
+            // ]
+            // 若使用daplink,则将log任务设置为依赖于jlink launch任务,保证jlink launch任务先于log任务执行
         },
     ]
 }
