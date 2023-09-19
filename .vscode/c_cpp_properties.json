@@ -1,81 +1,10 @@
-// {
-//     "configurations": [
-//         {
-//             "name": "Win32",
-//             "includePath": [
-//                 "${workspaceFolder}/**"
-//             ],
-//             "defines": [
-//                 "_DEBUG",
-//                 "UNICODE",
-//                 "_UNICODE"
-//             ],
-//             "cStandard": "c17",
-//             "cppStandard": "gnu++17",
-//             "intelliSenseMode": "windows-gcc-arm",
-//             "configurationProvider": "ms-vscode.makefile-tools"
-//         }
-//     ],
-//     "version": 4
-// }
 {
     "configurations": [
-      {
-        "name": "STM32",
-        "includePath": [
-          "Drivers/CMSIS/Device/ST/STM32F4xx/Include",
-          "Drivers/CMSIS/Include",
-          "Drivers/STM32F4xx_HAL_Driver/Inc",
-          "Drivers/STM32F4xx_HAL_Driver/Inc/Legacy",
-          "Inc",
-          "Middlewares/ST/ARM/DSP/Inc",
-          "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
-          "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
-          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS",
-          "Middlewares/Third_Party/FreeRTOS/Source/include",
-          "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
-          "Middlewares/Third_Party/SEGGER/Config",
-          "Middlewares/Third_Party/SEGGER/RTT",
-          "application",
-          "application/chassis",
-          "application/cmd",
-          "application/gimbal",
-          "application/shoot",
-          "bsp",
-          "bsp/can",
-          "bsp/dwt",
-          "bsp/gpio",
-          "bsp/iic",
-          "bsp/log",
-          "bsp/pwm",
-          "bsp/spi",
-          "bsp/usart",
-          "bsp/usb",
-          "modules",
-          "modules/BMI088",
-          "modules/algorithm",
-          "modules/can_comm",
-          "modules/daemon",
-          "modules/imu",
-          "modules/ist8310",
-          "modules/led",
-          "modules/master_machine",
-          "modules/message_center",
-          "modules/motor",
-          "modules/motor/DJImotor",
-          "modules/motor/HTmotor",
-          "modules/motor/LKmotor",
-          "modules/motor/servo_motor",
-          "modules/motor/step_motor",
-          "modules/oled",
-          "modules/referee",
-          "modules/remote",
-          "modules/super_cap",
-          "modules/vofa"
-        ]
-        
-      }
+        {
+            "name": "STM32",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"//VSCode开发C++时让intelliSense正确识别include关系
+        }
     ],
     "version": 4
-  }
-
+}

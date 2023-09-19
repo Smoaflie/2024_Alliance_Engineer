@@ -39,8 +39,8 @@
             "interface": "swd",
             "svdFile": "STM32F407.svd",
             "rtos": "FreeRTOS",
-            "preLaunchTask": "CMake", //cmake编译
-            "preLaunchTask": "Debug_with_Ozone", //先运行打开ozone软件
+            //"preLaunchTask": "CMake", //cmake编译
+            //"preLaunchTask": "Debug_with_Ozone", //先运行打开ozone软件
             //"preLaunchTask": "build task", //先运行Build任务,取消注释即可使用
             //"preLaunchTask": "log", // 调试时同时开启RTT viewer窗口,若daplink使用jlinkGDBserver启动,需要先开始调试再打开log
             // 若想要在调试前编译并且打开log,可只使用log的prelaunch task并为log任务添加depends on依赖
