@@ -1,9 +1,20 @@
 {
     "configurations": [
         {
-            "name": "STM32",
-            "configurationProvider": "ms-vscode.cmake-tools",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"//VSCode开发C++时让intelliSense正确识别include关系
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "cStandard": "c17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "windows-gcc-arm",
+            "configurationProvider": "ms-vscode.makefile-tools",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"  //vscode自动引用cmake生成的代码文件依赖
         }
     ],
     "version": 4
