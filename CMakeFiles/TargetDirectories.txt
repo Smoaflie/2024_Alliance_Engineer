@@ -1,3 +1,0 @@
-G:/robomaster/new_code/new/basic_framework/CMakeFiles/basic_framework.elf.dir
-G:/robomaster/new_code/new/basic_framework/CMakeFiles/edit_cache.dir
-G:/robomaster/new_code/new/basic_framework/CMakeFiles/rebuild_cache.dir

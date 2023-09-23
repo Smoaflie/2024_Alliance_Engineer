@@ -1,0 +1,41 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "OpenOCD Download",
+      "type": "shell",
+      "command": "openocd",
+      "args": [
+        "-f",
+        "interface/jlink.cfg",
+        "-c",
+        " transport select swd",
+        "-f",
+        "target/stm32f4x.cfg",
+        "-c",
+        " program ./build/blank_framework.elf verify reset exit"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Download with JFlash", //!需要将Jlink目录添加到环境变量
+      "type": "process",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "JFlash",
+        "-openprj${workspaceFolder}/STM32.jflash",
+        "-open${workspaceFolder}/build/basic_framework.hex,0x8000000", //!不同的工程名称需要修改hex名称
+        "-auto",
+        "-startapp",
+        "-exit"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    }
+  ]
+}

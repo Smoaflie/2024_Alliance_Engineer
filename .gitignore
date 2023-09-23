@@ -53,4 +53,3 @@ build
 .vscode/.cortex-debug.registers.state.json
 *.jdebug*
 settings.json
-tasks.json
