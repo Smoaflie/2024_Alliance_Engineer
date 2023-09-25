@@ -36,6 +36,16 @@
         "kind": "build",
         "isDefault": false
       }
+    },
+    {
+      "label": "Debug with Ozone", //!需要将Ozone目录添加到环境变量
+      "type": "process",
+      "command": "cmd",
+      "args": ["/c", "Ozone", "${workspaceFolder}/Ozone_debug.jdebug"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
     }
   ]
 }
