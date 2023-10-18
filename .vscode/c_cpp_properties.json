@@ -1,9 +1,0 @@
-{
-  "configurations": [
-    {
-      "name": "STM32",
-      "compileCommands": "${workspaceFolder}/build/compile_commands.json" //让intelliSense正确识别include关系
-    }
-  ],
-  "version": 4
-}

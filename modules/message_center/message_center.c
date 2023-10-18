@@ -1,18 +1,17 @@
 #include "message_center.h"
-#include "stdlib.h"
-#include "string.h"
+#include <stdlib.h>
+#include <string.h>
 #include "bsp_log.h"
 
 /* message_center是fake head node,是方便链表编写的技巧,这样就不需要处理链表头的特殊情况 */
 static Publisher_t message_center = {
-    .topic_name = "Message_Manager",
-    .first_subs = NULL,
+    .topic_name      = "Message_Manager",
+    .first_subs      = NULL,
     .next_topic_node = NULL};
 
 static void CheckName(char *name)
 {
-    if (strnlen(name, MAX_TOPIC_NAME_LEN + 1) >= MAX_TOPIC_NAME_LEN)
-    {
+    if (strnlen(name, MAX_TOPIC_NAME_LEN + 1) >= MAX_TOPIC_NAME_LEN) {
         LOGERROR("EVENT NAME TOO LONG:%s", name);
         while (1)
             ; // 进入这里说明话题名超出长度限制
@@ -21,8 +20,7 @@ static void CheckName(char *name)
 
 static void CheckLen(uint8_t len1, uint8_t len2)
 {
-    if (len1 != len2)
-    {
+    if (len1 != len2) {
         LOGERROR("EVENT LEN NOT SAME:%d,%d", len1, len2);
         while (1)
             ; // 进入这里说明相同话题的消息长度却不同
@@ -59,14 +57,12 @@ Subscriber_t *SubRegister(char *name, uint8_t data_len)
     Subscriber_t *ret = (Subscriber_t *)malloc(sizeof(Subscriber_t));
     memset(ret, 0, sizeof(Subscriber_t));
     // 对新建的Subscriber进行初始化
-    ret->data_len = data_len; // 设定数据长度
-    for (size_t i = 0; i < QUEUE_SIZE; ++i)
-    { // 给消息队列的每一个元素分配空间,queue里保存的实际上是数据执指针,这样可以兼容不同的数据长度
+    ret->data_len = data_len;                 // 设定数据长度
+    for (size_t i = 0; i < QUEUE_SIZE; ++i) { // 给消息队列的每一个元素分配空间,queue里保存的实际上是数据执指针,这样可以兼容不同的数据长度
         ret->queue[i] = malloc(data_len);
     }
     // 如果是第一个订阅者,特殊处理一下,将first_subs指针指向新建的订阅者(详见文档)
-    if (pub->first_subs == NULL)
-    {
+    if (pub->first_subs == NULL) {
         pub->first_subs = ret;
         return ret;
     }
@@ -83,8 +79,7 @@ Subscriber_t *SubRegister(char *name, uint8_t data_len)
 /* 如果队列为空,会返回0;成功获取数据,返回1;后续可以做更多的修改,比如剩余消息数目等 */
 uint8_t SubGetMessage(Subscriber_t *sub, void *data_ptr)
 {
-    if (sub->temp_size == 0)
-    {
+    if (sub->temp_size == 0) {
         return 0;
     }
     memcpy(data_ptr, sub->queue[sub->front_idx], sub->data_len);
@@ -98,8 +93,7 @@ uint8_t PubPushMessage(Publisher_t *pub, void *data_ptr)
     static Subscriber_t *iter;
     iter = pub->first_subs; // iter作为订阅者指针,遍历订阅该话题的所有订阅者;如果为空说明遍历结束
     // 遍历订阅了当前话题的所有订阅者,依次填入最新消息
-    while (iter)
-    {
+    while (iter) {
         if (iter->temp_size == QUEUE_SIZE) // 如果队列已满,则需要删除最老的数据(头部),再填入
         {
             // 队列头索引前移动,相当于抛弃前一个位置的数据,被抛弃的位置稍后会被写入新的数据

@@ -1,4 +1,0 @@
-void OnProjectLoad(void)
-{
-    Project.SetOSPlugin("FreeRTOSPlugin_CM4");
-}
