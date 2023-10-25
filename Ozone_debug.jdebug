@@ -4,8 +4,8 @@
 *                         www.segger.com                             *
 **********************************************************************
 
-File          : F:/project/Alliance/Alliance_Robomaster/2024_Control_New_Framework_Base-dev-all/Ozone_debug.jdebug
-Created       : 23 Sep 2023 21:37
+File          : F:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/ozone_debug.jdebug
+Created       : 18 Oct 2023 21:56
 Ozone Version : V3.30b
 */
 
@@ -22,18 +22,18 @@ void OnProjectLoad (void) {
   //
   // Dialog-generated settings
   //
-  Project.AddPathSubstitute ("F:/project/Alliance/Alliance_Robomaster/2024_Control_New_Framework_Base-dev-all", "$(ProjectDir)");
-  Project.AddPathSubstitute ("f:/project/alliance/alliance_robomaster/2024_control_new_framework_base-dev-all", "$(ProjectDir)");
+  Project.AddPathSubstitute ("F:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all", "$(ProjectDir)");
+  Project.AddPathSubstitute ("f:/project/alliance/alliance2024/2024_control_new_framework_base-dev-all", "$(ProjectDir)");
   Project.SetDevice ("STM32F407IG");
   Project.SetHostIF ("USB", "");
   Project.SetTargetIF ("SWD");
   Project.SetTIFSpeed ("8 MHz");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M4F.svd");
-  Project.SetJLinkScript ("F:/project/Alliance/Alliance_Robomaster/2024_Control_New_Framework_Base-dev-all/Ozone_script.jdebug");
   //
   // User settings
   //
-  File.Open ("$(ProjectDir)/build/basic_framework.elf");
+  Edit.SysVar (VAR_RTT_ENABLED, 1);
+  File.Open ("$(ProjectDir)/build/Debug/basic_framework.elf");
 }
 
 /*********************************************************************

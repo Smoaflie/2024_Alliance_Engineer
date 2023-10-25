@@ -10,7 +10,7 @@
 
 static uint8_t idx;
 static HTMotorInstance *ht_motor_instance[HT_MOTOR_CNT];
-static osThreadId ht_task_handle[HT_MOTOR_CNT];
+//static osThreadId ht_task_handle[HT_MOTOR_CNT];
 static uint8_t zero_buff[6] = {0};
 
 /**
@@ -214,8 +214,8 @@ void HTMotorControlInit()
         __itoa(i, ht_id_buff, 10);
         strcat(ht_task_name, ht_id_buff); // 似乎没什么吊用,osthreaddef会把第一个变量当作宏字符串传入,作为任务名
         // @todo 还需要一个更优雅的方案来区分不同的电机任务
-        osThreadDef(ht_task_name, HTMotorTask, osPriorityNormal, 0, 128);
-        ht_task_handle[i] = osThreadCreate(osThread(ht_task_name), ht_motor_instance[i]);
+        // osThreadDef(ht_task_name, HTMotorTask, osPriorityNormal, 0, 128);
+        // ht_task_handle[i] = osThreadCreate(osThread(ht_task_name), ht_motor_instance[i]);
     }
 }
 
