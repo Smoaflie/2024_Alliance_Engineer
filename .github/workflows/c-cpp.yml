@@ -1,0 +1,23 @@
+name: C/C++ ARM CI
+
+on:
+  push:
+    branches: ["main", "dev-all"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: carlosperate/arm-none-eabi-gcc-action@v1
+      - run: arm-none-eabi-gcc --version
+
+      - uses: actions/checkout@v3
+      - name: make
+        run: make -j12
+
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      - name: ninja
+        run: cd build && cmake -G Ninja .. && ninja

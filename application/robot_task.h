@@ -16,7 +16,8 @@
 #include "buzzer.h"
 
 #include "bsp_log.h"
-
+//! 任务直接在cubeMX中配置,不再使用这种方式
+#if 0
 osThreadId insTaskHandle;
 osThreadId robotTaskHandle;
 osThreadId motorTaskHandle;
@@ -35,23 +36,23 @@ void StartUITASK(void const *argument);
  */
 void OSTaskInit()
 {
-    //     osThreadDef(instask, StartINSTASK, osPriorityAboveNormal, 0, 1024);
-    //     insTaskHandle = osThreadCreate(osThread(instask), NULL); // 由于是阻塞读取传感器,为姿态解算设置较高优先级,确保以1khz的频率执行
-    //     // 后续修改为读取传感器数据准备好的中断处理,
+        osThreadDef(instask, StartINSTASK, osPriorityAboveNormal, 0, 1024);
+        insTaskHandle = osThreadCreate(osThread(instask), NULL); // 由于是阻塞读取传感器,为姿态解算设置较高优先级,确保以1khz的频率执行
+        // 后续修改为读取传感器数据准备好的中断处理,
 
-    //     osThreadDef(motortask, StartMOTORTASK, osPriorityNormal, 0, 256);
-    //     motorTaskHandle = osThreadCreate(osThread(motortask), NULL);
+        osThreadDef(motortask, StartMOTORTASK, osPriorityNormal, 0, 256);
+        motorTaskHandle = osThreadCreate(osThread(motortask), NULL);
 
-    //     osThreadDef(daemontask, StartDAEMONTASK, osPriorityNormal, 0, 128);
-    //     daemonTaskHandle = osThreadCreate(osThread(daemontask), NULL);
+        osThreadDef(daemontask, StartDAEMONTASK, osPriorityNormal, 0, 128);
+        daemonTaskHandle = osThreadCreate(osThread(daemontask), NULL);
 
-    //     osThreadDef(robottask, StartROBOTTASK, osPriorityNormal, 0, 1024);
-    //     robotTaskHandle = osThreadCreate(osThread(robottask), NULL);
+        osThreadDef(robottask, StartROBOTTASK, osPriorityNormal, 0, 1024);
+        robotTaskHandle = osThreadCreate(osThread(robottask), NULL);
 
-    //     osThreadDef(uitask, StartUITASK, osPriorityNormal, 0, 512);
-    //     uiTaskHandle = osThreadCreate(osThread(uitask), NULL);
+        osThreadDef(uitask, StartUITASK, osPriorityNormal, 0, 512);
+        uiTaskHandle = osThreadCreate(osThread(uitask), NULL);
 
-    //     HTMotorControlInit(); // 没有注册HT电机则不会执行
+        HTMotorControlInit(); // 没有注册HT电机则不会执行
 }
 
 __attribute__((noreturn)) void StartINSTASK(void const *argument)
@@ -130,5 +131,28 @@ __attribute__((noreturn)) void StartUITASK(void const *argument)
         // 每给裁判系统发送一包数据会挂起一次,详见UITask函数的refereeSend()
         UITask();
         osDelay(1); // 即使没有任何UI需要刷新,也挂起一次,防止卡在UITask中无法切换
+    }
+}
+#endif
+#include "led.h"
+void TestTask(void *argument)
+{
+    // static LEDInstance *led_R;
+    UNUSED(argument);
+    // LED_Init_Config_s led_R_config = {
+    //     .pwm_config = {
+    //         .htim      = &htim1,
+    //         .channel   = TIM_CHANNEL_3,
+    //         .period    = 0.001f,
+    //         .dutyratio = 0,
+    //         .callback  = NULL,
+    //         .id        = NULL,
+    //     },
+    //     .init_swtich = 1,
+    // };
+    // led_R = LEDRegister(&led_R_config);
+    for (;;) {
+
+        osDelay(1);
     }
 }

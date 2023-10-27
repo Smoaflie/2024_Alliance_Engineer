@@ -479,11 +479,17 @@ static void IMU_QuaternionEKF_Observe(KalmanFilter_t *kf)
  */
 static float invSqrt(float x)
 {
+    union {
+        float f;
+        long i;
+    } conv;
+    
     float halfx = 0.5f * x;
     float y = x;
-    long i = *(long *)&y;
-    i = 0x5f375a86 - (i >> 1);
-    y = *(float *)&i;
+    conv.f = y;
+    conv.i = 0x5f375a86 - (conv.i >> 1);
+    y = conv.f;
     y = y * (1.5f - (halfx * y * y));
     return y;
 }
+

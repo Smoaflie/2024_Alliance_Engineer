@@ -17,7 +17,7 @@ void BuzzerInit()
         .htim = &htim4,
         .channel = TIM_CHANNEL_3,
         .dutyratio = 0,
-        .period = 0.001,
+        .period = 0.001f,
     };
     buzzer = PWMRegister(&buzzer_config);
 }
