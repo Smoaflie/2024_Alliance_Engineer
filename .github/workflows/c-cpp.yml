@@ -2,7 +2,7 @@ name: C/C++ ARM CI
 
 on:
   push:
-    branches: ["main", "dev-all"]
+    branches: ["main", "dev-all", "github_test"]
   pull_request:
     branches: ["main"]
 
@@ -23,5 +23,4 @@ jobs:
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
       - name: Build
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
