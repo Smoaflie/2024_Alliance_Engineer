@@ -33,8 +33,11 @@ const uint16_t Note_Freq[] = {0,
                               2093, 2217, 2349, 2489, 2637, 2794, 2960, 3136, 3322, 3520, 3729, 3951,
                               4186, 4435, 4699, 4978, 5274, 5588, 5920, 6272, 6645, 7040, 7459, 7902};
 // 开机音乐
-char StartUP_sound[] = "MFT240L8 O4aO5dc O4aO5dc O4aO5dc L16dcdcdcdc";
-char No_RC_sound[]   = "MFT200L8 O5ecececec";
+char StartUP_sound[]      = "T240L8 O4aO5dc O4aO5dc O4aO5dc L16dcdcdcdc";
+char No_RC_sound[]        = "T200L8 O5ecececec";
+char RoboMaster_You[]     = "T75 L4O5ef g.L8e gL16eL8g.L4b O6c. O5L8cdeL4g L8a...L16gL8aL16gL8g.g L2d L4efL2g L8gL16eL8g.O6L4dc. O5L8cde O6L4c O5L8a...L16g L8aL16gL8a. O6L4cd. P8O5L8deL16d L1c";
+char RoboMaster_Prepare[] = "T140L8 O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa L2O5eO7c O6ee O5eO6a ee O5cO6f O5aa O4bO5b L2O5eO7c O6ee O5eO6a ee O5cO6f O5aa O4bO5b";
+char Test[]               = "T200 L4O5c.defgabO6c";
 /**
  * @brief :  蜂鸣器注册
  * @return  void
@@ -68,7 +71,7 @@ void BuzzerRegister(void)
  * @return  void
  */
 void BuzzerPlay(char *sound)
-{  
+{
     // 如果蜂鸣器未注册，则注册
     if (buzzer == NULL) {
         BuzzerRegister();
@@ -93,8 +96,10 @@ inline static void NotePlay()
         PWMSetPeriod(buzzer->buzzer_pwm, 1.0f / freq);
     }
     float note_delay = 1000 * (4.0f / (float)buzzer->_note_length) * 60 / (float)buzzer->_tempo;
+    note_delay += note_delay / 2.0f * (float)buzzer->dots;
     osDelay((uint32_t)note_delay);
     PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
+    osDelay(10);
 }
 /**
  * @brief :  下一个字符
@@ -131,6 +136,19 @@ inline static unsigned next_number()
     }
 }
 /**
+ * @brief :  下一个点
+ * @return  unsigned
+ */
+inline static unsigned next_dots()
+{
+    unsigned dots = 0;
+    while (next_char() == '.') {
+        buzzer->_next_tune++;
+        dots++;
+    }
+    return dots;
+}
+/**
  * @brief :  音符处理
  * @return  void
  */
@@ -138,6 +156,8 @@ inline static void Note_handle()
 {
     int c = next_char();
     if (c >= 'A' && c <= 'G') { buzzer->note = _note_tab[c - 'A'] + (buzzer->_octave * 12) + 1; }
+    buzzer->_next_tune++;
+    c = next_char();
     switch (c) {
         case '#': // Up a semitone.
         case '+':
@@ -156,7 +176,7 @@ inline static void Note_handle()
             // 0 / No next char here is OK.
             break;
     }
-    buzzer->_next_tune++;
+    buzzer->dots = next_dots();
 #if 0
     // Shorthand length notation.
     unsigned note_length = next_number();
@@ -221,8 +241,8 @@ inline static void string_handle()
                 break;
             case 'O': // Select octave.
                 buzzer->_octave = next_number();
-                if (buzzer->_octave > 6) {
-                    buzzer->_octave = 6;
+                if (buzzer->_octave > 8) {
+                    buzzer->_octave = 8;
                 }
                 break;
             case '<': // Decrease octave.
@@ -231,7 +251,7 @@ inline static void string_handle()
                 }
                 break;
             case '>': // Increase octave.
-                if (buzzer->_octave < 6) {
+                if (buzzer->_octave < 8) {
                     buzzer->_octave++;
                 }
                 break;
@@ -240,6 +260,7 @@ inline static void string_handle()
                 break;
             case 'P': // Pause for a note length.
                 buzzer->_note_length = next_number();
+                buzzer->dots         = next_dots();
                 buzzer->note         = 0;
                 NotePlay();
                 if (buzzer->_note_length < 1)

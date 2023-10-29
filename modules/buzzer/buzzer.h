@@ -26,6 +26,7 @@ typedef struct
     char *_next_tune;
     uint8_t _note_mode;    // 音符模式
     unsigned _note_length; // 音符长度 2分，4分，8分，16分，32分，64分
+    unsigned dots;         // 附点数
     unsigned _octave;      // 八度 0-6
     unsigned _tempo;       // 节拍 32-255
     uint8_t _repeat;       // 是否重复
@@ -35,6 +36,9 @@ typedef struct
 
 extern char StartUP_sound[]; // 除了extern想不出smarter的方法了，各位大佬有什么好的方法可以提出来
 extern char No_RC_sound[];
+extern char RoboMaster_You[];
+extern char RoboMaster_Prepare[];
+extern char Test[];
 
 void BuzzerRegister(void);
 

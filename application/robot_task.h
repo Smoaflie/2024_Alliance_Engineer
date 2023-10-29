@@ -141,8 +141,8 @@ void TestTask(void *argument)
     UNUSED(argument);
     static C_board_LEDInstance *c_led = NULL;
     c_led                             = C_boardLEDRegister();
-    //BuzzerPlay(StartUP_sound);
-    BuzzerPlay(No_RC_sound);
+    BuzzerPlay(StartUP_sound);
+    // BuzzerPlay(RoboMaster_Prepare);
     for (;;) {
         C_board_LEDSet(c_led, 0x33ffff);
         osDelay(500);

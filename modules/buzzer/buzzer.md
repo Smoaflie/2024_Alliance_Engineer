@@ -11,6 +11,14 @@ BuzzerPlay(StartUP_sound);
 
 其中`StartUP_sound`是一个数组，用于存放提示音的频率和持续时间。
 
+## 可选曲目
+
+==`StartUP_sound`==
+==`No_RC_sound`==
+==`RoboMaster_You`==
+==`RoboMaster_Prepare`==
+==`Test`==
+
 ## 编曲指南
 
 > 功能：演奏由给定的字符串所表示的音乐 
