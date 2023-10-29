@@ -12,6 +12,18 @@
             "runToEntryPoint": "main",
             "device": "STM32F407IG",
             "toolchainPrefix": "arm-none-eabi"
+        },
+        {
+            "cwd": "${workspaceRoot}",
+            "type": "cortex-debug",
+            "request": "attach",
+            "name": "jlink-attach",
+            "servertype": "jlink",
+            "interface": "swd",
+            "executable": "build\\Debug\\basic_framework.elf",
+            "runToEntryPoint": "main",
+            "device": "STM32F407IG",
+            "toolchainPrefix": "arm-none-eabi"
         }
     ]
 }

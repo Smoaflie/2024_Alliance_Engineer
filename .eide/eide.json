@@ -19,7 +19,7 @@
   },
   "outDir": "build",
   "deviceName": null,
-  "packDir": null,
+  "packDir": ".pack/Keil/STM32F4xx_DFP.2.14.0",
   "miscInfo": {
     "uid": "e04d1d6c31b878935f89f59d8ebb84d9"
   },
@@ -80,7 +80,7 @@
           "bsp/pwm",
           "bsp/bsp_legacy_support",
           "modules/algorithm",
-          "modules/alarm",
+          "modules/buzzer",
           "modules/BMI088",
           "modules/imu",
           "modules/ist8310",

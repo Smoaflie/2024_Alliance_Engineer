@@ -135,24 +135,18 @@ __attribute__((noreturn)) void StartUITASK(void const *argument)
 }
 #endif
 #include "led.h"
+#include "buzzer.h"
 void TestTask(void *argument)
 {
-    // static LEDInstance *led_R;
     UNUSED(argument);
-    // LED_Init_Config_s led_R_config = {
-    //     .pwm_config = {
-    //         .htim      = &htim1,
-    //         .channel   = TIM_CHANNEL_3,
-    //         .period    = 0.001f,
-    //         .dutyratio = 0,
-    //         .callback  = NULL,
-    //         .id        = NULL,
-    //     },
-    //     .init_swtich = 1,
-    // };
-    // led_R = LEDRegister(&led_R_config);
+    static C_board_LEDInstance *c_led = NULL;
+    c_led                             = C_boardLEDRegister();
+    //BuzzerPlay(StartUP_sound);
+    BuzzerPlay(No_RC_sound);
     for (;;) {
-
-        osDelay(1);
+        C_board_LEDSet(c_led, 0x33ffff);
+        osDelay(500);
+        C_board_LEDSet(c_led, 0xd633ff);
+        osDelay(500);
     }
 }

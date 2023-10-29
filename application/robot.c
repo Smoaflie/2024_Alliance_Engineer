@@ -13,6 +13,7 @@
 #include "robot_def.h"
 #include "robot_task.h"
 
+#define ROBOT_DEF_PARAM_WARNING
 // 编译warning,提醒开发者修改机器人参数
 #ifndef ROBOT_DEF_PARAM_WARNING
 #define ROBOT_DEF_PARAM_WARNING
