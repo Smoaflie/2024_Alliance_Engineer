@@ -9,7 +9,7 @@
 #include "robot.h"
 #include "ins_task.h"
 #include "motor_task.h"
-#include "referee_task.h"
+#include "referee_init.h"
 #include "master_process.h"
 #include "daemon.h"
 #include "HT04.h"
