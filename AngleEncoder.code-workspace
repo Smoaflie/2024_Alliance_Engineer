@@ -1,0 +1,87 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.autoGuessEncoding": true,
+    "C_Cpp.default.configurationProvider": "cl.eide",
+    "C_Cpp.errorSquiggles": "disabled",
+    "files.associations": {
+      ".eideignore": "ignore",
+      "*.a51": "a51",
+      "*.h": "c",
+      "*.c": "c",
+      "*.hxx": "cpp",
+      "*.hpp": "cpp",
+      "*.c++": "cpp",
+      "*.cpp": "cpp",
+      "*.cxx": "cpp",
+      "*.cc": "cpp",
+      "array": "cpp",
+      "atomic": "cpp",
+      "bit": "cpp",
+      "*.tcc": "cpp",
+      "cctype": "cpp",
+      "clocale": "cpp",
+      "cmath": "cpp",
+      "compare": "cpp",
+      "concepts": "cpp",
+      "cstdarg": "cpp",
+      "cstddef": "cpp",
+      "cstdint": "cpp",
+      "cstdio": "cpp",
+      "cstdlib": "cpp",
+      "cwchar": "cpp",
+      "cwctype": "cpp",
+      "deque": "cpp",
+      "unordered_map": "cpp",
+      "vector": "cpp",
+      "exception": "cpp",
+      "algorithm": "cpp",
+      "functional": "cpp",
+      "iterator": "cpp",
+      "memory": "cpp",
+      "memory_resource": "cpp",
+      "numeric": "cpp",
+      "optional": "cpp",
+      "random": "cpp",
+      "string": "cpp",
+      "string_view": "cpp",
+      "system_error": "cpp",
+      "tuple": "cpp",
+      "type_traits": "cpp",
+      "utility": "cpp",
+      "initializer_list": "cpp",
+      "iosfwd": "cpp",
+      "limits": "cpp",
+      "new": "cpp",
+      "ostream": "cpp",
+      "ranges": "cpp",
+      "stdexcept": "cpp",
+      "streambuf": "cpp",
+      "typeinfo": "cpp"
+    },
+    "[yaml]": {
+      "editor.insertSpaces": true,
+      "editor.tabSize": 4,
+      "editor.autoIndent": "advanced"
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "cl.eide",
+      "keroc.hex-fmt",
+      "xiaoyongdong.srecord",
+      "hars.cppsnippets",
+      "zixuanwang.linkerscript",
+      "redhat.vscode-yaml",
+      "IBM.output-colorizer",
+      "cschlosser.doxdocgen",
+      "ms-vscode.vscode-serial-monitor",
+      "dan-c-underwood.arm",
+      "marus25.cortex-debug"
+    ]
+  }
+}

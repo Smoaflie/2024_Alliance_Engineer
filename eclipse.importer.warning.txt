@@ -1,0 +1,64 @@
+!!! 警告 !!!
+
+在 eclipse 和 eide 之间有一些不兼容的参数，您需要检查并手动添加到 eide 项目 !
+
+当你解决了这些不兼容的参数，你需要删除这个提示文件，否则这个文件还会再次显示 !
+
+---
+
+##### Configurations For All Targets #####
+
+//
+///// Target: 'Debug' /////
+//
+
+Incompatible Args:
+    /:
+        globalArgs:
+            - <MCU> = STM32F103C8Tx
+            - <CPU> = 0
+            - <Core> = 0
+            - <Board> = genericBoard
+            - "<Defaults> = com.st.stm32cube.ide.common.services.build.inputs.revA.1.0.6 || Debug || true || Executable || com.st.stm32cube.ide.mcu.gnu.managedbuild.option.toolchain.value.workspace || STM32F103C8Tx || 0 || 0 || arm-none-eabi- || ${gnu_tools_for_stm32_compiler_path} || ../Core/Inc | ../Drivers/STM32F1xx_HAL_Driver/Inc | ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy | ../Drivers/CMSIS/Device/ST/STM32F1xx/Include | ../Drivers/CMSIS/Include ||  ||  || USE_HAL_DRIVER | STM32F103xB ||  || Drivers | Core/Startup | Core ||  ||  || ${workspace_loc:/${ProjName}/STM32F103C8TX_FLASH.ld} || true || NonSecure ||  || secure_nsclib.o ||  || None ||  ||  || "
+            - <undefined> = 72
+        cIncDirs: []
+        cMacros: []
+        cCompilerArgs:
+            - <Debug level> = com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.debuglevel.value.g3
+            - <Optimization level> = undefined
+            - <Debug level> = com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.debuglevel.value.g3
+        sIncDirs: []
+        sMacros: []
+        assemblerArgs:
+            - <Debug level> = com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.value.g3
+        linkerArgs: []
+        linkerLibArgs: []
+
+
+//
+///// Target: 'Release' /////
+//
+
+Incompatible Args:
+    /:
+        globalArgs:
+            - <undefined> = STM32F103C8Tx
+            - <undefined> = 0
+            - <undefined> = genericBoard
+            - "<undefined> = com.st.stm32cube.ide.common.services.build.inputs.revA.1.0.6 || Release || false || Executable || com.st.stm32cube.ide.mcu.gnu.managedbuild.option.toolchain.value.workspace || STM32F103C8Tx || 0 || 0 || arm-none-eabi- || ${gnu_tools_for_stm32_compiler_path} || ../Core/Inc | ../Drivers/STM32F1xx_HAL_Driver/Inc | ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy | ../Drivers/CMSIS/Device/ST/STM32F1xx/Include | ../Drivers/CMSIS/Include ||  ||  || USE_HAL_DRIVER | STM32F103xB ||  || Drivers | Core/Startup | Core ||  ||  || ${workspace_loc:/${ProjName}/STM32F103C8TX_FLASH.ld} || true || NonSecure ||  || secure_nsclib.o ||  || None ||  ||  || "
+            - <undefined> = 72
+        cIncDirs: []
+        cMacros: []
+        cCompilerArgs:
+            - <undefined> = com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.debuglevel.value.g0
+            - <undefined> = com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.option.optimization.level.value.os
+            - <undefined> = com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.debuglevel.value.g0
+            - <undefined> = com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.optimization.level.value.os
+        sIncDirs: []
+        sMacros: []
+        assemblerArgs:
+            - <undefined> = com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.assembler.option.debuglevel.value.g0
+        linkerArgs:
+            - <undefined> = ${workspace_loc:/${ProjName}/STM32F103C8TX_FLASH.ld}
+        linkerLibArgs: []
+
