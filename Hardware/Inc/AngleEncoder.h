@@ -11,3 +11,5 @@ typedef struct
 } AngleEncoderData;
 
 AngleEncoderData RecieveData(void);
+
+const uint8_t IsAngleEncoderOnline(void);

@@ -34,6 +34,9 @@ void CanTimeInitInstance()
 
     AutoCount = (uint16_t)((double)1.0 / (double)frequence * ((double)APB1TIMER / (double)(Prescaler - 1)));
 
+    HAL_TIM_Base_Stop_IT(&htim2);
+    HAL_TIM_Base_Stop_IT(&htim3);
+
     __HAL_TIM_SET_PRESCALER(&htim2, Prescaler);
     __HAL_TIM_SET_AUTORELOAD(&htim2, AutoCount - 1);
     __HAL_TIM_SET_COUNTER(&htim2, 0); // 初始时钟中断周期（任务发送频率）

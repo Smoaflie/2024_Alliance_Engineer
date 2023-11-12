@@ -92,3 +92,8 @@ uint8_t OddOvenCheck(uint64_t CheckedDate, uint8_t length, uint8_t flag)
         }
     }
 }
+
+const uint8_t IsAngleEncoderOnline()
+{
+    return AngleEncoder.Error;
+}

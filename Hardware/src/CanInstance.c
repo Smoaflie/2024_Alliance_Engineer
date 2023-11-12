@@ -1,10 +1,14 @@
 #include "CanInstance.h"
+#include "can.h"
 
-const uint16_t rxid = 0x01;
-const uint16_t txid = 0x01;
 extern CAN_HandleTypeDef hcan;
 
 CanRTx CanRTXValue = {0};
+
+const CanRTx *CanRTXValueGet()
+{
+    return &CanRTXValue;
+}
 
 void CanAddFilter(CAN_HandleTypeDef *can_handle)
 {
@@ -80,6 +84,13 @@ static void CANFIFOxCallback(CAN_HandleTypeDef *_hcan, uint32_t fifox)
     }
 }
 
+static uint8_t CanRxFlag = 0;
+
+const uint8_t IsCanRx()
+{
+    return CanRxFlag;
+}
+
 /**
  * @brief rx fifo callback. Once FIFO_0 is full,this func would be called
  *
@@ -88,6 +99,7 @@ static void CANFIFOxCallback(CAN_HandleTypeDef *_hcan, uint32_t fifox)
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
     CANFIFOxCallback(hcan, CAN_RX_FIFO0); // 调用我们自己写的函数来处理消息
+    CanRxFlag = 1;
 }
 
 /**
@@ -98,4 +110,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
     CANFIFOxCallback(hcan, CAN_RX_FIFO1); // 调用我们自己写的函数来处理消息
+    CanRxFlag = 1;
+}
+
+void CanReset(CanRTx *CanRTXPtr)
+{
+    HAL_CAN_MspDeInit(&hcan);
+    MX_CAN_Init();
+    CanInit(CanRTXPtr);
 }

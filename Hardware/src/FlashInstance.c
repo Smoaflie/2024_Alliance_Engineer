@@ -9,8 +9,7 @@ static uint32_t FLASH_USER_END_ADDR = 0x0800FC00;
 
 // static uint32_t FLASH_USER_END_ADDR = 0x08007C00;
 
-uint8_t
-FlashWrite(uint32_t *data, uint32_t length)
+uint8_t FlashWrite(uint32_t *data, uint32_t length)
 {
     HAL_FLASH_Unlock(); // 解锁
     FLASH_EraseInitTypeDef EraseInitStruct;

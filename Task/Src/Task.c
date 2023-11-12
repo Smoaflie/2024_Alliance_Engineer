@@ -1,10 +1,15 @@
 #include "Task.h"
-#include "CanInstance.h"
-#include "FlashInstance.h"
-#include "AngleEncoder.h"
 #include "CanSendTask.h"
+#include "LedTask.h"
+#include "KeyTask.h"
 
 void InitTask()
 {
     CanTimeInitInstance();
+}
+
+void Task()
+{
+    Key_Task();
+    LedTask();
 }
