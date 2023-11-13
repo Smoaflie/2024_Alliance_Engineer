@@ -35,7 +35,7 @@
 extern int __io_putchar(int ch) __attribute__((weak));
 extern int __io_getchar(void) __attribute__((weak));
 
-
+#if 0
 char *__env[1] = { 0 };
 char **environ = __env;
 
@@ -174,3 +174,4 @@ int _execve(char *name, char **argv, char **env)
   errno = ENOMEM;
   return -1;
 }
+#endif

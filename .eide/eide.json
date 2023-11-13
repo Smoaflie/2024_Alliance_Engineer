@@ -3,14 +3,10 @@
   "type": "ARM",
   "dependenceList": [],
   "srcDirs": [
-    ".eide/deps",
     "Startup",
     "Src",
     "Middlewares",
-    "Drivers",
-    "application",
-    "bsp",
-    "modules"
+    "Drivers"
   ],
   "virtualFolder": {
     "name": "<virtual_root>",
@@ -29,7 +25,7 @@
       "toolchain": "GCC",
       "compileConfig": {
         "cpuType": "Cortex-M4",
-        "floatingPointHardware": "single",
+        "floatingPointHardware": "none",
         "scatterFilePath": "",
         "useCustomScatterFile": true,
         "storageLayout": {
@@ -54,59 +50,17 @@
       "custom_dep": {
         "name": "default",
         "incList": [
+          "Inc",
           "Drivers/STM32F4xx_HAL_Driver/Inc",
           "Drivers/STM32F4xx_HAL_Driver/Inc/Legacy",
-          "Drivers/CMSIS/Device/ST/STM32F4xx/Include",
-          "Drivers/CMSIS/Include",
           "Middlewares/Third_Party/FreeRTOS/Source/include",
-          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
           "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
           "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
           "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
-          "Middlewares/Third_Party/SEGGER/Config",
-          "Middlewares/Third_Party/SEGGER/RTT",
+          "Drivers/CMSIS/Device/ST/STM32F4xx/Include",
+          "Drivers/CMSIS/Include",
           "Middlewares/ST/ARM/DSP/Inc",
-          "Inc",
-          ".eide/deps",
-          "bsp",
-          "bsp/dwt",
-          "bsp/can",
-          "bsp/usart",
-          "bsp/usb",
-          "bsp/gpio",
-          "bsp/spi",
-          "bsp/iic",
-          "bsp/log",
-          "bsp/pwm",
-          "bsp/bsp_legacy_support",
-          "modules/algorithm",
-          "modules/alarm",
-          "modules/BMI088",
-          "modules/imu",
-          "modules/ist8310",
-          "modules/led",
-          "modules/led_task",
-          "modules/master_machine",
-          "modules/motor/DJImotor",
-          "modules/motor/LKmotor",
-          "modules/motor/HTmotor",
-          "modules/motor/step_motor",
-          "modules/motor/servo_motor",
-          "modules/motor",
-          "modules/oled",
-          "modules/referee",
-          "modules/remote",
-          "modules/super_cap",
-          "modules/can_comm",
-          "modules/message_center",
-          "modules/daemon",
-          "modules/vofa",
-          "modules",
-          "application/chassis",
-          "application/cmd",
-          "application/gimbal",
-          "application/shoot",
-          "application"
+          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib"
@@ -115,8 +69,7 @@
         "defineList": [
           "DEBUG",
           "USE_HAL_DRIVER",
-          "STM32F407xx",
-          "ARM_MATH_CM4"
+          "STM32F407xx"
         ]
       }
     },
@@ -139,8 +92,8 @@
         "bin": "",
         "baseAddr": "",
         "cpuInfo": {
-          "vendor": "null",
-          "cpuName": "null"
+          "vendor": "ST",
+          "cpuName": "STM32F407IG"
         },
         "proType": 1,
         "speed": 8000,
@@ -154,13 +107,13 @@
           "Drivers/STM32F4xx_HAL_Driver/Inc",
           "Drivers/STM32F4xx_HAL_Driver/Inc/Legacy",
           "Middlewares/Third_Party/FreeRTOS/Source/include",
-          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS",
           "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
           "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
           "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
           "Drivers/CMSIS/Device/ST/STM32F4xx/Include",
           "Drivers/CMSIS/Include",
-          "Middlewares/ST/ARM/DSP/Inc"
+          "Middlewares/ST/ARM/DSP/Inc",
+          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
         ],
         "defineList": [
           "USE_HAL_DRIVER",

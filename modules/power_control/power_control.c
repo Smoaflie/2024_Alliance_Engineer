@@ -69,11 +69,17 @@ void TargetTorqueCali(Physical_Quantity_t *physical_quantity,Coefficient_t *coef
     c = coefficient->k2 * pow(motor_speed,2) + coefficient->constant - physical_quantity->max_power;
     if(output > 0)
     {
-        physical_quantity->target_torque=(-b + sqrt((b * b) - (4.0f * a * c))) / (2.0f * a);
+        physical_quantity->target_torque=(-b + 
+        
+        
+        
+        
+        
+        f((b * b) - (4.0f * a * c))) / (2.0f * a);
     }
     else if(output < 0)
     {
-        physical_quantity->target_torque=(-b - sqrt((b * b) - (4.0f * a * c))) / (2.0f * a);
+        physical_quantity->target_torque=(-b - sqrtf((b * b) - (4.0f * a * c))) / (2.0f * a);
     }
 }
 void PowerDistribution(Physical_Quantity_t *physical_quantity,Coefficient_t *coefficient,float motor_output,float motor_speed)       
