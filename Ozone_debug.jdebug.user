@@ -1,27 +1,52 @@
 
 
-OpenDocument="bsp_dwt.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/bsp/dwt/bsp_dwt.c", Line=90
-OpenDocument="main.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/Src/main.c", Line=102
+GraphedExpression="set_ref", Color=#e56a6f
+GraphedExpression="((motor)->measure).speed_aps", Color=#35792b
+OpenDocument="main.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/Src/main.c", Line=181
+OpenDocument="bsp_can.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/bsp/can/bsp_can.c", Line=100
+OpenDocument="dji_motor.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/modules/motor/DJImotor/dji_motor.c", Line=273
+OpenDocument="chassis.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/application/chassis/chassis.c", Line=269
+OpenDocument="robot_task.h", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/application/robot_task.h", Line=135
+OpenDocument="startup_stm32f407ighx.s", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/Startup/startup_stm32f407ighx.s", Line=54
+OpenDocument="bsp_dwt.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/bsp/dwt/bsp_dwt.c", Line=112
+OpenDocument="stm32f4xx_hal_can.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c", Line=1398
+OpenDocument="gimbal.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/application/gimbal/gimbal.c", Line=26
+OpenDocument="ins_task.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/modules/imu/ins_task.c", Line=79
+OpenDocument="stm32f4xx_it.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/Src/stm32f4xx_it.c", Line=104
+OpenDocument="bmi088.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/modules/BMI088/bmi088.c", Line=470
+OpenDocument="cmsis_os2.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c", Line=619
+OpenDocument="user_lib.c", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/modules/algorithm/user_lib.c", Line=197
+OpenDocument="cmsis_gcc.h", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/Drivers/CMSIS/Include/cmsis_gcc.h", Line=193
+OpenDocument="referee_task.h", FilePath="f:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/modules/referee/referee_task.h", Line=0
+OpenDocument="startup_stm32f407xx.s", FilePath="F:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all/startup_stm32f407xx.s", Line=54
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=0, w=745, h=462, TabPos=4, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
-OpenWindow="Source Files", DockArea=LEFT, x=0, y=0, w=509, h=479, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=745, h=462, TabPos=0, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=1, w=509, h=328, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
-OpenWindow="Memory 1", DockArea=RIGHT, x=0, y=0, w=745, h=462, TabPos=3, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x17A0
-OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=0, w=745, h=462, TabPos=1, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Functions", DockArea=LEFT, x=0, y=0, w=509, h=479, TabPos=1, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Terminal", DockArea=RIGHT, x=0, y=1, w=745, h=326, TabPos=1, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Data Sampling", DockArea=RIGHT, x=0, y=0, w=745, h=462, TabPos=2, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
-OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=2560, h=451, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="500 ms / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="2338;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="2338;0", CodeGraphLegendShown=0, CodeGraphLegendPosition="2354;0"
-OpenWindow="Console", DockArea=RIGHT, x=0, y=1, w=745, h=326, TabPos=0, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=0, w=462, h=358, TabPos=4, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
+OpenWindow="Source Files", DockArea=LEFT, x=0, y=0, w=488, h=283, TabPos=0, TopOfStack=1, FilterBarShown=1, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=462, h=358, TabPos=0, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=1, w=488, h=209, TabPos=2, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
+OpenWindow="Memory 1", DockArea=RIGHT, x=0, y=0, w=462, h=358, TabPos=3, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x17A0
+OpenWindow="Global Data", DockArea=LEFT, x=0, y=1, w=488, h=209, TabPos=0, TopOfStack=0, FilterBarShown=1, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Local Data", DockArea=LEFT, x=0, y=1, w=488, h=209, TabPos=1, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=0, w=462, h=358, TabPos=1, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Functions", DockArea=LEFT, x=0, y=0, w=488, h=283, TabPos=1, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Terminal", DockArea=RIGHT, x=0, y=1, w=462, h=134, TabPos=1, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=RIGHT, x=0, y=0, w=462, h=358, TabPos=2, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=1920, h=417, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="200 ms", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="0;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="1723;5", CodeGraphLegendShown=0, CodeGraphLegendPosition="1737;0"
+OpenWindow="Console", DockArea=RIGHT, x=0, y=1, w=462, h=134, TabPos=0, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
-TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Description"], ColWidths=[100;105;540]
-TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time"], ColWidths=[100;100]
-TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[110;100;100;100;100;100;102;118;118]
-TableHeader="Functions", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Address";"Size";"#Insts";"Source"], ColWidths=[1182;100;100;100;100]
+TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" set_ref";" ((motor)->measure).speed_aps"], ColWidths=[100;100;100;162]
+TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[100;100;105;100;100;100;100;102;102]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Refresh"], ColWidths=[206;176;100]
+TableHeader="Global Data", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Location";"Size";"Type";"Scope"], ColWidths=[146;100;100;100;100;322]
+TableHeader="Local Data", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Location";"Size";"Type";"Scope"], ColWidths=[113;100;100;100;154;100]
+TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Description"], ColWidths=[142;118;259]
 TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;500]
-TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;100;209]
+TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;100;188]
+TableHeader="Functions", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Address";"Size";"#Insts";"Source"], ColWidths=[1182;100;100;100;100]
 TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
-TableHeader="Source Files", SortCol="File", SortOrder="DESCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[239;100;100;100;1182]
-TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Refresh"], ColWidths=[264;201;280]
+TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[239;100;100;100;903]
+TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[200;100;100;359]
+WatchedExpression="INS", Window=Watched Data 1
+WatchedExpression="motor", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="set_ref", Window=Watched Data 1

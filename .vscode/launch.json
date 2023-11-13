@@ -11,7 +11,27 @@
             "executable": "build\\Debug\\basic_framework.elf",
             "runToEntryPoint": "main",
             "device": "STM32F407IG",
-            "toolchainPrefix": "arm-none-eabi"
+            "toolchainPrefix": "arm-none-eabi",
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            }
+        },
+        {
+            "cwd": "${workspaceRoot}",
+            "type": "cortex-debug",
+            "request": "attach",
+            "name": "jlink-attach",
+            "servertype": "jlink",
+            "interface": "swd",
+            "executable": "build\\Debug\\basic_framework.elf",
+            "runToEntryPoint": "main",
+            "device": "STM32F407IG",
+            "toolchainPrefix": "arm-none-eabi",
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 4
+            }
         }
     ]
 }

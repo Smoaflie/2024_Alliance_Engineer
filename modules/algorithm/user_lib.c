@@ -16,6 +16,7 @@
 #include "user_lib.h"
 #include "math.h"
 #include "main.h"
+#include "bsp_dwt.h"
 
 #ifdef _CMSIS_OS_H
 #define user_malloc pvPortMalloc
@@ -37,8 +38,7 @@ float Sqrt(float x)
     float delta;
     float maxError;
 
-    if (x <= 0)
-    {
+    if (x <= 0) {
         return 0;
     }
 
@@ -48,8 +48,7 @@ float Sqrt(float x)
     // refine
     maxError = x * 0.001f;
 
-    do
-    {
+    do {
         delta = (y * y) - x;
         y -= delta / (2 * y);
     } while (delta > maxError || delta < -maxError);
@@ -60,12 +59,9 @@ float Sqrt(float x)
 // 绝对值限制
 float abs_limit(float num, float Limit)
 {
-    if (num > Limit)
-    {
+    if (num > Limit) {
         num = Limit;
-    }
-    else if (num < -Limit)
-    {
+    } else if (num < -Limit) {
         num = -Limit;
     }
     return num;
@@ -74,12 +70,9 @@ float abs_limit(float num, float Limit)
 // 判断符号位
 float sign(float value)
 {
-    if (value >= 0.0f)
-    {
+    if (value >= 0.0f) {
         return 1.0f;
-    }
-    else
-    {
+    } else {
         return -1.0f;
     }
 }
@@ -87,8 +80,7 @@ float sign(float value)
 // 浮点死区
 float float_deadband(float Value, float minValue, float maxValue)
 {
-    if (Value < maxValue && Value > minValue)
-    {
+    if (Value < maxValue && Value > minValue) {
         Value = 0.0f;
     }
     return Value;
@@ -119,24 +111,18 @@ int16_t int16_constrain(int16_t Value, int16_t minValue, int16_t maxValue)
 // 循环限幅函数
 float loop_float_constrain(float Input, float minValue, float maxValue)
 {
-    if (maxValue < minValue)
-    {
+    if (maxValue < minValue) {
         return Input;
     }
 
-    if (Input > maxValue)
-    {
+    if (Input > maxValue) {
         float len = maxValue - minValue;
-        while (Input > maxValue)
-        {
+        while (Input > maxValue) {
             Input -= len;
         }
-    }
-    else if (Input < minValue)
-    {
+    } else if (Input < minValue) {
         float len = maxValue - minValue;
-        while (Input < minValue)
-        {
+        while (Input < minValue) {
             Input += len;
         }
     }
@@ -156,7 +142,7 @@ int float_rounding(float raw)
     static int integer;
     static float decimal;
     integer = (int)raw;
-    decimal = raw - integer;
+    decimal = raw - (float)integer;
     if (decimal > 0.5f)
         integer++;
     return integer;
@@ -196,8 +182,7 @@ float Dot3d(float *v1, float *v2)
 float AverageFilter(float new_data, float *buf, uint8_t len)
 {
     float sum = 0;
-    for (uint8_t i = 0; i < len - 1; i++)
-    {
+    for (uint8_t i = 0; i < len - 1; i++) {
         buf[i] = buf[i + 1];
         sum += buf[i];
     }
@@ -210,5 +195,44 @@ void MatInit(mat *m, uint8_t row, uint8_t col)
 {
     m->numCols = col;
     m->numRows = row;
-    m->pData = (float *)zmalloc(row * col * sizeof(float));
+    m->pData   = (float *)zmalloc(row * col * sizeof(float));
+}
+/**
+ * @brief :  正弦扫频生成器
+ * @param[in] F_start 起始频率
+ * @param[in] F_end 终止频率
+ * @param[in] repeat_time 周期重复次数
+ * @param[out] *SE_signal 结束生成标志
+ * @param[out] *F_out 当前频率
+ * @return 正弦值（0~1）
+ */
+float sin_signal_generate(float F_start, float F_end, float repeat_time, uint8_t *SE_signal, float *F_out)
+{
+    static float F = 0;
+    if (F == 0) F = F_start;
+    static float lasttime = 0;
+    // 频率超过限定，返回0
+    if (F > F_end) {
+        *SE_signal = 0;
+        return 0;
+    }
+    // 保证sin初值为0
+    if (lasttime == 0) lasttime = DWT_GetTimeline_s();
+
+    float nowtime = DWT_GetTimeline_s();
+    *F_out        = F;
+    // 计算正弦值
+    float cnt = arm_sin_f32(2 * PI * F * (nowtime - lasttime));
+    // 频率递增
+    if (nowtime - lasttime > ((1 / F) * repeat_time)) {
+        if (F < 24)
+            F += 0.5f;
+        else if (F >= 24 && F <= 120)
+            F += 2;
+        else
+            F += 4;
+
+        lasttime = DWT_GetTimeline_s();
+    }
+    return cnt;
 }

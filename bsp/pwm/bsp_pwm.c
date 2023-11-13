@@ -1,6 +1,7 @@
 #include "bsp_pwm.h"
 #include "stdlib.h"
 #include "memory.h"
+#include "user_lib.h"
 
 // 配合中断以及初始化
 static uint8_t idx;
@@ -27,8 +28,7 @@ PWMInstance *PWMRegister(PWM_Init_Config_s *config)
     if (idx >= PWM_DEVICE_CNT) // 超过最大实例数,考虑增加或查看是否有内存泄漏
         while (1)
             ;
-    PWMInstance *pwm = (PWMInstance *)malloc(sizeof(PWMInstance));
-    memset(pwm, 0, sizeof(PWMInstance));
+    PWMInstance *pwm = (PWMInstance *)zmalloc(sizeof(PWMInstance));
 
     pwm->htim      = config->htim;
     pwm->channel   = config->channel;
@@ -46,13 +46,13 @@ PWMInstance *PWMRegister(PWM_Init_Config_s *config)
 }
 
 /* 只是对HAL的函数进行了形式上的封装 */
-inline void PWMStart(PWMInstance *pwm)
+void PWMStart(PWMInstance *pwm)
 {
     HAL_TIM_PWM_Start(pwm->htim, pwm->channel);
 }
 
 /* 只是对HAL的函数进行了形式上的封装 */
-inline void PWMStop(PWMInstance *pwm)
+void PWMStop(PWMInstance *pwm)
 {
     HAL_TIM_PWM_Stop(pwm->htim, pwm->channel);
 }
@@ -63,7 +63,7 @@ inline void PWMStop(PWMInstance *pwm)
  * @param pwm pwm实例
  * @param period 周期 单位 s
  */
-inline void PWMSetPeriod(PWMInstance *pwm, float period)
+void PWMSetPeriod(PWMInstance *pwm, float period)
 {
     __HAL_TIM_SetAutoreload(pwm->htim, period * ((pwm->tclk) / (pwm->htim->Init.Prescaler + 1)));
 }
@@ -73,13 +73,13 @@ inline void PWMSetPeriod(PWMInstance *pwm, float period)
  * @param pwm pwm实例
  * @param dutyratio 占空比 0~1
  */
-inline void PWMSetDutyRatio(PWMInstance *pwm, float dutyratio)
+void PWMSetDutyRatio(PWMInstance *pwm, float dutyratio)
 {
     __HAL_TIM_SetCompare(pwm->htim, pwm->channel, dutyratio * (pwm->htim->Instance->ARR));
 }
 
 /* 只是对HAL的函数进行了形式上的封装 */
-inline void PWMStartDMA(PWMInstance *pwm, uint32_t *pData, uint32_t Size)
+void PWMStartDMA(PWMInstance *pwm, uint32_t *pData, uint32_t Size)
 {
     HAL_TIM_PWM_Start_DMA(pwm->htim, pwm->channel, pData, (uint16_t)Size);
 }
