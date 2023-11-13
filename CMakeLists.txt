@@ -14,7 +14,8 @@ set(CMAKE_OBJCOPY arm-none-eabi-objcopy)
 set(CMAKE_OBJDUMP arm-none-eabi-objdump)
 set(SIZE arm-none-eabi-size)
 set(CMAKE_AR arm-none-eabi-ar)
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # 指定工程名称和语言类型
@@ -26,7 +27,7 @@ set(CMAKE_BUILD_TYPE Debug) # Debug Release RelWithDebInfo MinSizeRel
 # board specific settings, arch/fpu/instruction
 set(MCU_FLAGS -mcpu=cortex-m4 -mthumb -mthumb-interwork -mfloat-abi=hard -mfpu=fpv4-sp-d16)
 set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F407IGHx_FLASH.ld") # 指定链接脚本
-set(DSP_NAME "libCMSISDSP.a") # 指定DSP库名称
+set(AHRS_LIB "${CMAKE_SOURCE_DIR}/modules/algorithm/AHRS.lib")
 link_directories(${CMAKE_SOURCE_DIR}/Middlewares/ST/ARM/DSP/Lib)
 
 # Generic compiler settings for optimization and basic link lib
@@ -42,6 +43,7 @@ add_link_options(-pipe ${MCU_FLAGS} -T${LINKER_SCRIPT} -Wl,--no-warn-rwx-segment
 # add_compile_definitions() works for compile stage
 # while add_definitions() works for both compile and link stage
 add_definitions(
+    -DUSE_CMAKE_BUILD # 区分EIDE与Cmake构建，两种方式互不兼容
     -DUSE_HAL_DRIVER
     -DSTM32F407xx
     -DARM_MATH_CM4
@@ -108,7 +110,7 @@ endif()
 # build binary and hex file
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build) # 设置目标路径
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${ASM_SOURCES} ${LINKER_SCRIPT})
-target_link_libraries(${PROJECT_NAME}.elf ${DSP_NAME} m) # link DSP lib and math lib
+target_link_libraries(${PROJECT_NAME}.elf CMSISDSP m ${AHRS_LIB}) # link DSP lib and math lib
 
 add_custom_command(
     TARGET ${PROJECT_NAME}.elf POST_BUILD

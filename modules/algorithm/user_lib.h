@@ -1,14 +1,12 @@
-/**
- ******************************************************************************
- * @file	 user_lib.h
- * @author  Wang Hongxi
- * @version V1.0.0
- * @date    2021/2/18
- * @brief
- ******************************************************************************
- * @attention
+/*
+ * @Author       : Alliance
+ * @Date         : 2023-09-08
+ * @LastEditors  : HDC h2019dc@outlook.com
+ * @LastEditTime : 2023-11-12
+ * @FilePath     : \2024_Control_New_Framework_Base-dev-all\modules\algorithm\user_lib.h
+ * @Description  :
  *
- ******************************************************************************
+ * Copyright (c) 2023 by Alliance-EC, All Rights Reserved.
  */
 #ifndef _USER_LIB_H
 #define _USER_LIB_H
@@ -115,5 +113,7 @@ float Dot3d(float *v1, float *v2);
 float AverageFilter(float new_data, float *buf, uint8_t len);
 
 #define rad_format(Ang) loop_float_constrain((Ang), -PI, PI)
+// 正弦扫频生成器
+float sin_signal_generate(float F_start, float F_end, float repeat_time, uint8_t *SE_signal,float *F_out);
 
 #endif

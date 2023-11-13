@@ -9,7 +9,7 @@
 #include "robot.h"
 #include "ins_task.h"
 #include "motor_task.h"
-#include "referee_task.h"
+#include "referee_init.h"
 #include "master_process.h"
 #include "daemon.h"
 #include "HT04.h"
@@ -55,23 +55,6 @@ void OSTaskInit()
         HTMotorControlInit(); // 没有注册HT电机则不会执行
 }
 
-__attribute__((noreturn)) void StartINSTASK(void const *argument)
-{
-    static float ins_start;
-    static float ins_dt;
-    INS_Init(); // 确保BMI088被正确初始化.
-    LOGINFO("[freeRTOS] INS Task Start");
-    for (;;) {
-        // 1kHz
-        ins_start = DWT_GetTimeline_ms();
-        INS_Task();
-        ins_dt = DWT_GetTimeline_ms() - ins_start;
-        if (ins_dt > 1)
-            LOGERROR("[freeRTOS] INS Task is being DELAY! dt = [%f]", &ins_dt);
-        VisionSend(); // 解算完成后发送视觉数据,但是当前的实现不太优雅,后续若添加硬件触发需要重新考虑结构的组织
-        osDelay(1);
-    }
-}
 
 __attribute__((noreturn)) void StartMOTORTASK(void const *argument)
 {
@@ -136,17 +119,43 @@ __attribute__((noreturn)) void StartUITASK(void const *argument)
 #endif
 #include "led.h"
 #include "buzzer.h"
-void TestTask(void *argument)
+#include "ins_task.h"
+#include "chassis.h"
+#include "user_lib.h"
+
+__attribute__((noreturn)) void StartINSTASK(void *argument)
 {
     UNUSED(argument);
-    static C_board_LEDInstance *c_led = NULL;
-    c_led                             = C_boardLEDRegister();
+    static uint32_t ins_time;
+    static float ins_dt;
+    LOGINFO("[freeRTOS] INS Task Start");
+    while (1) {
+        INS_Task();
+        ins_dt = 1000 * DWT_GetDeltaT(&ins_time);
+        if (ins_dt > 1.2f)
+            LOGERROR("[freeRTOS] INS Task is being DELAY! dt = [%f]ms", &ins_dt);
+        osDelay(1);
+    }
+}
+extern void One_motor_Init();
+extern void One_motor_task();
+extern void MotorControlTask();
+
+__attribute__((noreturn)) void TestTask(void *argument)
+{
+    UNUSED(argument);
+    One_motor_Init();
+    osDelay(500);
     BuzzerPlay(StartUP_sound);
-    // BuzzerPlay(RoboMaster_Prepare);
-    for (;;) {
-        C_board_LEDSet(c_led, 0x33ffff);
-        osDelay(500);
-        C_board_LEDSet(c_led, 0xd633ff);
-        osDelay(500);
+
+    while (1) {
+        C_board_LEDSet(0x33ffff);
+        /*osDelay(500);
+        C_board_LEDSet(0xd633ff);
+        osDelay(500);*/
+        One_motor_task();
+        MotorControlTask();
+
+        osDelay(1);
     }
 }

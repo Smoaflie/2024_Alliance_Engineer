@@ -12,6 +12,7 @@
 #include "robot.h"
 #include "robot_def.h"
 #include "robot_task.h"
+#include "buzzer.h"
 
 #define ROBOT_DEF_PARAM_WARNING
 // 编译warning,提醒开发者修改机器人参数
@@ -38,18 +39,20 @@ void RobotInit()
     __disable_irq();
 
     BSPInit();
-
+    buzzer_one_note(Do_freq, 0.1f);
 #if defined(ONE_BOARD) || defined(GIMBAL_BOARD)
     RobotCMDInit();
+    buzzer_one_note(Re_freq, 0.1f);
     GimbalInit();
-    ShootInit();
+    buzzer_one_note(Mi_freq, 0.1f);
+    //ShootInit();
+    buzzer_one_note(Fa_freq, 0.1f);
 #endif
 
 #if defined(ONE_BOARD) || defined(CHASSIS_BOARD)
-    ChassisInit();
+    //ChassisInit();
+    buzzer_one_note(So_freq, 0.1f);
 #endif
-
-    // OSTaskInit(); // 创建基础任务
 
     // 初始化完成,开启中断
     __enable_irq();
