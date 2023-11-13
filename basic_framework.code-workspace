@@ -20,7 +20,8 @@
       "*.cxx": "cpp",
       "*.cc": "cpp",
       "compare": "c",
-      "type_traits": "c"
+      "type_traits": "c",
+      "*.lib": "c"
     },
     "[yaml]": {
       "editor.insertSpaces": true,

@@ -25,7 +25,9 @@
   },
   "targets": {
     "Debug": {
-      "excludeList": [],
+      "excludeList": [
+        "Src/syscalls.c"
+      ],
       "toolchain": "GCC",
       "compileConfig": {
         "cpuType": "Cortex-M4",
@@ -109,7 +111,8 @@
           "application"
         ],
         "libList": [
-          "Middlewares/ST/ARM/DSP/Lib"
+          "Middlewares/ST/ARM/DSP/Lib",
+          "modules/algorithm"
         ],
         "sourceDirList": [],
         "defineList": [

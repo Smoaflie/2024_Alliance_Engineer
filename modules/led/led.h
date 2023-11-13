@@ -39,9 +39,9 @@ typedef struct
 
 LEDInstance *LEDRegister(LED_Init_Config_s *led_config);
 
-C_board_LEDInstance *C_boardLEDRegister(void);
+void C_boardLEDRegister(void);
 
-void C_board_LEDSet(C_board_LEDInstance *_c_led, uint32_t color);
+void C_board_LEDSet(uint32_t color);
 
 void LEDSet(LEDInstance *_led, float brightness);
 

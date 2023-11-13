@@ -5,6 +5,7 @@
  * @LastEditTime : 2023-10-28
  * @FilePath     : \2024_Control_New_Framework_Base-dev-all\modules\led\led.c
  * @Description  : LED模块
+ *                 针对C板板载LED提供了一些上层接口方便调用，C板LED为单实例，不返回指针
  *
  * Copyright (c) 2023 by Alliance-EC, All Rights Reserved.
  */
@@ -35,7 +36,7 @@ LEDInstance *LEDRegister(LED_Init_Config_s *led_config)
  * @brief : C板LED注册
  * @return C板LED实例
  */
-C_board_LEDInstance *C_boardLEDRegister(void)
+void C_boardLEDRegister(void)
 {
     C_board_LEDInstance *c_led_ins = (C_board_LEDInstance *)zmalloc(sizeof(C_board_LEDInstance));
     LED_Init_Config_s led_config   = {
@@ -60,22 +61,21 @@ C_board_LEDInstance *C_boardLEDRegister(void)
     c_led_ins->led_B              = LEDRegister(&led_config);
 
     c_led = c_led_ins;
-    return c_led;
 }
 /**
  * @brief :  C板LED颜色设置
- * @param *_c_led C板LED实例
  * @param color 颜色 0xRRGGBB
  * @return
  */
-void C_board_LEDSet(C_board_LEDInstance *_c_led, uint32_t color)
+void C_board_LEDSet(uint32_t color)
 {
-    _c_led->led_R->led_brightness = (float)((color >> 16) & 0xFF) / 255.0f;
-    _c_led->led_G->led_brightness = (float)((color >> 8) & 0xFF) / 255.0f;
-    _c_led->led_B->led_brightness = (float)((color >> 0) & 0xFF) / 255.0f;
-    LEDSet(_c_led->led_R, _c_led->led_R->led_brightness);
-    LEDSet(_c_led->led_G, _c_led->led_G->led_brightness);
-    LEDSet(_c_led->led_B, _c_led->led_B->led_brightness);
+    if (c_led == NULL) C_boardLEDRegister();
+    c_led->led_R->led_brightness = (float)((color >> 16) & 0xFF) / 255.0f;
+    c_led->led_G->led_brightness = (float)((color >> 8) & 0xFF) / 255.0f;
+    c_led->led_B->led_brightness = (float)((color >> 0) & 0xFF) / 255.0f;
+    LEDSet(c_led->led_R, c_led->led_R->led_brightness);
+    LEDSet(c_led->led_G, c_led->led_G->led_brightness);
+    LEDSet(c_led->led_B, c_led->led_B->led_brightness);
 }
 /**
  * @brief : 设置LED亮度

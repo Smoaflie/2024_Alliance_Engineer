@@ -22,18 +22,19 @@ void OnProjectLoad (void) {
   //
   // Dialog-generated settings
   //
-  Project.AddPathSubstitute ("F:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all", "$(ProjectDir)");
-  Project.AddPathSubstitute ("f:/project/alliance/alliance2024/2024_control_new_framework_base-dev-all", "$(ProjectDir)");
   Project.SetDevice ("STM32F407IG");
   Project.SetHostIF ("USB", "");
   Project.SetTargetIF ("SWD");
-  Project.SetTIFSpeed ("8 MHz");
+  Project.SetTIFSpeed ("12 MHz");
+  Project.AddPathSubstitute ("F:/project/Alliance/Alliance2024/2024_Control_New_Framework_Base-dev-all", "$(ProjectDir)");
+  Project.AddPathSubstitute ("f:/project/alliance/alliance2024/2024_control_new_framework_base-dev-all", "$(ProjectDir)");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M4F.svd");
   //
   // User settings
   //
   Edit.SysVar (VAR_RTT_ENABLED, 1);
   File.Open ("$(ProjectDir)/build/Debug/basic_framework.elf");
+  //File.Open ("$(ProjectDir)/build/basic_framework.elf");
 }
 
 /*********************************************************************

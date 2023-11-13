@@ -4,12 +4,34 @@
 
 ## 使用范例
 
+### 播放字符串
+
 ```c
 BuzzerPlay(StartUP_sound);
 ```
 由于buzzer为单实例，故不保存实例，如果未初始化实例，程序会自动初始化。
 
 其中`StartUP_sound`是一个数组，用于存放提示音的频率和持续时间。
+
+### 播放单个音符（阻塞模式）
+
+```c
+buzzer_one_note(Do_freq , 0.5);//音符，延时
+```
+
+其中音符有以下选择
+
+```c
+#define Do_freq Note_Freq[61]
+#define Re_freq Note_Freq[63]
+#define Mi_freq Note_Freq[65]
+#define Fa_freq Note_Freq[66]
+#define So_freq Note_Freq[68]
+#define La_freq Note_Freq[70]
+#define Si_freq Note_Freq[72]
+```
+
+对应第四八度
 
 ## 可选曲目
 

@@ -12,6 +12,21 @@
         "kind": "build",
         "isDefault": false
       }
+    },
+    {
+      "label": "Download with JFlash", //!需要将Jlink目录添加到环境变量
+      "type": "shell",
+      "command": "JFlash",
+      "args": [
+        "-openprj${workspaceFolder}/STM32.jflash",
+        "-auto",
+        "-startapp",
+        "-exit"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
     }
   ]
 }

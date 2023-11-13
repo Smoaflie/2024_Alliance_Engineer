@@ -68,6 +68,13 @@ const osThreadAttr_t Buzzer_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for instask */
+osThreadId_t instaskHandle;
+const osThreadAttr_t instask_attributes = {
+  .name = "instask",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityRealtime7,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -77,6 +84,7 @@ const osThreadAttr_t Buzzer_attributes = {
 void StartDefaultTask(void *argument);
 void TestTask(void *argument);
 void BuzzerTask(void *argument);
+void StartINSTASK(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -116,6 +124,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Buzzer */
   BuzzerHandle = osThreadNew(BuzzerTask, NULL, &Buzzer_attributes);
+
+  /* creation of instask */
+  instaskHandle = osThreadNew(StartINSTASK, NULL, &instask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
@@ -180,6 +191,24 @@ __weak void BuzzerTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END BuzzerTask */
+}
+
+/* USER CODE BEGIN Header_StartINSTASK */
+/**
+* @brief Function implementing the instask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartINSTASK */
+__weak void StartINSTASK(void *argument)
+{
+  /* USER CODE BEGIN StartINSTASK */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartINSTASK */
 }
 
 /* Private application code --------------------------------------------------*/

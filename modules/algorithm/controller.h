@@ -19,6 +19,7 @@
 #include "stdlib.h"
 #include "bsp_dwt.h"
 #include "arm_math.h"
+#include "user_lib.h"
 #include <math.h>
 
 #ifndef abs
@@ -26,23 +27,21 @@
 #endif
 
 // PID 优化环节使能标志位,通过位与可以判断启用的优化环节;也可以改成位域的形式
-typedef enum
-{
-    PID_IMPROVE_NONE = 0b00000000,                // 0000 0000
-    PID_Integral_Limit = 0b00000001,              // 0000 0001
-    PID_Derivative_On_Measurement = 0b00000010,   // 0000 0010
-    PID_Trapezoid_Intergral = 0b00000100,         // 0000 0100
+typedef enum {
+    PID_IMPROVE_NONE                = 0b00000000, // 0000 0000
+    PID_Integral_Limit              = 0b00000001, // 0000 0001
+    PID_Derivative_On_Measurement   = 0b00000010, // 0000 0010
+    PID_Trapezoid_Intergral         = 0b00000100, // 0000 0100
     PID_Proportional_On_Measurement = 0b00001000, // 0000 1000
-    PID_OutputFilter = 0b00010000,                // 0001 0000
-    PID_ChangingIntegrationRate = 0b00100000,     // 0010 0000
-    PID_DerivativeFilter = 0b01000000,            // 0100 0000
-    PID_ErrorHandle = 0b10000000,                 // 1000 0000
+    PID_OutputFilter                = 0b00010000, // 0001 0000
+    PID_ChangingIntegrationRate     = 0b00100000, // 0010 0000
+    PID_DerivativeFilter            = 0b01000000, // 0100 0000
+    PID_ErrorHandle                 = 0b10000000, // 1000 0000
 } PID_Improvement_e;
 
 /* PID 报错类型枚举*/
-typedef enum errorType_e
-{
-    PID_ERROR_NONE = 0x00U,
+typedef enum errorType_e {
+    PID_ERROR_NONE          = 0x00U,
     PID_MOTOR_BLOCKED_ERROR = 0x01U
 } ErrorType_e;
 
@@ -117,12 +116,12 @@ typedef struct // config parameter
 
 /**
  * @brief 初始化PID实例
- * @todo 待修改为统一的PIDRegister风格
+ * @attention 该函数为旧版本，请尽快使用PIDRegister函数
  * @param pid    PID实例指针
  * @param config PID初始化配置
  */
 void PIDInit(PIDInstance *pid, PID_Init_Config_s *config);
-
+PIDInstance *PIDRegister(PID_Init_Config_s *config);
 /**
  * @brief 计算PID输出
  *

@@ -2,8 +2,8 @@
  * @Author       : HDC h2019dc@outlook.com
  * @Date         : 2023-09-08
  * @LastEditors  : HDC h2019dc@outlook.com
- * @LastEditTime : 2023-10-28
- * @FilePath     : \2024_Control_New_Framework_Base-dev-all\modules\alarm\buzzer.c
+ * @LastEditTime : 2023-10-31
+ * @FilePath     : \2024_Control_New_Framework_Base-dev-all\modules\buzzer\buzzer.c
  * @Description  : 蜂鸣器模块，单实例模块，不返回实例指针
  *
  * Copyright (c) 2023 by Alliance-EC, All Rights Reserved.
@@ -16,11 +16,12 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include "user_lib.h"
+#include "robot_def.h"
 
 extern osThreadId_t BuzzerHandle; // 由于线程挂起后无法自己恢复，所以需要使用线程句柄
 static BuzzerInstance *buzzer = NULL;
 // 音符偏移量
-const uint8_t _note_tab[] = {9, 11, 0, 2, 4, 5, 7};
+static const uint8_t _note_tab[] = {9, 11, 0, 2, 4, 5, 7};
 // 音符频率
 const uint16_t Note_Freq[] = {0,
                               16, 17, 18, 19, 21, 22, 23, 25, 26, 28, 29, 31,
@@ -32,12 +33,12 @@ const uint16_t Note_Freq[] = {0,
                               1047, 1109, 1175, 1245, 1319, 1397, 1480, 1568, 1661, 1760, 1865, 1976,
                               2093, 2217, 2349, 2489, 2637, 2794, 2960, 3136, 3322, 3520, 3729, 3951,
                               4186, 4435, 4699, 4978, 5274, 5588, 5920, 6272, 6645, 7040, 7459, 7902};
-// 开机音乐
-char StartUP_sound[]      = "T240L8 O4aO5dc O4aO5dc O4aO5dc L16dcdcdcdc";
+// 音乐字符串 @todo（存入flash节省空间）
+char StartUP_sound[]      = "T240L4 O6cde L2g";
 char No_RC_sound[]        = "T200L8 O5ecececec";
 char RoboMaster_You[]     = "T75 L4O5ef g.L8e gL16eL8g.L4b O6c. O5L8cdeL4g L8a...L16gL8aL16gL8g.g L2d L4efL2g L8gL16eL8g.O6L4dc. O5L8cde O6L4c O5L8a...L16g L8aL16gL8a. O6L4cd. P8O5L8deL16d L1c";
-char RoboMaster_Prepare[] = "T140L8 O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa L2O5eO7c O6ee O5eO6a ee O5cO6f O5aa O4bO5b L2O5eO7c O6ee O5eO6a ee O5cO6f O5aa O4bO5b";
-char Test[]               = "T200 L4O5c.defgabO6c";
+char RoboMaster_Prepare[] = "T140L8 O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa L2O5eL1O6c L2O5eL1O5a L2O5cL1O5f L2O4bL1O5e L2O5eL1O6c L2O5eL1O5a L2O5cL1O5f L2O4bL1O5e";
+char Test[]               = "T240L8 O5aO6dc O5aO6dc O5aO6dc L16dcdcdcdc";
 /**
  * @brief :  蜂鸣器注册
  * @return  void
@@ -92,8 +93,12 @@ inline static void NotePlay()
         PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
     } else {
         float freq = Note_Freq[buzzer->note];
-        PWMSetDutyRatio(buzzer->buzzer_pwm, 0.5f); // 音量
         PWMSetPeriod(buzzer->buzzer_pwm, 1.0f / freq);
+#if (BUZZER_SILENCE == 1)
+        PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
+#else
+        PWMSetDutyRatio(buzzer->buzzer_pwm, 0.5f); // 音量
+#endif
     }
     float note_delay = 1000 * (4.0f / (float)buzzer->_note_length) * 60 / (float)buzzer->_tempo;
     note_delay += note_delay / 2.0f * (float)buzzer->dots;
@@ -305,8 +310,29 @@ inline static void string_handle()
  * @brief :  蜂鸣器静音
  * @return  void
  */
-inline static void buzzer_silence()
+void buzzer_silence(void)
 {
+    PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
+}
+/**
+ * @brief :  蜂鸣器播放单个音符，阻塞模式
+ * @param Note 音符
+ * @param delay 延时
+ * @return  void
+ */
+void buzzer_one_note(uint16_t Note, float delay)
+{
+    // 如果蜂鸣器未注册，则注册
+    if (buzzer == NULL) {
+        BuzzerRegister();
+    }
+    PWMSetPeriod(buzzer->buzzer_pwm, 1.0f / (float)Note);
+#if (BUZZER_SILENCE == 1)
+    PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
+#else
+    PWMSetDutyRatio(buzzer->buzzer_pwm, 0.5f); // 音量
+#endif
+    DWT_Delay(delay);
     PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
 }
 /**

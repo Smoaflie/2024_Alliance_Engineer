@@ -251,3 +251,45 @@ void ChassisTask()
     CANCommSend(chasiss_can_comm, (void *)&chassis_feedback_data);
 #endif // CHASSIS_BOARD
 }
+// 以下内容DEBUG
+static DJIMotorInstance *motor;
+void One_motor_Init()
+{
+    Motor_Init_Config_s chassis_motor_config = {
+        .can_init_config.can_handle   = &hcan1,
+        .controller_param_init_config = {
+            .speed_PID = {
+                .Kp            = 10, // 4.5
+                .Ki            = 0,  // 0
+                .Kd            = 0,  // 0
+                .IntegralLimit = 3000,
+                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                .MaxOut        = 12000,
+                0},
+            .current_PID = {
+                .Kp            = 0.5, // 0.4
+                .Ki            = 0,   // 0
+                .Kd            = 0,
+                .IntegralLimit = 3000,
+                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                .MaxOut        = 15000,
+            },
+        },
+        .controller_setting_init_config = {
+            .angle_feedback_source = MOTOR_FEED,
+            .speed_feedback_source = MOTOR_FEED,
+            .outer_loop_type       = SPEED_LOOP,
+            .close_loop_type       = SPEED_LOOP | CURRENT_LOOP,
+        },
+        .motor_type = M3508,
+    };
+    chassis_motor_config.can_init_config.tx_id                             = 1;
+    chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
+    motor                                                                  = DJIMotorInit(&chassis_motor_config);
+}
+float set_ref = 0;
+void One_motor_task()
+{
+    DJIMotorEnable(motor);
+    DJIMotorSetRef(motor, set_ref);
+}
