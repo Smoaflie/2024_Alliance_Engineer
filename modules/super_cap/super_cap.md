@@ -52,3 +52,65 @@ uint16_t tx = 0x321;
 SuperCapSend(ins, (uint8_t*)&tx);
 ```
 
+## 通信协议（待修改）
+接收数据
+```c
+typedef struct 
+{
+    uint8_t power_relay_flag;           //继电器开启状态
+    uint8_t power_level;                //功率等级
+    uint16_t chassic_power_remaining;   //剩余功率
+}SuperCap_Msg_g;
+```
+
+```c
+发送数据
+typedef struct
+{
+    float CapVot;         // 电压
+    uint8_t open_flag;    // 开关指示
+} SuperCap_Msg_s;
+```
+
+旧的协议
+```c
+CAN1_Tx_Data[0] = power_relay;
+CAN1_Tx_Data[1] = power_level;
+CAN1_Tx_Data[2] = chassic_power_remaining;
+CAN1_Tx_Data[3] = 0;
+CAN1_Tx_Data[4] = 0;
+CAN1_Tx_Data[5] = 0;
+CAN1_Tx_Data[6] = 0;
+CAN1_Tx_Data[7] = 0;
+--------------------------------------------------------------------
+SuperCap_Info.CapVot = bit8TObit32(CAN1_Rx_Data);
+SuperCap_Info.InputCurrent = bit8TObit32(&CAN1_Rx_Data[4]);
+SuperCap_Info.id = 0x300;
+--------------------------------------------------------------------
+switch (Referee_Inf.game_robot_state.chassis_power_limit)
+{
+	case 45:
+	    power_level = 1;
+	    break;
+	case 50:
+		power_level = 2;
+	    break;
+	case 55:
+		power_level = 3;
+	    break;
+	case 60:
+		power_level = 4;
+	    break;
+	case 80:
+		power_level = 5;
+	    break;
+	case 100:
+		power_level = 6;
+	    break;
+	default:
+		power_level = 7;
+	    break;
+}
+
+chassic_power_remaining=Referee_Inf.game_robot_state.chassis_power_limit - Referee_Inf.power_heat_data.chassis_power;
+```

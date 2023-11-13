@@ -26,8 +26,8 @@ static void SuperCapRxCallback(CANInstance *_instance)
     uint8_t *rxbuff;
     SuperCap_Msg_s *Msg;
     rxbuff         = _instance->rx_buff;
-    Msg            = &super_cap_instance->cap_msg;
-    Msg->vol       = *(float *)rxbuff;
+    Msg            = &super_cap_instance->cap_msg_s;
+    Msg->CapVot       = *(float *)rxbuff;
     Msg->open_flag = rxbuff[4];
 }
 
@@ -49,5 +49,5 @@ void SuperCapSend(SuperCapInstance *instance, uint8_t *data)
 
 SuperCap_Msg_s SuperCapGet(SuperCapInstance *instance)
 {
-    return instance->cap_msg;
+    return instance->cap_msg_s;
 }
