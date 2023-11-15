@@ -2,7 +2,7 @@ name: C/C++ ARM CI
 
 on:
   push:
-    branches: ["main", "dev-all", "github_test"]
+    branches: ["main", "dev-all", "github_action_test"]
   pull_request:
     branches: ["main"]
 
@@ -16,7 +16,8 @@ jobs:
 
     steps:
       - uses: carlosperate/arm-none-eabi-gcc-action@v1
-      - run: arm-none-eabi-gcc --version
+        with:
+          release: "12.3.Rel1" # <-- The compiler release to use
 
       - uses: actions/checkout@v3
       - name: Configure CMake
