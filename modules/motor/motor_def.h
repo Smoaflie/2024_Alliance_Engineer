@@ -14,6 +14,7 @@
 
 #include "controller.h"
 #include "stdint.h"
+#include "bsp_can.h"
 
 #define LIMIT_MIN_MAX(x, min, max) (x) = (((x) <= (min)) ? (min) : (((x) >= (max)) ? (max) : (x)))
 
