@@ -62,7 +62,6 @@
           "Drivers/CMSIS/Device/ST/STM32F4xx/Include",
           "Drivers/CMSIS/Include",
           "Middlewares/ST/ARM/DSP/Inc",
-          "Inc",
           ".eide/deps",
           "bsp",
           "bsp/dwt",
