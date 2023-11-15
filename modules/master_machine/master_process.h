@@ -10,39 +10,36 @@
 #pragma pack(1)
 typedef struct
 {
-	float pitch;
-	float yaw;
-	uint16_t coordinate_X;
-	uint16_t coordinate_Y;
+    float pitch;
+    float yaw;
+    uint16_t coordinate_X;
+    uint16_t coordinate_Y;
 } Vision_Recv_s;
 
-typedef enum
-{
-	COLOR_NONE = 0,
-	COLOR_BLUE = 1,
-	COLOR_RED = 2,
+typedef enum {
+    COLOR_NONE = 0,
+    COLOR_BLUE = 1,
+    COLOR_RED  = 2,
 } Enemy_Color_e;
 
-typedef enum
-{
-	VISION_MODE_AIM = 0,
-	VISION_MODE_SMALL_BUFF = 1,
-	VISION_MODE_BIG_BUFF = 2
+typedef enum {
+    VISION_MODE_AIM        = 0,
+    VISION_MODE_SMALL_BUFF = 1,
+    VISION_MODE_BIG_BUFF   = 2
 } Work_Mode_e;
 
-typedef enum
-{
-	BULLET_SPEED_NONE = 0,
-	BIG_AMU_16 = 16,
-	SMALL_AMU_30 = 30,
+typedef enum {
+    BULLET_SPEED_NONE = 0,
+    BIG_AMU_16        = 16,
+    SMALL_AMU_30      = 30,
 } Bullet_Speed_limit_e;
 
 typedef struct
 {
-	Enemy_Color_e enemy_color;
-	Work_Mode_e work_mode;
-	Bullet_Speed_limit_e bullet_Speed_limit;
-	float bullet_speed_current
+    Enemy_Color_e enemy_color;
+    Work_Mode_e work_mode;
+    Bullet_Speed_limit_e bullet_Speed_limit;
+    float bullet_speed_current;
 } Vision_Send_s;
 #pragma pack()
 
@@ -66,7 +63,7 @@ void VisionSend();
  * @param work_mode
  * @param bullet_speed
  */
-void VisionSetFlag(Enemy_Color_e enemy_color, Work_Mode_e work_mode, Bullet_Speed_e bullet_speed);
+// void VisionSetFlag(Enemy_Color_e enemy_color, Work_Mode_e work_mode, Bullet_Speed_e bullet_speed);
 
 /**
  * @brief 设置发送数据的姿态部分

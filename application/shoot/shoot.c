@@ -169,14 +169,6 @@ void ShootTask()
     if (shoot_cmd_recv.friction_mode == FRICTION_ON) {
         // 根据收到的弹速设置设定摩擦轮电机参考值,需实测后填入
         switch (shoot_cmd_recv.bullet_speed) {
-            case SMALL_AMU_15:
-                DJIMotorSetRef(friction_l, 0);
-                DJIMotorSetRef(friction_r, 0);
-                break;
-            case SMALL_AMU_18:
-                DJIMotorSetRef(friction_l, 0);
-                DJIMotorSetRef(friction_r, 0);
-                break;
             case SMALL_AMU_30:
                 DJIMotorSetRef(friction_l, 0);
                 DJIMotorSetRef(friction_r, 0);
