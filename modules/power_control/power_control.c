@@ -2,6 +2,7 @@
 #include "message_center.h"
 #include <stdlib.h>
 #include <math.h>
+#include "user_lib.h"
 
 /*功率控制计算部分*/
 /**
@@ -69,13 +70,13 @@ void TargetTorqueCali(Physical_Quantity_t *physical_quantity,Coefficient_t *coef
     c = coefficient->k2 * pow(motor_speed,2) + coefficient->constant - physical_quantity->max_power;
     if(output > 0)
     {
-        physical_quantity->target_torque=(-b + 
+        /*physical_quantity->target_torque=(-b + 
         
         
         
         
         
-        f((b * b) - (4.0f * a * c))) / (2.0f * a);
+        f((b * b) - (4.0f * a * c))) / (2.0f * a);*/
     }
     else if(output < 0)
     {
@@ -151,7 +152,7 @@ void PhysicalQuantityInit(Physical_Quantity_t *physical_quantity)
  */
 PowerControlInstance *PowerControlInit(void)
 {
-    PowerControlInstance *instance = (PowerControlInstance *)malloc(sizeof(PowerControlInstance));
+    PowerControlInstance *instance = (PowerControlInstance *)zmalloc(sizeof(PowerControlInstance));
     CoefficientInit(&instance->coefficient);
     PhysicalQuantityInit(&instance->physical_quantity);
     return instance;

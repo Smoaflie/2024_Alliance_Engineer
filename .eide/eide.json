@@ -6,7 +6,11 @@
     "Startup",
     "Src",
     "Middlewares",
-    "Drivers"
+    "Drivers",
+    "application",
+    "bsp",
+    "Inc",
+    "modules"
   ],
   "virtualFolder": {
     "name": "<virtual_root>",
@@ -27,7 +31,7 @@
       "toolchain": "GCC",
       "compileConfig": {
         "cpuType": "Cortex-M4",
-        "floatingPointHardware": "none",
+        "floatingPointHardware": "single",
         "scatterFilePath": "",
         "useCustomScatterFile": true,
         "storageLayout": {
@@ -57,12 +61,14 @@
           "Drivers/STM32F4xx_HAL_Driver/Inc/Legacy",
           "Middlewares/Third_Party/FreeRTOS/Source/include",
           "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
+          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
           "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
           "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
+          "Middlewares/Third_Party/SEGGER/Config",
+          "Middlewares/Third_Party/SEGGER/RTT",
           "Drivers/CMSIS/Device/ST/STM32F4xx/Include",
           "Drivers/CMSIS/Include",
           "Middlewares/ST/ARM/DSP/Inc",
-          "Inc",
           ".eide/deps",
           "bsp",
           "bsp/dwt",
@@ -112,7 +118,8 @@
         "defineList": [
           "DEBUG",
           "USE_HAL_DRIVER",
-          "STM32F407xx"
+          "STM32F407xx",
+          "ARM_MATH_CM4"
         ]
       }
     },

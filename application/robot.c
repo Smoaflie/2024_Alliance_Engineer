@@ -45,12 +45,12 @@ void RobotInit()
     buzzer_one_note(Re_freq, 0.1f);
     GimbalInit();
     buzzer_one_note(Mi_freq, 0.1f);
-    //ShootInit();
+    ShootInit();
     buzzer_one_note(Fa_freq, 0.1f);
 #endif
 
 #if defined(ONE_BOARD) || defined(CHASSIS_BOARD)
-    //ChassisInit();
+    ChassisInit();
     buzzer_one_note(So_freq, 0.1f);
 #endif
 
