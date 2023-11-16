@@ -4,6 +4,7 @@
 #include "daemon.h"
 #include "bsp_dwt.h"
 #include "bsp_log.h"
+#include "user_lib.h"
 
 static uint8_t idx;                                                                                   // 记录注册宇树电机的个数
 static YSMotorInstance *YSmotor_instance[YS_MOTOR_MX_CNT] = {NULL};                                   // 最多可以有四个宇树电机实例
@@ -12,9 +13,7 @@ static uint8_t A1_Motor1_Tx_Message[34]                   = {0};                
 YSMotor_Measure_t *YSMotor_Measure_TX;                                                                // 发送时使用的电机数据
 YSMotorInstance *YSMotorInit(YSMotor_Init_Config_s *config, UART_HandleTypeDef *ysmotor_usart_handle) // 宇树电机注册函数
 {
-    YSMotorInstance *motor = (YSMotorInstance *)malloc(sizeof(YSMotorInstance));
-    motor                  = (YSMotorInstance *)malloc(sizeof(YSMotorInstance));
-    memset(motor, 0, sizeof(YSMotorInstance));
+    YSMotorInstance *motor = (YSMotorInstance *)zmalloc(sizeof(YSMotorInstance));
 
     motor->motor_settings = config->controller_setting_init_config;
     PIDInit(&motor->current_PID, &config->controller_param_init_config.current_PID);
@@ -51,9 +50,9 @@ static void YSMotor_Data_Decode()
         rx_motor.Current_Speed     = (rx_buff[14]) | (rx_buff[15] << 8);
         rx_motor.Current_Acc       = (rx_buff[26]) | (rx_buff[27] << 8);
         rx_motor.Current_Pos       = (rx_buff[30]) | (rx_buff[31] << 8) | (rx_buff[32] << 16) | (rx_buff[33] << 24);
-        rx_motor.Current_Pos_rad   = (float)rx_motor.Current_Pos * 2 * PI / 16384 / 9.1;
+        rx_motor.Current_Pos_rad   = (float)rx_motor.Current_Pos * 2.0f * PI / 16384 / 9.1f;
         rx_motor.Current_Pos_angle = rx_motor.Current_Pos_rad * RAD_TO_ANGLE;
-        rx_motor.Current_Torque_Nm = (float)rx_motor.Current_Torque / 256 * 9.1;
+        rx_motor.Current_Torque_Nm = (float)rx_motor.Current_Torque / 256 * 9.1f;
 
         YSmotor_instance[Motor_id]->measure = rx_motor;
     }
@@ -79,8 +78,8 @@ void YSMotorControl()
     float pid_measure, pid_ref;
     int16_t set;
     YSMotorInstance *motor;
-    YSMotor_Measure_t *measure;
-    Motor_Control_Setting_s *setting;
+    YSMotor_Measure_t *measure       = NULL;
+    Motor_Control_Setting_s *setting = NULL;
 
     for (size_t i = 0; i < idx; ++i) {
         motor   = YSmotor_instance[i];
