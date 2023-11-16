@@ -64,7 +64,7 @@
 
 #define USBD_VID     1155
 #define USBD_LANGID_STRING     1033
-#define USBD_MANUFACTURER_STRING     "YueLuEmbedded"
+#define USBD_MANUFACTURER_STRING     "Alliance_EC"
 #define USBD_PID_FS     202
 #define USBD_PRODUCT_STRING_FS     "Vision Comm port"
 #define USBD_CONFIGURATION_STRING_FS     "CDC Config"

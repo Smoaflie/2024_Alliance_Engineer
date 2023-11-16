@@ -1,0 +1,28 @@
+{
+    "version": 5,
+    "beforeBuildTasks": [],
+    "afterBuildTasks": [],
+    "global": {
+        "$float-abi-type": "hard",
+        "output-debug-info": "enable",
+        "misc-control": "-Werror"
+    },
+    "c/cpp-compiler": {
+        "language-c": "gnu17",
+        "language-cpp": "gnu++17",
+        "optimization": "level-3",
+        "warnings": "all-warnings",
+        "one-elf-section-per-function": true,
+        "one-elf-section-per-data": true,
+        "turn-Warning-into-errors": true
+    },
+    "asm-compiler": {
+        "ASM_FLAGS": "-DDEBUG"
+    },
+    "linker": {
+        "output-format": "elf",
+        "remove-unused-input-sections": true,
+        "LD_FLAGS": "-TSTM32F407IGHX_FLASH.ld",
+        "LIB_FLAGS": "-lCMSISDSP -larm_cortexM4lf_math modules/algorithm/AHRS.lib"
+    }
+}

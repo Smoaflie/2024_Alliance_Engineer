@@ -14,6 +14,7 @@
 
 #include "controller.h"
 #include "stdint.h"
+#include "bsp_can.h"
 
 #define LIMIT_MIN_MAX(x, min, max) (x) = (((x) <= (min)) ? (min) : (((x) >= (max)) ? (max) : (x)))
 
@@ -65,7 +66,7 @@ typedef enum
 typedef enum
 {
     MOTOR_STOP = 0,
-    MOTOR_ENALBED = 1,
+    MOTOR_ENABLED = 1,
 } Motor_Working_Type_e;
 
 /* 电机控制设置,包括闭环类型,反转标志和反馈来源 */

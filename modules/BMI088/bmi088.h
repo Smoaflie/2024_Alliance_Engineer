@@ -7,32 +7,27 @@
 #include "bsp_pwm.h"
 #include "stdint.h"
 
+#define IMU_READY_FLAG (1 << 0)
+
 // bmi088工作模式枚举
-typedef enum
-{
+typedef enum {                      //@note 阻塞是指解算是阻塞的，F4系列没有硬件DSP
     BMI088_BLOCK_PERIODIC_MODE = 0, // 阻塞模式,周期性读取
-    BMI088_BLOCK_TRIGGER_MODE,      // 阻塞模式,触发读取(中断)
+    BMI088_BLOCK_TRIGGER_MODE,      // 阻塞模式,触发读取(中断) //! 该模式会出现一些错误数据
 } BMI088_Work_Mode_e;
 
 // bmi088标定方式枚举,若使用预设标定参数,注意修改预设参数
-typedef enum
-{
+typedef enum {
     BMI088_CALIBRATE_ONLINE_MODE = 0, // 初始化时进行标定
     BMI088_LOAD_PRE_CALI_MODE,        // 使用预设标定参数,
 } BMI088_Calibrate_Mode_e;
 
-#pragma pack(1) // 1字节对齐
 /* BMI088数据*/
 typedef struct
 {
     float gyro[3];     // 陀螺仪数据,xyz
     float acc[3];      // 加速度计数据,xyz
     float temperature; // 温度
-
-    // float timestamp; // 时间戳,单位为ms,用于计算两次采样的时间间隔,同时给视觉提供timeline
-    // uint32_t count;  // 第count次采样,用于对齐时间戳
 } BMI088_Data_t;
-#pragma pack() // 恢复默认对齐,需要传输的结构体务必开启1字节对齐
 
 /* BMI088实例结构体定义 */
 typedef struct
@@ -47,16 +42,21 @@ typedef struct
     GPIOInstance *gyro_int;
     GPIOInstance *acc_int;
     // 温度控制
-    PIDInstance heat_pid; // 恒温PID
-    PWMInstance *heat_pwm; // 加热PWM
+    PIDInstance *heat_pid;     // 恒温PID
+    PWMInstance *heat_pwm;     // 加热PWM
+    float ambient_temperature; // 陀螺仪环境温度
+    // RAW数据
+    uint8_t gyro_raw[6];
+    uint8_t acc_raw[6];
+    uint8_t temp_raw[2];
+    float last_gyro[3]; // 上次陀螺仪数据,xyz
     // IMU数据
     float gyro[3];     // 陀螺仪数据,xyz
     float acc[3];      // 加速度计数据,xyz
     float temperature; // 温度
     // 标定数据
     float gyro_offset[3]; // 陀螺仪零偏
-    float gNorm;          // 重力加速度模长,从标定获取
-    float acc_coef;       // 加速度计原始数据转换系数
+    float acc_offset[3];  // 加速度计零偏
     // 传感器灵敏度,用于计算实际值(regNdef.h中定义)
     float BMI088_ACCEL_SEN;
     float BMI088_GYRO_SEN;
@@ -103,14 +103,8 @@ BMI088Instance *BMI088Register(BMI088_Init_Config_s *config);
  * @param bmi088 BMI088实例指针
  * @return BMI088_Data_t 读取到的数据
  */
-uint8_t BMI088Acquire(BMI088Instance *bmi088,BMI088_Data_t* data_store);
-
-/**
- * @brief 标定传感器.BMI088在初始化的时候会调用此函数. 提供接口方便标定离线数据
- * @attention @todo 注意,当操作系统开始运行后,此函数会和INS_Task冲突.目前不允许在运行时调用此函数,后续加入标志位判断以提供运行时重新的标定功能
- *
- * @param _bmi088 待标定的实例
- */
-void BMI088CalibrateIMU(BMI088Instance *_bmi088);
+uint8_t BMI088Acquire(BMI088Instance *bmi088, BMI088_Data_t *data_store);
+uint8_t BMI088Acquire_IT_Status(BMI088Instance *bmi088);
+void BMI088_temp_control(BMI088Instance *bmi088);
 
 #endif // !__BMI088_H__

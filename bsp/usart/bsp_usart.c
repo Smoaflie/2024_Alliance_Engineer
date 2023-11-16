@@ -1,4 +1,14 @@
 /**
+ * @Author: HDC h2019dc@outlook.com
+ * @Date: 2023-09-08 16:47:43
+ * @LastEditors: HDC h2019dc@outlook.com
+ * @LastEditTime: 2023-10-24 21:25:13
+ * @FilePath: \2024_Control_New_Framework_Base-dev-all\bsp\usart\bsp_usart.c
+ * @Description:
+ *
+ * Copyright (c) 2023 by Alliance-EC, All Rights Reserved.
+ */
+/**
  * @file bsp_usart.c
  * @author neozng
  * @brief  串口bsp层的实现
@@ -49,8 +59,8 @@ USARTInstance *USARTRegister(USART_Init_Config_s *init_config)
     USARTInstance *instance = (USARTInstance *)malloc(sizeof(USARTInstance));
     memset(instance, 0, sizeof(USARTInstance));
 
-    instance->usart_handle = init_config->usart_handle;
-    instance->recv_buff_size = init_config->recv_buff_size;
+    instance->usart_handle    = init_config->usart_handle;
+    instance->recv_buff_size  = init_config->recv_buff_size;
     instance->module_callback = init_config->module_callback;
 
     usart_instance[idx++] = instance;
@@ -61,21 +71,20 @@ USARTInstance *USARTRegister(USART_Init_Config_s *init_config)
 /* @todo 当前仅进行了形式上的封装,后续要进一步考虑是否将module的行为与bsp完全分离 */
 void USARTSend(USARTInstance *_instance, uint8_t *send_buf, uint16_t send_size, USART_TRANSFER_MODE mode)
 {
-    switch (mode)
-    {
-    case USART_TRANSFER_BLOCKING:
-        HAL_UART_Transmit(_instance->usart_handle, send_buf, send_size, 100);
-        break;
-    case USART_TRANSFER_IT:
-        HAL_UART_Transmit_IT(_instance->usart_handle, send_buf, send_size);
-        break;
-    case USART_TRANSFER_DMA:
-        HAL_UART_Transmit_DMA(_instance->usart_handle, send_buf, send_size);
-        break;
-    default:
-        while (1)
-            ; // illegal mode! check your code context! 检查定义instance的代码上下文,可能出现指针越界
-        break;
+    switch (mode) {
+        case USART_TRANSFER_BLOCKING:
+            HAL_UART_Transmit(_instance->usart_handle, send_buf, send_size, 100);
+            break;
+        case USART_TRANSFER_IT:
+            HAL_UART_Transmit_IT(_instance->usart_handle, send_buf, send_size);
+            break;
+        case USART_TRANSFER_DMA:
+            HAL_UART_Transmit_DMA(_instance->usart_handle, send_buf, send_size);
+            break;
+        default:
+            while (1)
+                ; // illegal mode! check your code context! 检查定义instance的代码上下文,可能出现指针越界
+            break;
     }
 }
 
@@ -94,19 +103,16 @@ uint8_t USARTIsReady(USARTInstance *_instance)
  *
  * @note  通过__HAL_DMA_DISABLE_IT(huart->hdmarx,DMA_IT_HT)关闭dma half transfer中断防止两次进入HAL_UARTEx_RxEventCallback()
  *        这是HAL库的一个设计失误,发生DMA传输完成/半完成以及串口IDLE中断都会触发HAL_UARTEx_RxEventCallback()
- *        我们只希望处理，因此直接关闭DMA半传输中断第一种和第三种情况
+ *        我们只希望处理，因此直接关闭DMA半传输中断第一种和第三种情况 @todo 可以使用DMA完成中断，就不用lagacy的HAL_UARTEx_RxEventCallback()了
  *
  * @param huart 发生中断的串口
  * @param Size 此次接收到的总数居量,暂时没用
  */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
-    for (uint8_t i = 0; i < idx; ++i)
-    { // find the instance which is being handled
-        if (huart == usart_instance[i]->usart_handle)
-        { // call the callback function if it is not NULL
-            if (usart_instance[i]->module_callback != NULL)
-            {
+    for (uint8_t i = 0; i < idx; ++i) {                 // find the instance which is being handled
+        if (huart == usart_instance[i]->usart_handle) { // call the callback function if it is not NULL
+            if (usart_instance[i]->module_callback != NULL) {
                 usart_instance[i]->module_callback();
                 memset(usart_instance[i]->recv_buff, 0, Size); // 接收结束后清空buffer,对于变长数据是必要的
             }
@@ -126,10 +132,8 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
  */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
-    for (uint8_t i = 0; i < idx; ++i)
-    {
-        if (huart == usart_instance[i]->usart_handle)
-        {
+    for (uint8_t i = 0; i < idx; ++i) {
+        if (huart == usart_instance[i]->usart_handle) {
             HAL_UARTEx_ReceiveToIdle_DMA(usart_instance[i]->usart_handle, usart_instance[i]->recv_buff, usart_instance[i]->recv_buff_size);
             __HAL_DMA_DISABLE_IT(usart_instance[i]->usart_handle->hdmarx, DMA_IT_HT);
             LOGWARNING("[bsp_usart] USART error callback triggered, instance idx [%d]", i);
