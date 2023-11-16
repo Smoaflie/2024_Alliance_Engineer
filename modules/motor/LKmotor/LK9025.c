@@ -155,7 +155,7 @@ void LKMotorStop(LKMotorInstance *motor)
 
 void LKMotorEnable(LKMotorInstance *motor)
 {
-    motor->stop_flag = MOTOR_ENALBED;
+    motor->stop_flag = MOTOR_ENABLED;
 }
 
 void LKMotorSetRef(LKMotorInstance *motor, float ref)

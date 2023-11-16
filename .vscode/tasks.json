@@ -1,0 +1,32 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Debug with Ozone", //!需要将Ozone目录添加到环境变量
+      "type": "shell",
+      "command": "Ozone",
+      "args": ["${workspaceFolder}/ozone_debug.jdebug"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+    {
+      "label": "Download with JFlash", //!需要将Jlink目录添加到环境变量
+      "type": "shell",
+      "command": "JFlash",
+      "args": [
+        "-openprj${workspaceFolder}/STM32.jflash",
+        "-auto",
+        "-startapp",
+        "-exit"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    }
+  ]
+}

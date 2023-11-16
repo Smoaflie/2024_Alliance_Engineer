@@ -1,18 +1,19 @@
-# ins_task
+# INS_task
 
-<p align='right'>neozng1@hnu.edu.cn</p>
+<p align='middle'>Alliance @HDC</p>
 
-## 硬触发流程
+## 初始化
 
-![image-20221113212706633](.assets\image-20221113212706633.png)
+```c
+INS_Init(BMI088_);
+```
 
-`times%10` 是固定相机的采集频率为100hz，请根据视觉算法实际能达到的最大帧率调整。
+调用INS_Init函数即可初始化，传入参数为BMI088实例指针，用于将INS模块与BMI088模块绑定
 
-## 算法解析
+该函数会返回一个`INS_Instance`指针，可用于保存INS实例以及获取INS数据
 
-介绍EKF四元数姿态解算的教程在:[四元数EKF姿态更新算法](https://zhuanlan.zhihu.com/p/454155643)
+## 解算部分
 
-## 模块移植
+采用DJI官方解算库`AHRS.lib`内部结构未公开
 
-由于历史遗留问题,IMU模块耦合程度高.后续实现BSP_SPI,将bmi088 middleware删除.仅保留BMI088读取的协议和寄存器定义等,单独实现IMU模块.
-> 移植已经完成,请转而使用module/BMI088的模块. 当前文件夹将在beta1.2停止支持, 1.5之后删除. INS_Task届时会被放到algorithm中,以提供对不同IMU的兼容.
+采用的算法应该是mahony互补滤波，计算量小，性能不错。经过实测，C板168MHz平均解算时间为`50.595us`，为其他任务腾出了充足的CPU时间

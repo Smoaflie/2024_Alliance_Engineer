@@ -23,8 +23,7 @@ static void f_Trapezoid_Intergral(PIDInstance *pid)
 // 变速积分(误差小时积分作用更强)
 static void f_Changing_Integration_Rate(PIDInstance *pid)
 {
-    if (pid->Err * pid->Iout > 0)
-    {
+    if (pid->Err * pid->Iout > 0) {
         // 积分呈累积趋势
         if (abs(pid->Err) <= pid->CoefB)
             return; // Full integral
@@ -38,25 +37,19 @@ static void f_Changing_Integration_Rate(PIDInstance *pid)
 static void f_Integral_Limit(PIDInstance *pid)
 {
     static float temp_Output, temp_Iout;
-    temp_Iout = pid->Iout + pid->ITerm;
+    temp_Iout   = pid->Iout + pid->ITerm;
     temp_Output = pid->Pout + pid->Iout + pid->Dout;
-    if (abs(temp_Output) > pid->MaxOut)
-    {
-        if (pid->Err * pid->Iout > 0) // 积分却还在累积
-        {
-            pid->ITerm = 0; // 当前积分项置零
-        }
+    if (abs(temp_Output) > pid->MaxOut && (pid->Err * pid->Iout > 0)) {
+        pid->ITerm = 0; // 当前积分项置零
     }
 
-    if (temp_Iout > pid->IntegralLimit)
-    {
+    if (temp_Iout > pid->IntegralLimit) {
         pid->ITerm = 0;
-        pid->Iout = pid->IntegralLimit;
+        pid->Iout  = pid->IntegralLimit;
     }
-    if (temp_Iout < -pid->IntegralLimit)
-    {
+    if (temp_Iout < -pid->IntegralLimit) {
         pid->ITerm = 0;
-        pid->Iout = -pid->IntegralLimit;
+        pid->Iout  = -pid->IntegralLimit;
     }
 }
 
@@ -83,12 +76,10 @@ static void f_Output_Filter(PIDInstance *pid)
 // 输出限幅
 static void f_Output_Limit(PIDInstance *pid)
 {
-    if (pid->Output > pid->MaxOut)
-    {
+    if (pid->Output > pid->MaxOut) {
         pid->Output = pid->MaxOut;
     }
-    if (pid->Output < -(pid->MaxOut))
-    {
+    if (pid->Output < -(pid->MaxOut)) {
         pid->Output = -(pid->MaxOut);
     }
 }
@@ -100,18 +91,14 @@ static void f_PID_ErrorHandle(PIDInstance *pid)
     if (fabsf(pid->Output) < pid->MaxOut * 0.001f || fabsf(pid->Ref) < 0.0001f)
         return;
 
-    if ((fabsf(pid->Ref - pid->Measure) / fabsf(pid->Ref)) > 0.95f)
-    {
+    if ((fabsf(pid->Ref - pid->Measure) / fabsf(pid->Ref)) > 0.95f) {
         // Motor blocked counting
         pid->ERRORHandler.ERRORCount++;
-    }
-    else
-    {
+    } else {
         pid->ERRORHandler.ERRORCount = 0;
     }
 
-    if (pid->ERRORHandler.ERRORCount > 500)
-    {
+    if (pid->ERRORHandler.ERRORCount > 500) {
         // Motor blocked over 1000times
         pid->ERRORHandler.ERRORType = PID_MOTOR_BLOCKED_ERROR;
     }
@@ -128,7 +115,6 @@ static void f_PID_ErrorHandle(PIDInstance *pid)
 void PIDInit(PIDInstance *pid, PID_Init_Config_s *config)
 {
     // config的数据和pid的部分数据是连续且相同的的,所以可以直接用memcpy
-    // @todo: 不建议这样做,可扩展性差,不知道的开发者可能会误以为pid和config是同一个结构体
     // 后续修改为逐个赋值
     memset(pid, 0, sizeof(PIDInstance));
     // utilize the quality of struct that its memeory is continuous
@@ -136,7 +122,29 @@ void PIDInit(PIDInstance *pid, PID_Init_Config_s *config)
     // set rest of memory to 0
     DWT_GetDeltaT(&pid->DWT_CNT);
 }
+/**
+ * @brief 初始化PID,设置参数和启用的优化环节,将其他数据置零
+ * @param config PID初始化设置
+ * @return PIDInstance* PID实例指针
+ */
+PIDInstance *PIDRegister(PID_Init_Config_s *config)
+{
+    PIDInstance *pid = (PIDInstance *)zmalloc(sizeof(PIDInstance));
+    pid->Kp          = config->Kp;
+    pid->Ki          = config->Ki;
+    pid->Kd          = config->Kd;
+    pid->MaxOut      = config->MaxOut;
+    pid->DeadBand    = config->DeadBand;
 
+    pid->Improve           = config->Improve;
+    pid->IntegralLimit     = config->IntegralLimit;
+    pid->CoefA             = config->CoefA;
+    pid->CoefB             = config->CoefB;
+    pid->Output_LPF_RC     = config->Output_LPF_RC;
+    pid->Derivative_LPF_RC = config->Derivative_LPF_RC;
+    DWT_GetDeltaT(&pid->DWT_CNT);
+    return pid;
+}
 /**
  * @brief          PID计算
  * @param[in]      PID结构体
@@ -154,16 +162,15 @@ float PIDCalculate(PIDInstance *pid, float measure, float ref)
 
     // 保存上次的测量值和误差,计算当前error
     pid->Measure = measure;
-    pid->Ref = ref;
-    pid->Err = pid->Ref - pid->Measure;
+    pid->Ref     = ref;
+    pid->Err     = pid->Ref - pid->Measure;
 
     // 如果在死区外,则计算PID
-    if (abs(pid->Err) > pid->DeadBand)
-    {
+    if (abs(pid->Err) > pid->DeadBand) {
         // 基本的pid计算,使用位置式
-        pid->Pout = pid->Kp * pid->Err;
+        pid->Pout  = pid->Kp * pid->Err;
         pid->ITerm = pid->Ki * pid->Err * pid->dt;
-        pid->Dout = pid->Kd * (pid->Err - pid->Last_Err) / pid->dt;
+        pid->Dout  = pid->Kd * (pid->Err - pid->Last_Err) / pid->dt;
 
         // 梯形积分
         if (pid->Improve & PID_Trapezoid_Intergral)
@@ -190,19 +197,18 @@ float PIDCalculate(PIDInstance *pid, float measure, float ref)
 
         // 输出限幅
         f_Output_Limit(pid);
-    }
-    else // 进入死区, 则清空积分和输出
+    } else // 进入死区, 则清空积分和输出
     {
         pid->Output = 0;
-        pid->ITerm = 0;
+        pid->ITerm  = 0;
     }
 
     // 保存当前数据,用于下次计算
     pid->Last_Measure = pid->Measure;
-    pid->Last_Output = pid->Output;
-    pid->Last_Dout = pid->Dout;
-    pid->Last_Err = pid->Err;
-    pid->Last_ITerm = pid->ITerm;
+    pid->Last_Output  = pid->Output;
+    pid->Last_Dout    = pid->Dout;
+    pid->Last_Err     = pid->Err;
+    pid->Last_ITerm   = pid->ITerm;
 
     return pid->Output;
 }
