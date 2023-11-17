@@ -54,7 +54,6 @@
 #define GYRO2GIMBAL_DIR_PITCH      1 // 陀螺仪数据相较于云台的pitch的方向,1为相同,-1为相反
 #define GYRO2GIMBAL_DIR_ROLL       1 // 陀螺仪数据相较于云台的roll的方向,1为相同,-1为相反
 
-#define sdf
 // 其他参数(尽量所有参数集中到此文件)
 #define BUZZER_SILENCE 1 // 蜂鸣器静音,1为静音,0为正常
 
