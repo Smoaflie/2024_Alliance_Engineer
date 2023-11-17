@@ -137,14 +137,12 @@ __attribute__((noreturn)) void StartINSTASK(void *argument)
         osDelay(1);
     }
 }
-extern void One_motor_Init();
-extern void One_motor_task();
+
 extern void MotorControlTask();
 
 __attribute__((noreturn)) void TestTask(void *argument)
 {
     UNUSED(argument);
-    One_motor_Init();
     osDelay(500);
     BuzzerPlay(StartUP_sound);
 
@@ -153,7 +151,6 @@ __attribute__((noreturn)) void TestTask(void *argument)
         /*osDelay(500);
         C_board_LEDSet(0xd633ff);
         osDelay(500);*/
-        One_motor_task();
         MotorControlTask();
 
         osDelay(1);

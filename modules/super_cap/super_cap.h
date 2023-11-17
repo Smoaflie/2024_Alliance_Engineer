@@ -21,19 +21,28 @@
 #include "bsp_can.h"
 
 #pragma pack(1)
+/* 超级电容发送信息 */
 typedef struct
 {
-    float vol;         // 电压
-    uint8_t open_flag; // 开关指示
+    float CapVot;         // 电压
+    uint8_t open_flag;    // 开关指示
 } SuperCap_Msg_s;
 
+/* 超级电容接收信息 */
+typedef struct 
+{
+    uint8_t power_relay_flag;           //继电器开启状态
+    uint8_t power_level;                //功率等级
+    uint16_t chassic_power_remaining;   //剩余功率
+}SuperCap_Msg_g;
 #pragma pack()
 
 /* 超级电容实例 */
 typedef struct
 {
-    CANInstance *can_ins;   // CAN实例
-    SuperCap_Msg_s cap_msg; // 超级电容信息
+    CANInstance *can_ins;     // CAN实例
+    SuperCap_Msg_s cap_msg_s; // 超级电容发送信息
+    SuperCap_Msg_g cap_msg_g; //超级电容接收信息
 } SuperCapInstance;
 
 /* 超级电容初始化配置 */
@@ -44,7 +53,7 @@ typedef struct
 
 /**
  * @brief 初始化超级电容
- *
+ * @attention:data是超级电容接收信息的数组，只有四位，注意不要超出范围
  * @param supercap_config 超级电容初始化配置
  * @return SuperCapInstance* 超级电容实例指针
  */

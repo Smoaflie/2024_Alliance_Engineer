@@ -47,6 +47,8 @@
 #define BMI088_PRE_CALI_GYRO_X_OFFSET -0.000267979165f
 #define BMI088_PRE_CALI_GYRO_Y_OFFSET 0.000386821659f
 #define BMI088_PRE_CALI_GYRO_Z_OFFSET 0.0041627204f
+//陀螺仪默认环境温度
+#define BMI088_AMBIENT_TEMPERATURE 25.0f
 
 #define GYRO2GIMBAL_DIR_YAW           1 // 陀螺仪数据相较于云台的yaw的方向,1为相同,-1为相反
 #define GYRO2GIMBAL_DIR_PITCH         1 // 陀螺仪数据相较于云台的pitch的方向,1为相同,-1为相反
@@ -166,7 +168,7 @@ typedef struct
     loader_mode_e load_mode;
     lid_mode_e lid_mode;
     friction_mode_e friction_mode;
-    Bullet_Speed_e bullet_speed; // 弹速枚举
+    Bullet_Speed_limit_e bullet_speed; // 弹速枚举
     uint8_t rest_heat;
     float shoot_rate; // 连续发射的射频,unit per s,发/秒
 } Shoot_Ctrl_Cmd_s;
@@ -187,9 +189,9 @@ typedef struct
     // float real_vy;
     // float real_wz;
 
-    uint8_t rest_heat;           // 剩余枪口热量
-    Bullet_Speed_e bullet_speed; // 弹速限制
-    Enemy_Color_e enemy_color;   // 0 for blue, 1 for red
+    uint8_t rest_heat; // 剩余枪口热量
+    // Bullet_Speed_e bullet_speed; // 弹速限制
+    Enemy_Color_e enemy_color; // 0 for blue, 1 for red
 
 } Chassis_Upload_Data_s;
 

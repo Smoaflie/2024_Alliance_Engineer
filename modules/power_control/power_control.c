@@ -2,6 +2,7 @@
 #include "message_center.h"
 #include <stdlib.h>
 #include <math.h>
+#include "user_lib.h"
 
 /*功率控制计算部分*/
 /**
@@ -142,7 +143,7 @@ void PhysicalQuantityInit(Physical_Quantity_t *physical_quantity)
  */
 PowerControlInstance *PowerControlInit(void)
 {
-    PowerControlInstance *instance = (PowerControlInstance *)malloc(sizeof(PowerControlInstance));
+    PowerControlInstance *instance = (PowerControlInstance *)zmalloc(sizeof(PowerControlInstance));
     CoefficientInit(&instance->coefficient);
     PhysicalQuantityInit(&instance->physical_quantity);
     return instance;

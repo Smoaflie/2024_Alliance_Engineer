@@ -11,6 +11,7 @@
 
 #include "ins_task.h"
 #include "AHRS.h"
+#include "robot_def.h"
 // 设置xyz轴
 #define BMI088_BOARD_INSTALL_SPIN_MATRIX \
     {0.0f, 1.0f, 0.0f},                  \
@@ -89,7 +90,7 @@ void INS_Task(void)
     // if (INS->BMI088->ambient_temperature < -270) {
     //     INS->BMI088->ambient_temperature = INS->BMI088->temperature;
     // }
-    INS->BMI088->ambient_temperature = 25;
+    INS->BMI088->ambient_temperature = BMI088_AMBIENT_TEMPERATURE;
     BMI088_temp_control(INS->BMI088);
     // 旋转与零漂
     imu_cali_slove(INS->INS_data.INS_gyro, INS->INS_data.INS_accel, INS->INS_data.INS_mag, &raw_data);
@@ -112,8 +113,21 @@ void INS_Task(void)
 
     INS->timing_time = DWT_GetDeltaT(&INS->BMI088->bias_dwt_cnt);
     AHRS_update(INS->INS_data.INS_quat, INS->timing_time, INS->INS_data.INS_gyro, accel_fliter_3, INS->INS_data.INS_mag);
-    get_angle(INS->INS_data.INS_quat, INS->INS_data.INS_angle + INS_YAW_ADDRESS_OFFSET, INS->INS_data.INS_angle + INS_PITCH_ADDRESS_OFFSET, INS->INS_data.INS_angle + INS_ROLL_ADDRESS_OFFSET);
-    INS->output.yaw   = INS->INS_data.INS_angle[INS_YAW_ADDRESS_OFFSET] * RAD_TO_ANGLE;
-    INS->output.pitch = INS->INS_data.INS_angle[INS_PITCH_ADDRESS_OFFSET] * RAD_TO_ANGLE;
-    INS->output.roll  = INS->INS_data.INS_angle[INS_ROLL_ADDRESS_OFFSET] * RAD_TO_ANGLE;
+    get_angle(INS->INS_data.INS_quat, INS->output.INS_angle + INS_YAW_ADDRESS_OFFSET, INS->output.INS_angle + INS_PITCH_ADDRESS_OFFSET, INS->output.INS_angle + INS_ROLL_ADDRESS_OFFSET);
+
+    // get Yaw total, yaw数据可能会超过360,处理一下方便其他功能使用(如小陀螺)
+    static float last_yaw_angle = 0; // 上一次的yaw角度
+    int16_t yaw_round_count     = 0; // yaw转过的圈数
+    if (INS->output.INS_angle[INS_YAW_ADDRESS_OFFSET] - last_yaw_angle > 180) {
+        yaw_round_count--;
+    } else if (INS->output.INS_angle[INS_YAW_ADDRESS_OFFSET] - last_yaw_angle < -180) {
+        yaw_round_count++;
+    }
+    INS->output.Yaw_total_angle = INS->output.INS_angle[INS_YAW_ADDRESS_OFFSET] + yaw_round_count * 2 * PI;
+
+    // 弧度转角度
+    for (uint8_t i = 0; i < 3; i++) {
+        INS->output.INS_angle_deg[i] = INS->output.INS_angle[i] * RAD_TO_ANGLE;
+    }
+    INS->output.Yaw_total_angle_deg = INS->output.Yaw_total_angle * RAD_TO_ANGLE;
 }
