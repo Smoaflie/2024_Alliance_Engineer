@@ -112,7 +112,6 @@
           "Middlewares/ST/ARM/DSP/Lib",
           "modules/algorithm"
         ],
-        "libList": [],
         "sourceDirList": [],
         "defineList": [
           "DEBUG",
