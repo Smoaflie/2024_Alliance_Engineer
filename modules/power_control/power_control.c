@@ -70,13 +70,7 @@ void TargetTorqueCali(Physical_Quantity_t *physical_quantity,Coefficient_t *coef
     c = coefficient->k2 * pow(motor_speed,2) + coefficient->constant - physical_quantity->max_power;
     if(output > 0)
     {
-        /*physical_quantity->target_torque=(-b + 
-        
-        
-        
-        
-        
-        f((b * b) - (4.0f * a * c))) / (2.0f * a);*/
+        physical_quantity->target_torque=(-b + sqrtf((b * b) - (4.0f * a * c))) / (2.0f * a);
     }
     else if(output < 0)
     {
@@ -110,14 +104,11 @@ void* CoefficientInit(Coefficient_t *coefficient)
 {
     float reduction_ratio;
     //根据不同电机的减速比进行修改，默认为M3508手册给出的减速比
-    if(coefficient->reduction_ratio != 0)
-    {
-        reduction_ratio = coefficient->reduction_ratio;
-    }
-    else
-    {
+    #ifdef Self_Reduction_Ratio
+        reduction_ratio = Self_Reduction_Ratio;
+    #else
         reduction_ratio = 0.0520746310219994f;
-    }
+    #endif
     //力矩电流与电调力矩电流控制值之间的转化系数，数值由20/16384得到
     coefficient->cmd_to_torque = 0.001220703125f;
     //力矩电流常数，为转矩常数与电机减速比相乘得到的转子力矩电流常数

@@ -25,9 +25,7 @@
   },
   "targets": {
     "Debug": {
-      "excludeList": [
-        "Src/syscalls.c"
-      ],
+      "excludeList": [],
       "toolchain": "GCC",
       "compileConfig": {
         "cpuType": "Cortex-M4",
