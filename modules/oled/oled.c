@@ -153,7 +153,7 @@ void OLED_draw_point(int8_t x, int8_t y, pen_typedef pen)
     uint8_t page = 0, row = 0;
 
     /* check the corrdinate */
-    if ((x < 0) || (x > (X_WIDTH - 1)) || (y < 0) || (y > (Y_WIDTH - 1)))
+    if ((x < 0) || /*(x > (X_WIDTH - 1)) ||*/ (y < 0) || (y > (Y_WIDTH - 1)))
     {
         return;
     }

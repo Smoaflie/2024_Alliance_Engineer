@@ -5,7 +5,7 @@
     "global": {
         "$float-abi-type": "hard",
         "output-debug-info": "enable",
-        "misc-control": "-Werror"
+        "misc-control": "-Wall -Wextra -Wshadow -Werror -Wno-error=unused-variable -Wno-error=unused-but-set-variable -Wno-unused-parameter"
     },
     "c/cpp-compiler": {
         "language-c": "gnu17",
