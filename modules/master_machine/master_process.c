@@ -134,15 +134,12 @@ Vision_Recv_s *VisionInit(UART_HandleTypeDef *_handle)
     return &recv_data;
 }
 
-void VisionSend()
-{
-    static uint16_t flag_register;
+void VisionSend(Vision_Send_s *vision_send_s)
+{                                                   
     static uint8_t send_buff[VISION_SEND_SIZE];
-    static uint16_t tx_len;
-    // TODO: code to set flag_register
-    flag_register = 30 << 8 | 0b00000001;
+    static uint8_t tx_len;
     // 将数据转化为seasky协议的数据包
-    get_protocol_send_data(0x02, flag_register, &send_data.bullet_speed_current, 1, send_buff, &tx_len);
+    get_protocol_send_data(vision_send_s, send_buff, &tx_len);
     USBTransmit(send_buff, tx_len);
 }
 

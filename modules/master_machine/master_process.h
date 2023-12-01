@@ -2,7 +2,6 @@
 #define MASTER_PROCESS_H
 
 #include "bsp_usart.h"
-#include "seasky_protocol.h"
 
 #define VISION_RECV_SIZE 18u // 当前为固定值,36字节
 #define VISION_SEND_SIZE 36u
@@ -37,8 +36,8 @@ typedef enum {
 typedef struct
 {
     Enemy_Color_e enemy_color;
-    Work_Mode_e work_mode;
     Bullet_Speed_limit_e bullet_Speed_limit;
+    Work_Mode_e work_mode;
     float bullet_speed_current;
 } Vision_Send_s;
 #pragma pack()
@@ -54,7 +53,7 @@ Vision_Recv_s *VisionInit(UART_HandleTypeDef *_handle);
  * @brief 发送视觉数据
  *
  */
-void VisionSend();
+void VisionSend(Vision_Send_s *vision_send_s);
 
 /**
  * @brief 设置视觉发送标志位
