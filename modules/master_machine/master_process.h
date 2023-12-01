@@ -53,7 +53,7 @@ Vision_Recv_s *VisionInit(UART_HandleTypeDef *_handle);
  * @brief 发送视觉数据
  *
  */
-void VisionSend(Vision_Send_s *vision_send_s);
+void VisionSend();
 
 /**
  * @brief 设置视觉发送标志位

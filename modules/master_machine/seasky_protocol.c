@@ -37,9 +37,9 @@ static uint8_t protocol_heade_Check(protocol_rm_struct *pro, uint8_t *rx_buf)
         pro->header.sof = rx_buf[0];
         if (CRC8_Check_Sum(&rx_buf[0], 4))
         {
-            pro->header.data_length = (rx_buf[2] << 8) | rx_buf[1];
-            pro->header.crc_check = rx_buf[3];
-            pro->cmd_id = (rx_buf[5] << 8) | rx_buf[4];
+            pro->header.data_length = rx_buf[1];
+            pro->header.crc_check = rx_buf[2];
+            pro->cmd_id = (rx_buf[4] << 8) | rx_buf[3];
             return 1;
         }
     }
@@ -75,22 +75,18 @@ void get_protocol_send_data(Vision_Send_s *tx_buf_data,     // 待发送的数�
     返回数据内容的id
 */
 uint16_t get_protocol_info(uint8_t *rx_buf,          // 接收到的原始数据
-                           uint16_t *flags_register, // 接收数据的16位寄存器地址
-                           uint8_t *rx_data)         // 接收的float数据存储地址
+                           uint8_t *rx_data)         // 接收的数据存储地址
 {
     // 放在静态区,避免反复申请栈上空间
     static protocol_rm_struct pro;
-    static uint16_t date_length;
 
     if (protocol_heade_Check(&pro, rx_buf))
     {
-        date_length = OFFSET_BYTE + pro.header.data_length;
-        // if (CRC16_Check_Sum(&rx_buf[0], date_length))
-        // {
-        //     *flags_register = (rx_buf[7] << 8) | rx_buf[6];
-        //     memcpy(rx_data, rx_buf + 8, pro.header.data_length - 2);
-        //     return pro.cmd_id;
-        // }
+        if (CRC8_Check_Sum(&rx_buf[0], pro.header.data_length))
+        {
+            memcpy(&rx_buf[5], rx_data, pro.header.data_length - 5);
+            return pro.cmd_id;
+        }
     }
     return 0;
 }

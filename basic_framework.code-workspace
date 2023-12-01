@@ -5,7 +5,12 @@
         }
     ],
     "settings": {
-        "editor.inlineSuggest.showToolbar": "onHover"
+        "editor.inlineSuggest.showToolbar": "always",
+        "files.associations": {
+            "seasky_protocol.h": "c",
+            "crc8.h": "c",
+            "_default_types.h": "c"
+        }
     },
     "extensions": {}
 }

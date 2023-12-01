@@ -111,10 +111,8 @@ static uint8_t *vis_recv_buff;
 
 static void DecodeVision(uint16_t recv_len)
 {
-    uint16_t flag_register;
-    get_protocol_info(vis_recv_buff, &flag_register, (uint8_t *)&recv_data.pitch);
-    // TODO: code to resolve flag_register;
-}
+    get_protocol_info(vis_recv_buff,(uint8_t *)&recv_data.pitch);
+} 
 
 /* 视觉通信初始化 */
 Vision_Recv_s *VisionInit(UART_HandleTypeDef *_handle)
@@ -134,12 +132,12 @@ Vision_Recv_s *VisionInit(UART_HandleTypeDef *_handle)
     return &recv_data;
 }
 
-void VisionSend(Vision_Send_s *vision_send_s)
+void VisionSend()
 {                                                   
     static uint8_t send_buff[VISION_SEND_SIZE];
     static uint8_t tx_len;
     // 将数据转化为seasky协议的数据包
-    get_protocol_send_data(vision_send_s, send_buff, &tx_len);
+    get_protocol_send_data(&send_data, send_buff, &tx_len);
     USBTransmit(send_buff, tx_len);
 }
 
