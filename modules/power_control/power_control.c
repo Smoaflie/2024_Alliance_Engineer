@@ -102,17 +102,11 @@ void PowerDistribution(Physical_Quantity_t *physical_quantity,Coefficient_t *coe
  */
 void* CoefficientInit(Coefficient_t *coefficient)
 {
-    float reduction_ratio;
-    //根据不同电机的减速比进行修改，默认为M3508手册给出的减速比
-    #ifdef Self_Reduction_Ratio
-        reduction_ratio = Self_Reduction_Ratio;
-    #else
-        reduction_ratio = 0.0520746310219994f;
-    #endif
+    //coefficient->reduction_ratio = 0.0520746310219994f;
     //力矩电流与电调力矩电流控制值之间的转化系数，数值由20/16384得到
     coefficient->cmd_to_torque = 0.001220703125f;
     //力矩电流常数，为转矩常数与电机减速比相乘得到的转子力矩电流常数
-    coefficient->torque = 0.3f * reduction_ratio;
+    coefficient->torque = 0.3f * coefficient->reduction_ratio;
     //功率模型中力矩二次方的系数
     coefficient->k1 = 1.23e-07;
     //功率模型中转速二次方的系数
@@ -122,30 +116,20 @@ void* CoefficientInit(Coefficient_t *coefficient)
     return coefficient;
 }
 
-/**
- * @brief 将目标力矩转换为电调力矩电流控制值
- * 
- * @param coefficient 系数结构体
- * @param target_torque 目标力矩值
- * 
- * @return motor_input 返回电调力矩电流控制值，用以给电机输入
- */
-void PhysicalQuantityInit(Physical_Quantity_t *physical_quantity)
-{
-    physical_quantity->max_power = MAX_POWER;
-}
-
 /*对外可被调用的功率控制接口*/
 /**
  * @brief 功率控制初始化
  * 
  * @param power_control_instance 功率控制实例
  */
-PowerControlInstance *PowerControlInit(void)
+PowerControlInstance *PowerControlInit(PowerControlInstance *init)
 {
     PowerControlInstance *instance = (PowerControlInstance *)zmalloc(sizeof(PowerControlInstance));
+
+    instance->coefficient.reduction_ratio = init->coefficient.reduction_ratio;
+    instance->physical_quantity.max_power = init->physical_quantity.max_power;
+
     CoefficientInit(&instance->coefficient);
-    PhysicalQuantityInit(&instance->physical_quantity);
     return instance;
 }
 /**

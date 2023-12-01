@@ -31,7 +31,7 @@ set(AHRS_LIB "${CMAKE_SOURCE_DIR}/modules/algorithm/AHRS.lib")
 link_directories(${CMAKE_SOURCE_DIR}/Middlewares/ST/ARM/DSP/Lib)
 
 # Generic compiler settings for optimization and basic link lib
-add_compile_options(-pipe ${MCU_FLAGS} -Wall -Werror -fmessage-length=0 # basic options
+add_compile_options(-pipe ${MCU_FLAGS} -Wall -Wextra -Wshadow -Werror -Wno-error=unused-variable -Wno-error=unused-but-set-variable -Wno-unused-parameter -fmessage-length=0 # basic options
     -ffunction-sections -fdata-sections -fno-common # optimize options
 )
 add_link_options(-pipe ${MCU_FLAGS} -T${LINKER_SCRIPT} -Wl,--no-warn-rwx-segments # close RWX warning
