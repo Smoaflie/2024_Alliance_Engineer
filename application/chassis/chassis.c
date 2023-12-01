@@ -17,6 +17,7 @@
 #include "super_cap.h"
 #include "message_center.h"
 #include "referee_init.h"
+#include "power_control.h"
 
 #include "general_def.h"
 #include "bsp_dwt.h"
@@ -46,6 +47,7 @@ static referee_info_t *referee_data; // 用于获取裁判系统的数据
 
 static SuperCapInstance *cap;                                       // 超级电容
 static DJIMotorInstance *motor_lf, *motor_rf, *motor_lb, *motor_rb; // left right forward back
+static PowerControlInstance *power;
 
 /* 用于自旋变速策略的时间变量 */
 // static float t;
@@ -56,6 +58,12 @@ static float vt_lf, vt_rf, vt_lb, vt_rb; // 底盘速度解算后的临时输出
 
 void ChassisInit()
 {
+    //修改减速比以及最大功率
+    PowerControlInstance power_init ={
+        .coefficient.reduction_ratio = 0.0520746310219994f,
+        .physical_quantity.max_power = 60,
+    };
+    power = PowerControlInit(&power_init);
     // 四个轮子的参数一样,改tx_id和反转标志位即可
     Motor_Init_Config_s chassis_motor_config = {
         .can_init_config.can_handle   = &hcan1,
