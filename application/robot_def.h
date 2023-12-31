@@ -51,10 +51,16 @@
 #define BMI088_PRE_CALI_GYRO_Z_OFFSET 0.0041627204f
 // 陀螺仪默认环境温度
 #define BMI088_AMBIENT_TEMPERATURE 25.0f
-
-#define GYRO2GIMBAL_DIR_YAW        1 // 陀螺仪数据相较于云台的yaw的方向,1为相同,-1为相反
-#define GYRO2GIMBAL_DIR_PITCH      1 // 陀螺仪数据相较于云台的pitch的方向,1为相同,-1为相反
-#define GYRO2GIMBAL_DIR_ROLL       1 // 陀螺仪数据相较于云台的roll的方向,1为相同,-1为相反
+// 设置陀螺仪数据相较于云台的yaw,pitch,roll的方向
+#define BMI088_BOARD_INSTALL_SPIN_MATRIX \
+    {1.0f, 0.0f, 0.0f},                  \
+        {0.0f, -1.0f, 0.0f},             \
+    {                                    \
+        0.0f, 0.0f, -1.0f                \
+    }
+#define INS_YAW_ADDRESS_OFFSET   2  // 陀螺仪数据相较于云台的yaw的方向
+#define INS_PITCH_ADDRESS_OFFSET 1  // 陀螺仪数据相较于云台的pitch的方向
+#define INS_ROLL_ADDRESS_OFFSET  0  // 陀螺仪数据相较于云台的roll的方向
 
 // 其他参数(尽量所有参数集中到此文件)
 #define BUZZER_SILENCE 1 // 蜂鸣器静音,1为静音,0为正常

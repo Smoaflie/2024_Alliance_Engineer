@@ -12,20 +12,7 @@
 #include "ins_task.h"
 #include "AHRS.h"
 #include "robot_def.h"
-// 设置xyz轴
-#define BMI088_BOARD_INSTALL_SPIN_MATRIX \
-    {0.0f, 1.0f, 0.0f},                  \
-        {-1.0f, 0.0f, 0.0f},             \
-    {                                    \
-        0.0f, 0.0f, 1.0f                 \
-    }
 
-#define IST8310_BOARD_INSTALL_SPIN_MATRIX \
-    {1.0f, 0.0f, 0.0f},                   \
-        {0.0f, 1.0f, 0.0f},               \
-    {                                     \
-        0.0f, 0.0f, 1.0f                  \
-    }
 // 旋转与零漂
 static float gyro_scale_factor[3][3]  = {BMI088_BOARD_INSTALL_SPIN_MATRIX};
 static float accel_scale_factor[3][3] = {BMI088_BOARD_INSTALL_SPIN_MATRIX};
