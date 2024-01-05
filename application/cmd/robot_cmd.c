@@ -13,8 +13,21 @@
 #include "bsp_log.h"
 
 // 私有宏,自动将编码器转换成角度值
-#define YAW_ALIGN_ANGLE     (YAW_CHASSIS_ALIGN_ECD * ECD_ANGLE_COEF_DJI) // 对齐时的角度,0-360
-#define PTICH_HORIZON_ANGLE (PITCH_HORIZON_ECD * ECD_ANGLE_COEF_DJI)     // pitch水平时电机的角度,0-360
+#define YAW_ALIGN_ANGLE (YAW_CHASSIS_ALIGN_ECD * ECD_ANGLE_COEF_DJI) // 对齐时的角度,0-360
+#if PITCH_FEED_TYPE                                                  // Pitch电机反馈数据源为陀螺仪
+#define PTICH_HORIZON_ANGLE 0                                        // PITCH水平时电机的角度
+#if PITCH_ECD_UP_ADD
+#define PITCH_LIMIT_ANGLE_UP   (((PITCH_POS_UP_LIMIT_ECD > PITCH_HORIZON_ECD) ? (PITCH_POS_UP_LIMIT_ECD - PITCH_HORIZON_ECD) : (PITCH_POS_UP_LIMIT_ECD + 8192 - PITCH_HORIZON_ECD)) * ECD_ANGLE_COEF_DJI)       // 云台竖直方向最大角度 0-360
+#define PITCH_LIMIT_ANGLE_DOWN (((PITCH_POS_DOWN_LIMIT_ECD < PITCH_HORIZON_ECD) ? (PITCH_POS_DOWN_LIMIT_ECD - PITCH_HORIZON_ECD) : (PITCH_POS_DOWN_LIMIT_ECD - 8192 - PITCH_HORIZON_ECD)) * ECD_ANGLE_COEF_DJI) // 云台竖直方向最小角度 0-360
+#else
+#define PITCH_LIMIT_ANGLE_UP   (((PITCH_POS_UP_LIMIT_ECD < PITCH_HORIZON_ECD) ? (PITCH_POS_UP_LIMIT_ECD - PITCH_HORIZON_ECD) : (PITCH_POS_UP_LIMIT_ECD - 8192 - PITCH_HORIZON_ECD)) * ECD_ANGLE_COEF_DJI)       // 云台竖直方向最大角度 0-360
+#define PITCH_LIMIT_ANGLE_DOWN (((PITCH_POS_DOWN_LIMIT_ECD > PITCH_HORIZON_ECD) ? (PITCH_POS_DOWN_LIMIT_ECD - PITCH_HORIZON_ECD) : (PITCH_POS_DOWN_LIMIT_ECD + 8192 - PITCH_HORIZON_ECD)) * ECD_ANGLE_COEF_DJI) // 云台竖直方向最小角度 0-360
+#endif
+#else                                                                   // PITCH电机反馈数据源为编码器
+#define PTICH_HORIZON_ANGLE    (PITCH_HORIZON_ECD * ECD_ANGLE_COEF_DJI) // PITCH水平时电机的角度,0-360
+#define PITCH_LIMIT_ANGLE_UP   (PITCH_POS_MAX_ECD * ECD_ANGLE_COEF_DJI) // 云台竖直方向最大角度 0-360
+#define PITCH_LIMIT_ANGLE_DOWN (PITCH_POS_MIN_ECD * ECD_ANGLE_COEF_DJI) // 云台竖直方向最小角度 0-360
+#endif
 
 /* cmd应用包含的模块实例指针和交互信息存储*/
 #ifdef GIMBAL_BOARD // 对双板的兼容,条件编译
@@ -71,7 +84,12 @@ void RobotCMDInit()
     };
     cmd_can_comm = CANCommInit(&comm_conf);
 #endif // GIMBAL_BOARD
+
+#if PITCH_FEED_TYPE
     gimbal_cmd_send.pitch = 0;
+#else
+    gimbal_cmd_send.pitch = PTICH_HORIZON_ANGLE;
+#endif
 
     robot_state = ROBOT_READY; // 启动时机器人进入工作模式,后续加入所有应用初始化完成之后再进入
 }
@@ -104,6 +122,25 @@ static void CalcOffsetAngle()
 }
 
 /**
+ * @brief 对Pitch轴角度变化进行限位
+ *
+ */
+static void PitchAngleLimit()
+{
+#if PITCH_ECD_UP_ADD // 云台抬升,反馈值增
+    if (gimbal_cmd_send.pitch > PITCH_LIMIT_ANGLE_UP)
+        gimbal_cmd_send.pitch = PITCH_LIMIT_ANGLE_UP;
+    if (gimbal_cmd_send.pitch < PITCH_LIMIT_ANGLE_DOWN)
+        gimbal_cmd_send.pitch = PITCH_LIMIT_ANGLE_DOWN;
+#else
+    if (gimbal_cmd_send.pitch < PITCH_LIMIT_ANGLE_UP)
+        gimbal_cmd_send.pitch = PITCH_LIMIT_ANGLE_UP;
+    if (gimbal_cmd_send.pitch > PITCH_LIMIT_ANGLE_DOWN)
+        gimbal_cmd_send.pitch = PITCH_LIMIT_ANGLE_DOWN;
+#endif
+}
+
+/**
  * @brief 控制输入为遥控器(调试时)的模式和控制量设置
  *
  */
@@ -128,8 +165,10 @@ static void RemoteControlSet()
     }
     // 左侧开关状态为[下],或视觉未识别到目标,纯遥控器拨杆控制
     if (switch_is_down(rc_data[TEMP].rc.switch_left) /*|| vision_recv_data->target_state == NO_TARGET*/) { // 按照摇杆的输出大小进行角度增量,增益系数需调整
-        gimbal_cmd_send.yaw += 0.005f * (float)rc_data[TEMP].rc.rocker_l_;
-        gimbal_cmd_send.pitch += 0.001f * (float)rc_data[TEMP].rc.rocker_l1;
+        gimbal_cmd_send.yaw += 0.002f * (float)rc_data[TEMP].rc.rocker_l_;
+        gimbal_cmd_send.pitch += 0.0001f * (float)rc_data[TEMP].rc.rocker_l1;
+
+        PitchAngleLimit(); // PITCH限位
     }
     // 云台软件限位
 

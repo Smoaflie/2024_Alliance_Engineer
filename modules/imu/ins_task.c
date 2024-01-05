@@ -12,20 +12,7 @@
 #include "ins_task.h"
 #include "AHRS.h"
 #include "robot_def.h"
-// 设置xyz轴
-#define BMI088_BOARD_INSTALL_SPIN_MATRIX \
-    {0.0f, 1.0f, 0.0f},                  \
-        {-1.0f, 0.0f, 0.0f},             \
-    {                                    \
-        0.0f, 0.0f, 1.0f                 \
-    }
 
-#define IST8310_BOARD_INSTALL_SPIN_MATRIX \
-    {1.0f, 0.0f, 0.0f},                   \
-        {0.0f, 1.0f, 0.0f},               \
-    {                                     \
-        0.0f, 0.0f, 1.0f                  \
-    }
 // 旋转与零漂
 static float gyro_scale_factor[3][3]  = {BMI088_BOARD_INSTALL_SPIN_MATRIX};
 static float accel_scale_factor[3][3] = {BMI088_BOARD_INSTALL_SPIN_MATRIX};
@@ -117,13 +104,14 @@ void INS_Task(void)
 
     // get Yaw total, yaw数据可能会超过360,处理一下方便其他功能使用(如小陀螺)
     static float last_yaw_angle = 0; // 上一次的yaw角度
-    int16_t yaw_round_count     = 0; // yaw转过的圈数
-    if (INS->output.INS_angle[INS_YAW_ADDRESS_OFFSET] - last_yaw_angle > 180) {
+    static int16_t yaw_round_count     = 0; // yaw转过的圈数
+    if (INS->output.INS_angle[INS_YAW_ADDRESS_OFFSET] - last_yaw_angle > PI) {
         yaw_round_count--;
-    } else if (INS->output.INS_angle[INS_YAW_ADDRESS_OFFSET] - last_yaw_angle < -180) {
+    } else if (INS->output.INS_angle[INS_YAW_ADDRESS_OFFSET] - last_yaw_angle < -PI) {
         yaw_round_count++;
     }
     INS->output.Yaw_total_angle = INS->output.INS_angle[INS_YAW_ADDRESS_OFFSET] + yaw_round_count * 2 * PI;
+    last_yaw_angle = INS->output.INS_angle[INS_YAW_ADDRESS_OFFSET];
 
     // 弧度转角度
     for (uint8_t i = 0; i < 3; i++) {
