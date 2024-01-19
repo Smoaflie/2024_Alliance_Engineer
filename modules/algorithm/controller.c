@@ -91,11 +91,12 @@ static void f_PID_ErrorHandle(PIDInstance *pid)
     if (fabsf(pid->Output) < pid->MaxOut * 0.001f || fabsf(pid->Ref) < 0.0001f)
         return;
 
-    if ((fabsf(pid->Ref - pid->Measure) / fabsf(pid->Ref)) > 0.95f) {
+    if ((fabsf(pid->Ref - pid->Last_Measure) / fabsf(pid->Ref)) > 0.95f) {
         // Motor blocked counting
         pid->ERRORHandler.ERRORCount++;
-    } else {
+    } else{
         pid->ERRORHandler.ERRORCount = 0;
+        pid->ERRORHandler.ERRORType &= ~PID_MOTOR_BLOCKED_ERROR;
     }
 
     if (pid->ERRORHandler.ERRORCount > 500) {
@@ -165,6 +166,10 @@ float PIDCalculate(PIDInstance *pid, float measure, float ref)
     pid->Ref     = ref;
     pid->Err     = pid->Ref - pid->Measure;
 
+    // 错误处理
+    if(pid->ERRORHandler.ERRORType == PID_MOTOR_BLOCKED_ERROR) // 堵转
+        pid->Ref     = -ref;
+    
     // 如果在死区外,则计算PID
     if (abs(pid->Err) > pid->DeadBand) {
         // 基本的pid计算,使用位置式
