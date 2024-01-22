@@ -70,6 +70,11 @@ INS_Instance *INS_Init(BMI088Instance *bmi088)
 }
 void INS_Task(void)
 {
+    if(INS == NULL)
+    {
+        return;
+    }
+    
     BMI088_Data_t raw_data;
     BMI088Acquire(INS->BMI088, &raw_data);
 

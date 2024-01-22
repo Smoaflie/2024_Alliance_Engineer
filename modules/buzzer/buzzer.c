@@ -344,11 +344,15 @@ __attribute__((noreturn)) void BuzzerTask(void *argument)
     UNUSED(argument);
     osThreadSuspend(NULL); // 挂起线程
     for (;;) {
-        do {
-            string_handle();
-            buzzer_silence();
-        } while (buzzer->_repeat);
-        buzzer->busy = 0;
+        if(buzzer == NULL){
+            osThreadSuspend(NULL); // 挂起线程
+            continue;
+        }
+            do {
+                string_handle();
+                buzzer_silence();
+            } while (buzzer->_repeat);
+            buzzer->busy = 0;   
         osThreadSuspend(NULL); // 挂起线程
     }
 }
