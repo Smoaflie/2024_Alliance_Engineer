@@ -1,5 +1,5 @@
-#ifndef LKmotor_H
-#define LKmotor_H
+#ifndef DRmotor_H
+#define DRmotor_H
 
 #include "stdint.h"
 #include "bsp_can.h"
@@ -7,37 +7,32 @@
 #include "motor_def.h"
 #include "daemon.h"
 
-#define LK_MOTOR_MX_CNT 4 // 最多允许4个LK电机使用多电机指令,挂载在一条总线上
+#define DR_MOTOR_MX_CNT 4 // 最多允许4个DR电机使用多电机指令,挂载在一条总线上
 
 #define I_MIN -2000
 #define I_MAX 2000
 #define CURRENT_SMOOTH_COEF 0.9f
 #define SPEED_SMOOTH_COEF 0.85f
 #define REDUCTION_RATIO_DRIVEN 1
-// #define ECD_ANGLE_COEF_LK (360.0f / 65536.0f)
-#define CURRENT_TORQUE_COEF_LK 0.003645f // 电流设定值转换成扭矩的系数,算出来的设定值除以这个系数就是扭矩值
+#define CURRENT_TORQUE_COEF_DR 0.003645f // 电流设定值转换成扭矩的系数,算出来的设定值除以这个系数就是扭矩值
 
 typedef struct
 {
-    uint16_t last_ecd;        // 上一次读取的编码器值
-    uint16_t ecd;             // 当前编码器值
-    uint16_t max_ecd;         // 编码器数值范围（MS5005与LK9025的回复报文中仅编码器精确度不同）
-
     float angle_single_round; // 单圈角度
     float speed_rads;         // speed rad/s
-    int16_t real_current;     // 实际电流
-    uint8_t temperature;      // 温度,C°
+    float real_current;     // 实际扭矩 Nm
+    // uint8_t temperature;      // 温度,C°
 
     float total_angle;   // 总角度
     int32_t total_round; // 总圈数
 
     float feed_dt;
     uint32_t feed_dwt_cnt;
-} LKMotor_Measure_t;
+} DRMotor_Measure_t;
 
 typedef struct
 {
-    LKMotor_Measure_t measure;
+    DRMotor_Measure_t measure;
 
     Motor_Control_Setting_s motor_settings;
 
@@ -57,15 +52,15 @@ typedef struct
     DaemonInstance *daemon;
 
     Motor_Type_e motor_type;        // 电机类型
-} LKMotorInstance;
+} DRMotorInstance;
 
 /**
- * @brief 初始化LK电机
+ * @brief 初始化DR电机
  *
  * @param config 电机配置
- * @return LKMotorInstance* 返回实例指针
+ * @return DRMotorInstance* 返回实例指针
  */
-LKMotorInstance *LKMotorInit(Motor_Init_Config_s *config);
+DRMotorInstance *DRMotorInit(Motor_Init_Config_s *config);
 
 /**
  * @brief 设置参考值
@@ -74,28 +69,28 @@ LKMotorInstance *LKMotorInit(Motor_Init_Config_s *config);
  * @param motor 要设置的电机
  * @param ref 设定值
  */
-void LKMotorSetRef(LKMotorInstance *motor, float ref);
+void DRMotorSetRef(DRMotorInstance *motor, float ref);
 
 /**
- * @brief 为所有LK电机计算pid/反转/模式控制,并通过bspcan发送电流值(发送CAN报文)
+ * @brief 为所有DR电机计算pid/反转/模式控制,并通过bspcan发送电流值(发送CAN报文)
  *
  */
-void LKMotorControl();
+void DRMotorControl();
 
 /**
- * @brief 停止LK电机,之后电机不会响应任何指令
- *
- * @param motor
- */
-void LKMotorStop(LKMotorInstance *motor);
-
-/**
- * @brief 启动LK电机
+ * @brief 停止DR电机,之后电机不会响应任何指令
  *
  * @param motor
  */
-void LKMotorEnable(LKMotorInstance *motor);
+void DRMotorStop(DRMotorInstance *motor);
 
-uint8_t LKMotorIsOnline(LKMotorInstance *motor);
+/**
+ * @brief 启动DR电机
+ *
+ * @param motor
+ */
+void DRMotorEnable(DRMotorInstance *motor);
 
-#endif // LKmotor_H
+uint8_t DRMotorIsOnline(DRMotorInstance *motor);
+
+#endif // DRmotor_H

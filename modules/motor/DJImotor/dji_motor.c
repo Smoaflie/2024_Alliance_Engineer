@@ -181,7 +181,7 @@ DJIMotorInstance *DJIMotorInit(Motor_Init_Config_s *config)
     };
     instance->daemon = DaemonRegister(&daemon_config);
 
-    DJIMotorEnable(instance);
+    DJIMotorStop(instance);
     dji_motor_instance[idx++] = instance;
     return instance;
 }
@@ -238,8 +238,7 @@ void DJIMotorControl()
         motor_controller = &motor->motor_controller;
         measure          = &motor->measure;
         pid_ref          = motor_controller->pid_ref; // 保存设定值,防止motor_controller->pid_ref在计算过程中被修改
-        if (motor_setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
-            pid_ref *= -1; // 设置反转
+            
 
         // pid_ref会顺次通过被启用的闭环充当数据的载体
         // 计算位置环,只有启用位置环且外层闭环为位置时会计算速度环输出
@@ -252,6 +251,9 @@ void DJIMotorControl()
             pid_ref = PIDCalculate(&motor_controller->angle_PID, pid_measure, pid_ref);
         }
 
+        if (motor_setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
+            pid_ref *= -1;
+            
         // 计算速度环,(外层闭环为速度或位置)且(启用速度环)时会计算速度环
         if ((motor_setting->close_loop_type & SPEED_LOOP) && (motor_setting->outer_loop_type & (ANGLE_LOOP | SPEED_LOOP))) {
             if (motor_setting->feedforward_flag & SPEED_FEEDFORWARD)
@@ -275,6 +277,7 @@ void DJIMotorControl()
         if (motor_setting->feedback_reverse_flag == FEEDBACK_DIRECTION_REVERSE)
             pid_ref *= -1;
 
+        
         // 获取最终输出
         set = (int16_t)pid_ref;
 

@@ -1,4 +1,4 @@
-#include "LK9025.h"
+#include "LKmotor.h"
 #include "stdlib.h"
 #include "general_def.h"
 #include "daemon.h"
@@ -27,7 +27,9 @@ static void LKMotorDecode(CANInstance *_instance)
     measure->last_ecd = measure->ecd;
     measure->ecd = (uint16_t)((rx_buff[7] << 8) | rx_buff[6]);
 
-    measure->angle_single_round = ECD_ANGLE_COEF_LK * measure->ecd;
+    // measure->angle_single_round = ECD_ANGLE_COEF_LK * measure->ecd;
+    // todo:优化
+    measure->angle_single_round = (360.0f / (float)measure->max_ecd) * measure->ecd;
 
     measure->speed_rads = (1 - SPEED_SMOOTH_COEF) * measure->speed_rads +
                           DEGREE_2_RAD * SPEED_SMOOTH_COEF * (float)((int16_t)(rx_buff[5] << 8 | rx_buff[4]));
@@ -36,10 +38,10 @@ static void LKMotorDecode(CANInstance *_instance)
                             CURRENT_SMOOTH_COEF * (float)((int16_t)(rx_buff[3] << 8 | rx_buff[2]));
 
     measure->temperature = rx_buff[1];
-
-    if (measure->ecd - measure->last_ecd > 32768)
+    
+    if ((int16_t)measure->ecd - measure->last_ecd > measure->max_ecd/2)
         measure->total_round--;
-    else if (measure->ecd - measure->last_ecd < -32768)
+    else if ((int16_t)measure->ecd - measure->last_ecd < -measure->max_ecd/2)
         measure->total_round++;
     measure->total_angle = measure->total_round * 360 + measure->angle_single_round;
 }
@@ -53,7 +55,7 @@ static void LKMotorLostCallback(void *motor_ptr)
 LKMotorInstance *LKMotorInit(Motor_Init_Config_s *config)
 {
     LKMotorInstance *motor = (LKMotorInstance *)malloc(sizeof(LKMotorInstance));
-    motor = (LKMotorInstance *)malloc(sizeof(LKMotorInstance));
+    // motor = (LKMotorInstance *)malloc(sizeof(LKMotorInstance));
     memset(motor, 0, sizeof(LKMotorInstance));
 
     motor->motor_settings = config->controller_setting_init_config;
@@ -62,6 +64,19 @@ LKMotorInstance *LKMotorInit(Motor_Init_Config_s *config)
     PIDInit(&motor->angle_PID, &config->controller_param_init_config.angle_PID);
     motor->other_angle_feedback_ptr = config->controller_param_init_config.other_angle_feedback_ptr;
     motor->other_speed_feedback_ptr = config->controller_param_init_config.other_speed_feedback_ptr;
+
+    motor->motor_type = config->motor_type;
+    switch(motor->motor_type){
+        case LK_MS5005:
+            motor->measure.max_ecd = 32768;
+            break;
+        case LK9025:
+            motor->measure.max_ecd = 16383;
+            break;
+        default: // other motors should not be registered here
+            while (1)
+                LOGERROR("[dji_motor]You must not register other motors using the API of DJI motor."); // 其他电机不应该在这里注册
+    }
 
     config->can_init_config.id = motor;
     config->can_init_config.can_module_callback = LKMotorDecode;
@@ -75,7 +90,7 @@ LKMotorInstance *LKMotorInit(Motor_Init_Config_s *config)
         sender_instance->tx_id = 0x280; //  修改tx_id为0x280,用于多电机发送,不用管其他LKMotorInstance的tx_id,它们仅作初始化用
     }
 
-    LKMotorEnable(motor);
+    LKMotorStop(motor);
     DWT_GetDeltaT(&motor->measure.feed_dwt_cnt);
     lkmotor_instance[idx++] = motor;
 
@@ -110,11 +125,15 @@ void LKMotorControl()
             if (setting->angle_feedback_source == OTHER_FEED)
                 pid_measure = *motor->other_angle_feedback_ptr;
             else
-                pid_measure = measure->real_current;
+                pid_measure = measure->total_angle;
             pid_ref = PIDCalculate(&motor->angle_PID, pid_measure, pid_ref);
             if (setting->feedforward_flag & SPEED_FEEDFORWARD)
                 pid_ref += *motor->speed_feedforward_ptr;
         }
+
+        //反转检测
+        if (setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
+            pid_ref *= -1;
 
         if ((setting->close_loop_type & SPEED_LOOP) && setting->outer_loop_type & (ANGLE_LOOP | SPEED_LOOP))
         {
@@ -122,7 +141,7 @@ void LKMotorControl()
                 pid_measure = *motor->other_speed_feedback_ptr;
             else
                 pid_measure = measure->speed_rads;
-            pid_ref = PIDCalculate(&motor->angle_PID, pid_measure, pid_ref);
+            pid_ref = PIDCalculate(&motor->speed_PID, pid_measure, pid_ref);
             if (setting->feedforward_flag & CURRENT_FEEDFORWARD)
                 pid_ref += *motor->current_feedforward_ptr;
         }
@@ -133,8 +152,7 @@ void LKMotorControl()
         }
 
         set = pid_ref;
-        if (setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
-            set *= -1;
+        
         // 这里随便写的,为了兼容多电机命令.后续应该将tx_id以更好的方式表达电机id,单独使用一个CANInstance,而不是用第一个电机的CANInstance
         memcpy(sender_instance->tx_buff + (motor->motor_can_ins->tx_id - 0x280) * 2, &set, sizeof(uint16_t));
 

@@ -125,7 +125,7 @@ HTMotorInstance *HTMotorInit(Motor_Init_Config_s *config)
     };
     motor->motor_daemon = DaemonRegister(&conf);
 
-    HTMotorEnable(motor);
+    HTMotorStop(motor);
     HTMotorSetMode(CMD_MOTOR_MODE, motor); // 确保电机已经上电并执行电机模式
     DWT_Delay(0.05f);
     HTMotorCalibEncoder(motor); // 将当前编码器位置作为零位
