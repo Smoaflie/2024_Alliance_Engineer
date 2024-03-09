@@ -65,4 +65,6 @@ void CANSetDLC(CANInstance *_instance, uint8_t length);
  */
 uint8_t CANTransmit(CANInstance *_instance,float timeout);
 
+/* 单次发送函数，用于只发不收的CAN通信（比如激活命令） */
+uint8_t CANTransmit_once(CANInstance *_instance, float timeout);
 #endif
