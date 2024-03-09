@@ -131,10 +131,12 @@ static void DecodeDJIMotor(CANInstance *_instance)
     measure->temperature = rxbuff[6];
 
     // 多圈角度计算,前提是假设两次采样间电机转过的角度小于180°,自己画个图就清楚计算过程了
-    if ((int16_t)(measure->ecd - measure->last_ecd) > 4096)
+    static uint8_t init_flag = 0; //需加个标志位，避免当前编码器值大于半圈时一上电就圈数-1
+    if ((int16_t)(measure->ecd - measure->last_ecd) > 4096 && init_flag)
         measure->total_round--;
-    else if ((int16_t)(measure->ecd - measure->last_ecd) < -4096)
+    else if ((int16_t)(measure->ecd - measure->last_ecd) < -4096 && init_flag)
         measure->total_round++;
+    init_flag = 1;
     measure->total_angle = measure->total_round * 360 + measure->angle_single_round;
 }
 
