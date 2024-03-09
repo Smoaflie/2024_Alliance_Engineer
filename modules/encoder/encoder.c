@@ -13,6 +13,7 @@ static void DecodeEncoder(CANInstance *_instance)
     uint8_t *rxbuff                 = _instance->rx_buff;
     EncoderInstance_s *encoder      = (EncoderInstance_s *)_instance->id;
     Encoder_Measure_s *measure = &encoder->measure; // measure要多次使用,保存指针减小访存开销
+    float offset                    = encoder->offset;
 
     DaemonReload(encoder->daemon);
     encoder->dt = DWT_GetDeltaT(&encoder->feed_cnt);
@@ -21,6 +22,9 @@ static void DecodeEncoder(CANInstance *_instance)
     measure->last_ecd           = measure->ecd;
     // measure->ecd                = ((uint32_t)_instance->rx_buff[0]);
     measure->ecd                = rxbuff[2] << 16 | rxbuff[1] << 8 | rxbuff[0];
+
+    measure->ecd = measure->ecd >= offset ? (measure->ecd - offset) : (measure->ecd + 262144 - offset) ;
+
     measure->angle_single_round = ECD_ANGLE_TO_DEG * (float)measure->ecd;
 
     // 多圈角度计算,前提是假设两次采样间电机转过的角度小于180°,自己画个图就清楚计算过程了
@@ -49,6 +53,9 @@ EncoderInstance_s *EncoderInit(Encoder_Init_Config_s *config)
     config->can_init_config.id                  = instance;       // set id,eq to address(it is identity)
     instance->encoder_can_instance                = CANRegister(&config->can_init_config);
 
+    //配置偏移量
+    instance->offset = config->offset;
+
     // 注册守护线程
     Daemon_Init_Config_s daemon_config = {
         .callback     = EncoderLostCallback,
@@ -58,5 +65,6 @@ EncoderInstance_s *EncoderInit(Encoder_Init_Config_s *config)
     instance->daemon = DaemonRegister(&daemon_config);
 
     encoder_instance[idx++] = instance;
+    
     return instance;
 }

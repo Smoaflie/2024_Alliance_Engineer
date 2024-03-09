@@ -13,7 +13,7 @@
 #include "stdint.h"
 #include "daemon.h"
 
-#define ENCODER_CNT 2
+#define ENCODER_CNT 5
 
 #define ECD_ANGLE_TO_DEG 0.0013733f // (360/262,144),将编码器值转化为角度制
 
@@ -31,11 +31,15 @@ typedef struct
 typedef struct
 {
     CAN_Init_Config_s can_init_config;
+
+    uint32_t offset;    //电机偏移量|可选
 } Encoder_Init_Config_s;
 
 typedef struct
 {
     Encoder_Measure_s measure;            // 电机测量值
+
+    uint32_t offset;    //电机偏移量|可选
 
     CANInstance *encoder_can_instance; // 电机CAN实例
 
