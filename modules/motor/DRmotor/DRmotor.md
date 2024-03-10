@@ -1,11 +1,5 @@
 # DR motor
 
-`DrEmpower_can`为官方提供的stm32通过CAN通信控制电机的库函数
-
-**不用管，放在这只是方便参考**
-
-`DRmotor`为该框架应用层可调用的模块层代码
-
 DR_PDA04默认CAN通信波特率为`250k`需自行通过库函数`set_can_baud_rate()`将其修改为`1M`
 
 且该电机默认不开启状态实时回报，需使用库函数`enable_angle_speed_torque_state(uint8_t id_num)`和`set_state_feedback_rate_ms(uint8_t id_num, uint32_t n_ms)`将其启动

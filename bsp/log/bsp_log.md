@@ -32,7 +32,7 @@ bsp_log是基于segger RTT实现的日志打印模块。
 int printf_log(const char *fmt, ...);
 void Float2Str(char *str, float va); // 输出浮点需要先用此函数进行转换
 ```
-
+                                                                                              
 调用第一个函数，可以通过jlink或dap-link向调试器连接的上位机发送信息，格式和printf相同，示例如下：
 
 ```c

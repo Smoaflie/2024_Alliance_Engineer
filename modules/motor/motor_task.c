@@ -1,5 +1,5 @@
 #include "motor_task.h"
-#include "LK9025.h"
+#include "LKmotor.h"
 #include "HT04.h"
 #include "dji_motor.h"
 #include "step_motor.h"
