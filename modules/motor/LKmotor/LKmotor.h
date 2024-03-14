@@ -33,6 +33,8 @@ typedef struct
 
     float feed_dt;
     uint32_t feed_dwt_cnt;
+
+    uint8_t ecd_init_flag;
 } LKMotor_Measure_t;
 
 typedef struct
