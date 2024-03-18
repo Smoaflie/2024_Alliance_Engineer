@@ -112,8 +112,9 @@ uint8_t CANTransmit(CANInstance *_instance, float timeout)
     {
         if (DWT_GetTimeline_ms() - dwt_start > timeout) // 超时
         {
-            LOGWARNING("[bsp_can] CAN MAILbox full! failed to add msg to mailbox. Cnt [%d]", busy_count);
+            LOGWARNING("[bsp_can] CAN MAILbox full! failed to add msg to mailbox. Cnt [%lu]. Current instance hcan[%d] tx_id:[0x%x]", busy_count, _instance->can_handle == &hcan1 ? 1 : 2, _instance->txconf.StdId);
             busy_count++;
+            // HAL_CAN_AbortTxRequest(_instance->can_handle,_instance->tx_mailbox);
             return 0;
         }
     }
@@ -121,39 +122,9 @@ uint8_t CANTransmit(CANInstance *_instance, float timeout)
     // tx_mailbox会保存实际填入了这一帧消息的邮箱,但是知道是哪个邮箱发的似乎也没啥用
     if (HAL_CAN_AddTxMessage(_instance->can_handle, &_instance->txconf, _instance->tx_buff, &_instance->tx_mailbox))
     {
-        LOGWARNING("[bsp_can] CAN bus BUS! cnt:%d", busy_count);
+        LOGWARNING("[bsp_can] CAN bus BUS! cnt:%lu Current instance tx_id:[0x%x]", busy_count, _instance->txconf.StdId);
         busy_count++;
-        return 0;
-    }
-    return 1; // 发送成功
-}
-
-/* 单次发送函数 */
-uint8_t CANTransmit_once(CANInstance *_instance, float timeout)
-{
-    if (!idx)
-    {
-        CANServiceInit(); // 判断是否进行过初始化,先进行硬件初始化
-        LOGINFO("[bsp_can] CAN Service Init");
-    }
-
-    static uint32_t busy_count;
-    float wait_time __attribute__((unused)); // for cancel warning
-    float dwt_start = DWT_GetTimeline_ms();
-    while (HAL_CAN_GetTxMailboxesFreeLevel(_instance->can_handle) == 0) // 等待邮箱空闲
-    {
-        if (DWT_GetTimeline_ms() - dwt_start > timeout) // 超时
-        {
-            LOGWARNING("[bsp_can] CAN MAILbox full! failed to add msg to mailbox. Cnt [%d]", busy_count);
-            busy_count++;
-            return 0;
-        }
-    }
-    // tx_mailbox会保存实际填入了这一帧消息的邮箱,但是知道是哪个邮箱发的似乎也没啥用
-    if (HAL_CAN_AddTxMessage(_instance->can_handle, &_instance->txconf, _instance->tx_buff, &_instance->tx_mailbox))
-    {
-        LOGWARNING("[bsp_can] CAN bus BUS! cnt:%d", busy_count);
-        busy_count++;
+        // HAL_CAN_AbortTxRequest(_instance->can_handle,_instance->tx_mailbox);
         return 0;
     }
     return 1; // 发送成功

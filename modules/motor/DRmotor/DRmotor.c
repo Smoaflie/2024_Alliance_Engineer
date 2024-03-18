@@ -94,7 +94,7 @@ DRMotorInstance *DRMotorInit(Motor_Init_Config_s *config)
             .tx_buff = {0xF1,0x55,0x03,0x00,0x01,0x00,0x00,0x00},
             .txconf.StdId = (config->can_init_config.tx_id << 5) + 0x1f,
         };
-        CANTransmit_once(&can_tmp_transmit_instance, 2);
+        CANTransmit(&can_tmp_transmit_instance, 2);
     }
     
 
@@ -138,7 +138,7 @@ void DRMotorControl()
                 .txconf.StdId = (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x1e,
                 .txconf.DLC = 8,    // Q: 如果不手动设置DLC，在运行一段时间后会发长度为0的包，不知道为什么
             };
-            CANTransmit_once(&can_tmp_transmit_instance, 2);
+            CANTransmit(&can_tmp_transmit_instance, 2);
         }
 
         if ((setting->close_loop_type & ANGLE_LOOP) && setting->outer_loop_type == ANGLE_LOOP)
