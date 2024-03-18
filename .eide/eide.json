@@ -26,7 +26,8 @@
   "targets": {
     "Debug": {
       "excludeList": [
-        "Src/syscalls.c"
+        "Src/syscalls.c",
+        "modules/motor/DRmotor/DrEmpower_can.c"
       ],
       "toolchain": "GCC",
       "compileConfig": {
@@ -108,7 +109,9 @@
           "application/cmd",
           "application/gimbal",
           "application/shoot",
-          "application"
+          "application",
+          "application/test",
+          "modules/encoder"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",

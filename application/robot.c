@@ -31,6 +31,10 @@
 #include "robot_cmd.h"
 #endif
 
+#ifdef TEST_MODE
+#include "test.h"
+#endif 
+
 void RobotInit()
 {
     // 关闭中断,防止在初始化过程中发生中断
@@ -40,6 +44,7 @@ void RobotInit()
 
     BSPInit();
     buzzer_one_note(Do_freq, 0.1f);
+
 #if defined(ONE_BOARD) || defined(GIMBAL_BOARD)
     RobotCMDInit();
     buzzer_one_note(Re_freq, 0.1f);
@@ -54,6 +59,9 @@ void RobotInit()
     buzzer_one_note(So_freq, 0.1f);
 #endif
 
+#ifdef TEST_MODE
+    TestInit();
+#endif
     // 初始化完成,开启中断
     __enable_irq();
 }
@@ -68,5 +76,9 @@ void RobotTask()
 
 #if defined(ONE_BOARD) || defined(CHASSIS_BOARD)
     ChassisTask();
+#endif
+
+#ifdef TEST_MODE
+    _TestTask();
 #endif
 }
