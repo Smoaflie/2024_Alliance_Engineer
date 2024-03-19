@@ -130,8 +130,12 @@ uint64_t DWT_GetTimeline_us(void)
 void DWT_Delay(float Delay)
 {
     uint32_t tickstart = DWT->CYCCNT;
-    float wait         = Delay;
-
-    while ((float)(DWT->CYCCNT - tickstart) < wait * (float)CPU_FREQ_Hz)
-        ;
+    // todo:DWT->CYCCNT计数最高只能到4e+09附近，实测DWT_Delay(100)会卡在循环中出不去，故出此下策
+    // 如果你想问哪里有DWT_Delay，是因为之前有人在USB初始化中使用了他，估计是以为该函数延时的单位是毫秒……已经被我改了
+    uint16_t times = Delay / 10;    
+    float wait         = Delay-times*10;
+    while(times--){
+        while((float)(DWT->CYCCNT - tickstart) < 10 * (float)CPU_FREQ_Hz);
+    }
+    while ((float)(DWT->CYCCNT - tickstart) < wait * (float)CPU_FREQ_Hz);
 }
