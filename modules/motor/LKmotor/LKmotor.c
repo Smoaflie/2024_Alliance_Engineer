@@ -39,12 +39,11 @@ static void LKMotorDecode(CANInstance *_instance)
 
     measure->temperature = rx_buff[1];
     
-    if ((int16_t)measure->ecd - measure->last_ecd > measure->max_ecd/2 && measure->ecd_init_flag)
+    if ((int16_t)measure->ecd - measure->last_ecd > measure->max_ecd/2)
         measure->total_round--;
-    else if ((int16_t)measure->ecd - measure->last_ecd < -measure->max_ecd/2 && measure->ecd_init_flag)
+    else if ((int16_t)measure->ecd - measure->last_ecd < -measure->max_ecd/2)
         measure->total_round++;
-    measure->ecd_init_flag = 1;
-    
+
     measure->total_angle = measure->total_round * 360 + measure->angle_single_round;
 }
 
