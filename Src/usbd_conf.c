@@ -97,9 +97,9 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
   /* USER CODE BEGIN USB_OTG_FS_MspInit 1 */
         // 上电后重新枚举usb设备
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
-        DWT_Delay(100);
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
-        DWT_Delay(100);
+        DWT_Delay(0.1);
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_SET);
+        DWT_Delay(0.1);
   /* USER CODE END USB_OTG_FS_MspInit 1 */
   }
 }

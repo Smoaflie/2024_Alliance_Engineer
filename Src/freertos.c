@@ -152,7 +152,7 @@ void StartDefaultTask(void *argument)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN StartDefaultTask */
     UNUSED(argument);
-    osThreadTerminate(NULL); // 避免空置和切换占用cpu
+    osThreadTerminate(defaultTaskHandle); // 避免空置和切换占用cpu
   /* USER CODE END StartDefaultTask */
 }
 
