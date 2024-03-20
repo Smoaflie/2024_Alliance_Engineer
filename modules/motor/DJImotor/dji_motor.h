@@ -40,8 +40,6 @@ typedef struct
 
     float total_angle;   // 总角度,注意方向
     int32_t total_round; // 总圈数,注意方向
-
-    uint8_t ecd_init_flag;  // ecd初始化标志,避免上电瞬间圈数-1
 } DJI_Motor_Measure_s;
 
 /**
