@@ -1,6 +1,12 @@
 # master_process
 
-
+> 2024.3.26 调整
+> 
+> 将`master_process.c`函数名调整为更符合名字的上位机通信（而非Visionxxx）
+> 原vision函数移到新文件`vision.c`内并修改内容为调用MASTERProcess_xxx
+> 不影响APP层
+> 吐槽：原master_process是什么意思，我想改成host_machine，但可能会影响其他仓库
+> // todo:vision.c未修改，待改进
 
 <p align='right'>neozng1@hnu.edu.cn</p>
 

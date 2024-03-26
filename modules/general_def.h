@@ -6,7 +6,7 @@
 #ifndef PI
 #define PI 3.1415926535f
 #endif
-#define PI2 (PI * 2.0f) // 2 pi
+#define PI2 1.5707963268f // 2 pi
 
 #define RAD_2_DEGREE 57.2957795f    // 180/pi
 #define DEGREE_2_RAD 0.01745329252f // pi/180

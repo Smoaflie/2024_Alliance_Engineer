@@ -2,75 +2,40 @@
 #define MASTER_PROCESS_H
 
 #include "bsp_usart.h"
-#include "seasky_protocol.h"
+#include "bsp_usb.h"
+#include "daemon.h"
+#include "vision.h" // 可以在不修改代码的情况下更新model层
 
-#define VISION_RECV_SIZE 18u // 当前为固定值,36字节
-#define VISION_SEND_SIZE 36u
-
-#pragma pack(1)
-typedef struct
-{
-    float pitch;
-    float yaw;
-    uint16_t coordinate_X;
-    uint16_t coordinate_Y;
-} Vision_Recv_s;
+#define Host_Instance_MX_CNT   1
 
 typedef enum {
-    COLOR_NONE = 0,
-    COLOR_BLUE = 1,
-    COLOR_RED  = 2,
-} Enemy_Color_e;
+    HOST_USART = 0, // 串口通信
+    HOST_VCP,       // 虚拟串口/USB通信
+} host_comm_mode;
 
-typedef enum {
-    VISION_MODE_AIM        = 0,
-    VISION_MODE_SMALL_BUFF = 1,
-    VISION_MODE_BIG_BUFF   = 2
-} Work_Mode_e;
+typedef struct {
+    void *comm_instance;      // 通信实例，会被转换为串口或USB通信实例
+    host_comm_mode comm_mode; // 通信方式
+    DaemonInstance *daemon;   // 守护进程
+} HostInstance;
 
-typedef enum {
-    BULLET_SPEED_NONE = 0,
-    BIG_AMU_16        = 16,
-    SMALL_AMU_30      = 30,
-} Bullet_Speed_limit_e;
-
-typedef struct
-{
-    Enemy_Color_e enemy_color;
-    Work_Mode_e work_mode;
-    Bullet_Speed_limit_e bullet_Speed_limit;
-    float bullet_speed_current;
-} Vision_Send_s;
-#pragma pack()
+typedef struct {
+    host_comm_mode comm_mode;         // 通信方式
+    void *callback;                   // 解析收到的数据的回调函数
+    uint8_t RECV_SIZE;                // 接收缓冲区大小
+    UART_HandleTypeDef *usart_handle; // 串口通信对应的handle
+} HostInstanceConf;
 
 /**
- * @brief 调用此函数初始化和视觉的串口通信
+ * @brief 调用此函数初始化上位机
  *
- * @param handle 用于和视觉通信的串口handle(C板上一般为USART1,丝印为USART2,4pin)
  */
-Vision_Recv_s *VisionInit(UART_HandleTypeDef *_handle);
+HostInstance *HostInit(HostInstanceConf *host_conf);
 
 /**
- * @brief 发送视觉数据
+ * @brief 发送数据
  *
  */
-void VisionSend();
-
-/**
- * @brief 设置视觉发送标志位
- *
- * @param enemy_color
- * @param work_mode
- * @param bullet_speed
- */
-// void VisionSetFlag(Enemy_Color_e enemy_color, Work_Mode_e work_mode, Bullet_Speed_e bullet_speed);
-
-/**
- * @brief 设置发送数据的姿态部分
- *
- * @param yaw
- * @param pitch
- */
-void VisionSetAltitude(float yaw, float pitch, float roll);
+void HostSend(HostInstance *instance, uint8_t *send_buf, uint16_t tx_len);
 
 #endif // !MASTER_PROCESS_H

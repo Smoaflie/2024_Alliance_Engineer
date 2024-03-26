@@ -28,3 +28,5 @@ typedef struct
 uint8_t *USBInit(USB_Init_Config_s usb_conf); // bsp初始化时调用会重新枚举设备
 
 void USBTransmit(uint8_t *buffer, uint16_t len); // 通过usb发送数据
+
+void USBRefresh(); // 重新枚举USB设备
