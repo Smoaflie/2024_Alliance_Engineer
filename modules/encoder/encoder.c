@@ -26,6 +26,7 @@ static void DecodeEncoder(CANInstance *_instance)
 
     switch (encoder->encoder_type) {
         case MT6825:
+        default:
             ECD_MAX_VAL  = 262144;
             ECD_HALF_VAL = 131072;
             ECD_TO_DEG   = MT6825_ECD_TO_DEG;
