@@ -2,6 +2,7 @@
 #include "general_def.h"
 #include "bsp_dwt.h"
 #include "bsp_log.h"
+#include <stdint.h>
 
 static uint8_t idx = 0; // register idx,是该文件的全局电机索引,在注册时使用
 /* DJI电机的实例,此处仅保存指针,内存的分配将通过电机实例初始化时通过malloc()进行 */
@@ -277,6 +278,9 @@ void DJIMotorControl()
 
         if (motor_setting->feedback_reverse_flag == FEEDBACK_DIRECTION_REVERSE)
             pid_ref *= -1;
+#ifdef SAMPLING
+        set = (int16_t)motor_controller->pid_ref;
+#endif
 
         
         // 获取最终输出

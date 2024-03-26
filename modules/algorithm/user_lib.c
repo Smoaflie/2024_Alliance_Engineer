@@ -211,9 +211,9 @@ float sin_signal_generate(float F_start, float F_end, float repeat_time, uint8_t
     static float F = 0;
     if (F == 0) F = F_start;
     static float lasttime = 0;
-    // 频率超过限定，返回0
+    // 频率超过限定，返回1
     if (F > F_end) {
-        *SE_signal = 0;
+        *SE_signal = 1;
         return 0;
     }
     // 保证sin初值为0

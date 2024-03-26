@@ -2,20 +2,20 @@
 #include "stdlib.h"
 #include "bsp_dwt.h"
 
-static TFMiniInstance *tfmini;
+static TFMiniInstance *tfmini_;
 
 TFMiniInstance *TFMiniRegister(I2C_HandleTypeDef *hi2c)
 {
-	tfmini = (TFMiniInstance *)malloc(sizeof(TFMiniInstance));
+	tfmini_ = (TFMiniInstance *)malloc(sizeof(TFMiniInstance));
 	IIC_Init_Config_s conf = {
 		.handle = hi2c,
 		.dev_address = 0x10,
-		.id = tfmini,
+		.id = tfmini_,
 		.work_mode = IIC_BLOCK_MODE,
 	};
-	tfmini->iic = IICRegister(&conf);
+	tfmini_->iic = IICRegister(&conf);
 	DWT_Delay(0.5);
-	return tfmini;
+	return tfmini_;
 }
 
 float GetDistance(TFMiniInstance *tfmini)
