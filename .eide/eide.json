@@ -108,7 +108,10 @@
           "application/cmd",
           "application/gimbal",
           "application/shoot",
-          "application"
+          "application",
+          "application/test",
+          "modules/encoder",
+          "modules/tool"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",

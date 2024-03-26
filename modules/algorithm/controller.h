@@ -28,14 +28,14 @@
 
 // PID 优化环节使能标志位,通过位与可以判断启用的优化环节;也可以改成位域的形式
 typedef enum {
-    PID_IMPROVE_NONE                = 0b00000000, // 0000 0000
-    PID_Integral_Limit              = 0b00000001, // 0000 0001
-    PID_Derivative_On_Measurement   = 0b00000010, // 0000 0010
-    PID_Trapezoid_Intergral         = 0b00000100, // 0000 0100
+    PID_IMPROVE_NONE                = 0b00000000, // 0000 0000  是否开启优化
+    PID_Integral_Limit              = 0b00000001, // 0000 0001  积分限幅
+    PID_Derivative_On_Measurement   = 0b00000010, // 0000 0010  微分先行
+    PID_Trapezoid_Intergral         = 0b00000100, // 0000 0100  梯形积分
     PID_Proportional_On_Measurement = 0b00001000, // 0000 1000
     PID_OutputFilter                = 0b00010000, // 0001 0000
-    PID_ChangingIntegrationRate     = 0b00100000, // 0010 0000
-    PID_DerivativeFilter            = 0b01000000, // 0100 0000
+    PID_ChangingIntegrationRate     = 0b00100000, // 0010 0000  变速积分
+    PID_DerivativeFilter            = 0b01000000, // 0100 0000  微分滤波器
     PID_ErrorHandle                 = 0b10000000, // 1000 0000
 } PID_Improvement_e;
 
