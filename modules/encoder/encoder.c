@@ -30,15 +30,16 @@ static void DecodeEncoder(CANInstance *_instance)
             ECD_MAX_VAL  = 262144;
             ECD_HALF_VAL = 131072;
             ECD_TO_DEG   = MT6825_ECD_TO_DEG;
+            measure->ecd = rxbuff[2] << 16 | rxbuff[1] << 8 | rxbuff[0];
             break;
         case me02_can:
             ECD_MAX_VAL  = 32768;
             ECD_HALF_VAL = 16384;
             ECD_TO_DEG   = me02_ECD_TO_DEG;
+            measure->ecd = (rxbuff[3] << 8) | rxbuff[2];
             break;
     }
 
-    measure->ecd = (rxbuff[3] << 8) | rxbuff[2];
     measure->ecd = measure->ecd >= offset ? (measure->ecd - offset) : (measure->ecd + ECD_MAX_VAL - offset);
     // 多圈角度计算,前提是假设两次采样间电机转过的角度小于180°,自己画个图就清楚计算过程了
     if ((int32_t)(measure->ecd - measure->last_ecd) > ECD_HALF_VAL)
