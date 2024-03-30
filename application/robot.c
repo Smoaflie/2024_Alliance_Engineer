@@ -32,7 +32,7 @@
 #endif
 
 #ifdef TEST_MODE
-#include "test.h"
+//#include "test.h"
 #endif 
 
 void RobotInit()
@@ -60,7 +60,7 @@ void RobotInit()
 #endif
 
 #ifdef TEST_MODE
-    TestInit();
+    //TestInit();
 #endif
     // 初始化完成,开启中断
     __enable_irq();
@@ -79,6 +79,6 @@ void RobotTask()
 #endif
 
 #ifdef TEST_MODE
-    _TestTask();
+    //_TestTask();
 #endif
 }
