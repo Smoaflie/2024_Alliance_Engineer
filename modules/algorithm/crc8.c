@@ -46,7 +46,7 @@ uint8_t crc_8(const uint8_t *input_str, size_t num_bytes)
             crc = sht75_crc_table[(*ptr++) ^ crc];
         }
     return crc;
-}
+}                                   
 
 /*
  * uint8_t update_crc_8( unsigned char crc, unsigned char val );

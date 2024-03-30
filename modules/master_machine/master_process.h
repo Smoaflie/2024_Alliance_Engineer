@@ -6,7 +6,7 @@
 #include "daemon.h"
 #include "vision.h" // 可以在不修改代码的情况下更新model层
 
-#define Host_Instance_MX_CNT   1
+#define Host_Instance_MX_CNT 1
 
 typedef enum {
     HOST_USART = 0, // 串口通信

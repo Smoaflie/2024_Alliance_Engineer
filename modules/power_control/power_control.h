@@ -1,8 +1,5 @@
 #ifndef POWER_CONTROl
 #define POWER_CONTROl
-
-#define MAX_POWER 60
-
 typedef struct{
     //力矩电流与电调力矩电流控制值之间的转化系数
     float cmd_to_torque;
@@ -16,7 +13,7 @@ typedef struct{
     float constant;
     //功率分配常数
     float power_distribution;
-    //减速比
+    //所用电机减速比
     float reduction_ratio;
 }Coefficient_t;
 
@@ -42,7 +39,7 @@ typedef struct{
     Physical_Quantity_t physical_quantity;
 }PowerControlInstance;
 
-extern PowerControlInstance *PowerControlInit(void);
+extern PowerControlInstance *PowerControlInit(PowerControlInstance *init);
 extern float PowerControl(PowerControlInstance *power_control_instance,float motor_output,float motor_speed);
 
 #endif
