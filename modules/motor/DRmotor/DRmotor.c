@@ -92,7 +92,7 @@ DRMotorInstance *DRMotorInit(Motor_Init_Config_s *config)
             .tx_mailbox = motor->motor_can_ins->tx_mailbox,
             .txconf = motor->motor_can_ins->txconf,
             .tx_buff = {0xF1,0x55,0x03,0x00,0x01,0x00,0x00,0x00},
-            .txconf.StdId = (config->can_init_config.tx_id << 5) + 0x1f,
+            .txconf.StdId = (config->can_init_config.tx_id - 1) + 0x1f,
         };
         CANTransmit(&can_tmp_transmit_instance, 2);
     }
