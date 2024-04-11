@@ -1,0 +1,27 @@
+{
+    "version": 5,
+    "beforeBuildTasks": [],
+    "afterBuildTasks": [],
+    "global": {
+        "$float-abi-type": "hard",
+        "output-debug-info": "enable"
+    },
+    "c/cpp-compiler": {
+        "language-c": "c11",
+        "language-cpp": "c++11",
+        "optimization": "level-debug",
+        "warnings": "all-warnings",
+        "one-elf-section-per-function": true,
+        "one-elf-section-per-data": true
+    },
+    "asm-compiler": {
+        "ASM_FLAGS": "-DDEBUG"
+    },
+    "linker": {
+        "output-format": "elf",
+        "remove-unused-input-sections": true,
+        "LD_FLAGS": "-TSTM32H723VGTX_FLASH.ld",
+        "$toolName": "auto",
+        "LIB_FLAGS": "modules/algorithm/AHRS.lib"
+    }
+}

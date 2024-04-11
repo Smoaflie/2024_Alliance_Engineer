@@ -1,0 +1,182 @@
+{
+  "name": "2024_ENGINEER_Frame",
+  "type": "ARM",
+  "dependenceList": [],
+  "srcDirs": [
+    ".eide/deps",
+    "Core",
+    "Middlewares",
+    "Drivers",
+    "bsp",
+    "modules",
+    "application",
+    "USB_DEVICE"
+  ],
+  "virtualFolder": {
+    "name": "<virtual_root>",
+    "files": [],
+    "folders": []
+  },
+  "outDir": "build",
+  "deviceName": null,
+  "packDir": null,
+  "miscInfo": {
+    "uid": "1f37de6558535282e11928c13b7d5bfe"
+  },
+  "targets": {
+    "Debug": {
+      "excludeList": [],
+      "toolchain": "GCC",
+      "compileConfig": {
+        "cpuType": "Cortex-M7",
+        "floatingPointHardware": "double",
+        "scatterFilePath": "",
+        "useCustomScatterFile": true,
+        "storageLayout": {
+          "RAM": [],
+          "ROM": []
+        },
+        "options": "null"
+      },
+      "uploader": "JLink",
+      "uploadConfig": {
+        "bin": "",
+        "baseAddr": "",
+        "cpuInfo": {
+          "vendor": "ST",
+          "cpuName": "STM32H723VG"
+        },
+        "proType": 1,
+        "speed": 8000,
+        "otherCmds": ""
+      },
+      "uploadConfigMap": {},
+      "custom_dep": {
+        "name": "default",
+        "incList": [
+          "Drivers/STM32H7xx_HAL_Driver/Inc",
+          "Drivers/STM32H7xx_HAL_Driver/Inc/Legacy",
+          "Middlewares/Third_Party/FreeRTOS/Source/include",
+          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS",
+          "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
+          "Drivers/CMSIS/Device/ST/STM32H7xx/Include",
+          "Drivers/CMSIS/Include",
+          ".eide/deps",
+          "bsp",
+          "bsp/dwt",
+          "bsp/can",
+          "bsp/usart",
+          "bsp/usb",
+          "bsp/gpio",
+          "bsp/spi",
+          "bsp/iic",
+          "bsp/log",
+          "bsp/pwm",
+          "bsp/bsp_legacy_support",
+          "modules/algorithm",
+          "modules/buzzer",
+          "modules/BMI088",
+          "modules/imu",
+          "modules/ist8310",
+          "modules/led",
+          "modules/led_task",
+          "modules/master_machine",
+          "modules/motor/DJImotor",
+          "modules/motor/LKmotor",
+          "modules/motor/HTmotor",
+          "modules/motor/step_motor",
+          "modules/motor/servo_motor",
+          "modules/motor",
+          "modules/oled",
+          "modules/referee",
+          "modules/remote",
+          "modules/super_cap",
+          "modules/can_comm",
+          "modules/message_center",
+          "modules/daemon",
+          "modules/vofa",
+          "modules",
+          "application/chassis",
+          "application/cmd",
+          "application/gimbal",
+          "application/shoot",
+          "application",
+          "Middlewares/ST/ARM/DSP/Inc",
+          "Core/Inc",
+          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
+          "application/first_stretch",
+          "modules/encoder",
+          "application/second_stretch",
+          "application/lift",
+          "application/horizontal",
+          "application/forward",
+          "Middlewares/Third_Party/SEGGER/RTT",
+          "Middlewares/Third_Party/SEGGER/Config",
+          "USB_DEVICE/App",
+          "USB_DEVICE/Target",
+          "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+          "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc"
+        ],
+        "libList": [
+          "Middlewares/ST/ARM/DSP/Lib",
+          "modules/algorithm"
+        ],
+        "sourceDirList": [],
+        "defineList": [
+          "DEBUG",
+          "USE_HAL_DRIVER",
+          "STM32H723xx",
+          "ARM_MATH_CM7"
+        ]
+      }
+    },
+    "Release": {
+      "excludeList": [],
+      "toolchain": "GCC",
+      "compileConfig": {
+        "cpuType": "Cortex-M3",
+        "floatingPointHardware": "none",
+        "scatterFilePath": "",
+        "useCustomScatterFile": true,
+        "storageLayout": {
+          "RAM": [],
+          "ROM": []
+        },
+        "options": "null"
+      },
+      "uploader": "JLink",
+      "uploadConfig": {
+        "bin": "",
+        "baseAddr": "",
+        "cpuInfo": {
+          "vendor": "null",
+          "cpuName": "null"
+        },
+        "proType": 1,
+        "speed": 8000,
+        "otherCmds": ""
+      },
+      "uploadConfigMap": {},
+      "custom_dep": {
+        "name": "default",
+        "incList": [
+          "Core/Inc",
+          "Drivers/STM32H7xx_HAL_Driver/Inc",
+          "Drivers/STM32H7xx_HAL_Driver/Inc/Legacy",
+          "Middlewares/Third_Party/FreeRTOS/Source/include",
+          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS",
+          "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
+          "Drivers/CMSIS/Device/ST/STM32H7xx/Include",
+          "Drivers/CMSIS/Include"
+        ],
+        "defineList": [
+          "USE_HAL_DRIVER",
+          "STM32H723xx"
+        ],
+        "sourceDirList": [],
+        "libList": []
+      }
+    }
+  },
+  "version": "3.3"
+}
