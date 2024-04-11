@@ -36,19 +36,23 @@ uint8_t DaemonIsOnline(DaemonInstance *instance)
 
 void DaemonTask()
 {
-    DaemonInstance *dins; // 提高可读性同时降低访存开销
-    for (size_t i = 0; i < idx; ++i)
+    while(1)
     {
-
-        dins = daemon_instances[i];
-        if (dins->temp_count > 0) // 如果计数器还有值,说明上一次喂狗后还没有超时,则计数器减一
-            dins->temp_count--;
-        else if (dins->callback) // 等于零说明超时了,调用回调函数(如果有的话)
+        DaemonInstance *dins; // 提高可读性同时降低访存开销
+        for (size_t i = 0; i < idx; ++i)
         {
-            dins->callback(dins->owner_id); // module内可以将owner_id强制类型转换成自身类型从而调用特定module的offline callback
-            // @todo 为蜂鸣器/led等增加离线报警的功能,非常关键!
+
+            dins = daemon_instances[i];
+            if (dins->temp_count > 0) // 如果计数器还有值,说明上一次喂狗后还没有超时,则计数器减一
+                dins->temp_count--;
+            else if (dins->callback) // 等于零说明超时了,调用回调函数(如果有的话)
+            {
+                dins->callback(dins->owner_id); // module内可以将owner_id强制类型转换成自身类型从而调用特定module的offline callback
+                // @todo 为蜂鸣器/led等增加离线报警的功能,非常关键!
+            }
         }
     }
+    
 }
 // (需要id的原因是什么?) 下面是copilot的回答!
 // 需要id的原因是因为有些module可能有多个实例,而我们需要知道具体是哪个实例offline
