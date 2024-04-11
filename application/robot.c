@@ -18,6 +18,8 @@
 #include "first.h"
 #include "second.h"
 #include "lift.h"
+#include "forward.h"
+#include "horizontal.h"
 
 void RobotInit()
 {
@@ -38,6 +40,11 @@ void RobotInit()
     buzzer_one_note(La_freq, 0.1f);
     ChassisInit();
     buzzer_one_note(So_freq, 0.1f);
+    Forward_Init();
+    buzzer_one_note(Fa_freq, 0.1f);
+    Horizontal_Init();
+    buzzer_one_note(Do_freq, 0.1);
+
 
     // 初始化完成,开启中断
     __enable_irq();
@@ -49,8 +56,7 @@ void RobotTask()
     First_Stretch_Task();
     Second_Stretch_Task();
     ChassisTask();
+    Horizontal_Task();
     Lift_Task();
-
-    
-
+    Forward_Task();
 }

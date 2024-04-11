@@ -36,6 +36,8 @@ uint8_t DaemonIsOnline(DaemonInstance *instance)
 
 void DaemonTask()
 {
+    while(1)
+    {
     DaemonInstance *dins; // 提高可读性同时降低访存开销
     for (size_t i = 0; i < idx; ++i)
     {
@@ -48,6 +50,7 @@ void DaemonTask()
             dins->callback(dins->owner_id); // module内可以将owner_id强制类型转换成自身类型从而调用特定module的offline callback
             // @todo 为蜂鸣器/led等增加离线报警的功能,非常关键!
         }
+    }
     }
 }
 // (需要id的原因是什么?) 下面是copilot的回答!
