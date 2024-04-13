@@ -63,6 +63,7 @@ USARTInstance *USARTRegister(USART_Init_Config_s *init_config)
     instance->usart_handle    = init_config->usart_handle;
     instance->recv_buff_size  = init_config->recv_buff_size;
     instance->module_callback = init_config->module_callback;
+    SCB_InvalidateDCache_by_Addr(instance->recv_buff,instance->recv_buff_size);
 
     usart_instance[idx++] = instance;
     USARTServiceInit(instance);

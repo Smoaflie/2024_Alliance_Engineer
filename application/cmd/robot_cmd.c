@@ -46,16 +46,16 @@ static void RemoteControlSet()
         if(1-is_range(rc_data[TEMP].rc.rocker_l_)&&(is_range(rc_data[TEMP].rc.rocker_r1)))
         {
             first_stretch_cmd_send.first_stretch_mode = FIRST_STRETCH;
-            first_stretch_cmd_send.first_left = rc_data[TEMP].rc.rocker_r1/100 + first_stretch_fetch_data.new_left_encoder;
-            first_stretch_cmd_send.first_right = -rc_data[TEMP].rc.rocker_r1/100 + first_stretch_fetch_data.new_right_encoder;
+            first_stretch_cmd_send.first_left = rc_data[TEMP].rc.rocker_r1 + first_stretch_fetch_data.new_left_encoder;
+            first_stretch_cmd_send.first_right = -rc_data[TEMP].rc.rocker_r1 + first_stretch_fetch_data.new_right_encoder;
             last_first_right_angle = first_stretch_fetch_data.new_right_encoder; 
             last_first_left_angle = first_stretch_fetch_data.new_left_encoder;
         }
         else if (1-is_range(rc_data[TEMP].rc.rocker_r1)&&(is_range(rc_data[TEMP].rc.rocker_l_)))
         {
             first_stretch_cmd_send.first_stretch_mode = FIRST_YAW;
-            first_stretch_cmd_send.first_left = rc_data[TEMP].rc.rocker_l_/100 + first_stretch_fetch_data.new_left_encoder;
-            first_stretch_cmd_send.first_right = rc_data[TEMP].rc.rocker_l_/100 + first_stretch_fetch_data.new_right_encoder;
+            first_stretch_cmd_send.first_left = rc_data[TEMP].rc.rocker_l_ + first_stretch_fetch_data.new_left_encoder;
+            first_stretch_cmd_send.first_right = rc_data[TEMP].rc.rocker_l_ + first_stretch_fetch_data.new_right_encoder;
             last_first_right_angle = first_stretch_fetch_data.new_right_encoder; 
             last_first_left_angle = first_stretch_fetch_data.new_left_encoder;
         }
@@ -66,6 +66,8 @@ static void RemoteControlSet()
             first_stretch_cmd_send.first_right = last_first_right_angle;
         }
     }
+                
+    
 }
 
 /**

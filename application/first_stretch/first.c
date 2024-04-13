@@ -56,7 +56,7 @@ void First_Stretch_Init()
             //.other_speed_feedback_ptr = &gimbal_IMU_data->INS_data.INS_gyro[INS_YAW_ADDRESS_OFFSET],
         },
         .controller_setting_init_config = {
-            .angle_feedback_source = OTHER_FEED,
+            .angle_feedback_source = MOTOR_FEED,
             .speed_feedback_source = MOTOR_FEED,
             .outer_loop_type       = ANGLE_LOOP,
             .close_loop_type       = ANGLE_LOOP | SPEED_LOOP,
@@ -66,12 +66,12 @@ void First_Stretch_Init()
     // 一级右电机
     Motor_Init_Config_s first_stretch_right_config = {
         .can_init_config = {
-            .can_handle = &hfdcan2,
-            .tx_id      = 4,
+            .can_handle = &hfdcan1,
+            .tx_id      = 1,
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 40,
+                .Kp            = 10,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
@@ -79,7 +79,7 @@ void First_Stretch_Init()
                 .MaxOut        = 0,
             },
             .speed_PID = {
-                .Kp            = 40,
+                .Kp            = 10,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
@@ -91,13 +91,13 @@ void First_Stretch_Init()
             //.other_speed_feedback_ptr = (&gimbal_IMU_data->INS_data.INS_gyro[INS_PITCH_ADDRESS_OFFSET]),
         },
         .controller_setting_init_config = {
-            .angle_feedback_source = OTHER_FEED,
+            .angle_feedback_source = MOTOR_FEED,
             .speed_feedback_source = MOTOR_FEED,
             .outer_loop_type       = ANGLE_LOOP,
             .close_loop_type       = SPEED_LOOP | ANGLE_LOOP,
             .motor_reverse_flag    = MOTOR_DIRECTION_NORMAL,
         },
-        .motor_type = M3508,
+        .motor_type = M2006 ,
     };
     // 电机对total_angle闭环,上电时为零,会保持静止,收到遥控器数据再动
     right_speed_motor = DJIMotorInit(&first_stretch_right_config);
@@ -145,6 +145,14 @@ void First_Stretch_Task()
             DJIMotorSetRef(right_speed_motor, first_stretch_cmd_recv.first_right);
             break;
         default:
+         DJIMotorEnable(left_speed_motor);
+            DJIMotorEnable(right_speed_motor);
+            //DJIMotorChangeFeed(left_speed_motor, ANGLE_LOOP, OTHER_FEED);
+            // DJIMotorChangeFeed(left_speed_motor, SPEED_LOOP, OTHER_FEED);
+            //DJIMotorChangeFeed(right_speed_motor, ANGLE_LOOP, OTHER_FEED);
+            // DJIMotorChangeFeed(right_speed_motor, SPEED_LOOP, OTHER_FEED);
+            DJIMotorSetRef(left_speed_motor, first_stretch_cmd_recv.first_left); // yaw和pitch会在robot_cmd中处理好多圈和单圈
+            DJIMotorSetRef(right_speed_motor, first_stretch_cmd_recv.first_right);
             break;
     }
 

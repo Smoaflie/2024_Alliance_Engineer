@@ -37,9 +37,9 @@ void RobotInit()
    // Second_Stretch_Init();
    // buzzer_one_note(Fa_freq, 0.1f);
     //Lift_Init();
-    buzzer_one_note(La_freq, 0.1f);
+   // buzzer_one_note(La_freq, 0.1f);
    // ChassisInit();
-    buzzer_one_note(So_freq, 0.1f);
+    //buzzer_one_note(So_freq, 0.1f);
    // Forward_Init();
     //buzzer_one_note(Fa_freq, 0.1f);
     //Horizontal_Init();
