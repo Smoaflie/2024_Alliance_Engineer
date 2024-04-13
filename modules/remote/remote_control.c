@@ -69,7 +69,6 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
         rc_ctrl[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL] = rc_ctrl[TEMP].key[KEY_PRESS];
     else
         memset(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL], 0, sizeof(Key_t));
-    
 
     
     uint16_t key_now = rc_ctrl[TEMP].key[KEY_PRESS].keys,                   // 当前按键是否按下
@@ -113,9 +112,9 @@ static void RemoteControlRxCallback()
  */
 static void RCLostCallback(void *id)
 {
-    memset(rc_ctrl, 0, sizeof(rc_ctrl)); // 清空遥控器数据
-    USARTServiceInit(rc_usart_instance); // 尝试重新启动接收
-    LOGWARNING("[rc] remote control lost");
+    // memset(rc_ctrl, 0, sizeof(rc_ctrl)); // 清空遥控器数据
+    // USARTServiceInit(rc_usart_instance); // 尝试重新启动接收
+     LOGWARNING("[rc] remote control lost");
 }
 
 RC_ctrl_t *RemoteControlInit(UART_HandleTypeDef *rc_usart_handle)
@@ -128,7 +127,7 @@ RC_ctrl_t *RemoteControlInit(UART_HandleTypeDef *rc_usart_handle)
 
     // 进行守护进程的注册,用于定时检查遥控器是否正常工作
     Daemon_Init_Config_s daemon_conf = {
-        .reload_count = 10, // 100ms未收到数据视为离线,遥控器的接收频率实际上是1000/14Hz(大约70Hz)
+        .reload_count = 500, // 100ms未收到数据视为离线,遥控器的接收频率实际上是1000/14Hz(大约70Hz)
         .callback = RCLostCallback,
         .owner_id = NULL, // 只有1个遥控器,不需要owner_id
     };

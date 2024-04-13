@@ -24,6 +24,7 @@ void Horizontal_Init()
     // 两个轮子的参数一样,改tx_id和反转标志位即可
     Motor_Init_Config_s Horizontal_motor_config = {
         .can_init_config.can_handle   = &hfdcan3,
+        .can_init_config.tx_id = 4,
         .controller_param_init_config = {
             .speed_PID = {
                 .Kp            = 10, // 4.5
