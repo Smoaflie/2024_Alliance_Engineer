@@ -16,25 +16,25 @@ static First_Stretch_Ctrl_Cmd_s first_stretch_cmd_recv;         // 来自cmd的�
 
 void First_Stretch_Init()
 {
-     Encoder_Init_Config_s encoder_config = {
-        .can_init_config = {
-            .can_handle = &hfdcan2,
-        }};
-    encoder_config.can_init_config.rx_id = 0x002;
-    left_angle_motor                      = EncoderInit(&encoder_config);
-    encoder_config.can_init_config.rx_id = 0x007;
-    right_angle_motor                      = EncoderInit(&encoder_config);
+    //  Encoder_Init_Config_s encoder_config = {
+    //     .can_init_config = {
+    //         .can_handle = &hfdcan2,
+    //     }};
+    // encoder_config.can_init_config.rx_id = 0x002;
+    // left_angle_motor                      = EncoderInit(&encoder_config);
+    // encoder_config.can_init_config.rx_id = 0x007;
+    // right_angle_motor                      = EncoderInit(&encoder_config);
    
 
     // 一级左电机
     Motor_Init_Config_s first_stretch_left_config = {
         .can_init_config = {
-            .can_handle = &hfdcan2,
-            .tx_id      = 1,
+            .can_handle = &hfdcan1,
+            .tx_id      = 4,
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 0,
+                .Kp            = 40,
                 .Ki            = 0,
                 .Kd            = 0,
                 .DeadBand      = 0.1f,
@@ -44,14 +44,14 @@ void First_Stretch_Init()
                 .MaxOut = 500,
             },
             .speed_PID = {
-                .Kp            = 0,
+                .Kp            = 40,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 0,
                 .MaxOut        = 0,
             },
-            .other_angle_feedback_ptr = &left_angle_motor->measure.total_angle,
+            //.other_angle_feedback_ptr = &left_angle_motor->measure.total_angle,
             // 还需要增加角速度额外反馈指针,注意方向,ins_task.md中有c板的bodyframe坐标系说明
             //.other_speed_feedback_ptr = &gimbal_IMU_data->INS_data.INS_gyro[INS_YAW_ADDRESS_OFFSET],
         },
@@ -67,11 +67,11 @@ void First_Stretch_Init()
     Motor_Init_Config_s first_stretch_right_config = {
         .can_init_config = {
             .can_handle = &hfdcan2,
-            .tx_id      = 2,
+            .tx_id      = 4,
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 0,
+                .Kp            = 40,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
@@ -79,14 +79,14 @@ void First_Stretch_Init()
                 .MaxOut        = 0,
             },
             .speed_PID = {
-                .Kp            = 0,
+                .Kp            = 40,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 0,
                 .MaxOut        = 0,
             },
-            .other_angle_feedback_ptr = &right_angle_motor->measure.total_angle,
+            //.other_angle_feedback_ptr = &right_angle_motor->measure.total_angle,
             // 还需要增加角速度额外反馈指针,注意方向,ins_task.md中有c板的bodyframe坐标系说明
             //.other_speed_feedback_ptr = (&gimbal_IMU_data->INS_data.INS_gyro[INS_PITCH_ADDRESS_OFFSET]),
         },
@@ -126,9 +126,9 @@ void First_Stretch_Task()
         case FIRST_YAW: // 后续只保留此模式
             DJIMotorEnable(left_speed_motor);
             DJIMotorEnable(right_speed_motor);
-            DJIMotorChangeFeed(left_speed_motor, ANGLE_LOOP, OTHER_FEED);
+           // DJIMotorChangeFeed(left_speed_motor, ANGLE_LOOP, OTHER_FEED);
             // DJIMotorChangeFeed(left_speed_motor, SPEED_LOOP, OTHER_FEED);
-            DJIMotorChangeFeed(right_speed_motor, ANGLE_LOOP, OTHER_FEED);
+           // DJIMotorChangeFeed(right_speed_motor, ANGLE_LOOP, OTHER_FEED);
             // DJIMotorChangeFeed(right_speed_motor, SPEED_LOOP, OTHER_FEED);
             DJIMotorSetRef(left_speed_motor, first_stretch_cmd_recv.first_left); // yaw和pitch会在robot_cmd中处理好多圈和单圈
             DJIMotorSetRef(right_speed_motor, first_stretch_cmd_recv.first_right);
@@ -137,9 +137,9 @@ void First_Stretch_Task()
         case FIRST_STRETCH: // 后续删除,或加入云台追地盘的跟随模式(响应速度更快)
             DJIMotorEnable(left_speed_motor);
             DJIMotorEnable(right_speed_motor);
-            DJIMotorChangeFeed(left_speed_motor, ANGLE_LOOP, OTHER_FEED);
+            //DJIMotorChangeFeed(left_speed_motor, ANGLE_LOOP, OTHER_FEED);
             // DJIMotorChangeFeed(left_speed_motor, SPEED_LOOP, OTHER_FEED);
-            DJIMotorChangeFeed(right_speed_motor, ANGLE_LOOP, OTHER_FEED);
+            //DJIMotorChangeFeed(right_speed_motor, ANGLE_LOOP, OTHER_FEED);
             // DJIMotorChangeFeed(right_speed_motor, SPEED_LOOP, OTHER_FEED);
             DJIMotorSetRef(left_speed_motor, first_stretch_cmd_recv.first_left); // yaw和pitch会在robot_cmd中处理好多圈和单圈
             DJIMotorSetRef(right_speed_motor, first_stretch_cmd_recv.first_right);
@@ -151,8 +151,8 @@ void First_Stretch_Task()
     
 
     // 设置反馈数据,主要是imu和yaw的ecd
-    first_stretch_feedback_data.new_left_encoder  = left_angle_motor->measure.total_angle;
-    first_stretch_feedback_data.new_right_encoder = right_angle_motor->measure.total_angle;
+    first_stretch_feedback_data.new_left_encoder  = left_speed_motor->measure.total_angle;
+    first_stretch_feedback_data.new_right_encoder = right_speed_motor->measure.total_angle;
 
     // 推送消息
     PubPushMessage(first_stretch_pub, (void *)&first_stretch_feedback_data);

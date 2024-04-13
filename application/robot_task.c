@@ -29,19 +29,7 @@ void StartROBOTTASK(void *argument)
         osDelay(3);
     }
 }
-void INIT(void *argument)
-{
-    /* USER CODE BEGIN INIT */
-    BuzzerPlay(StartUP_sound);
-    /* Infinite loop */
-    for (;;) {
-        RobotInit();
-        osDelay(3);
-        osThreadExit();
-    }
 
-    /* USER CODE END INIT */
-}
 void StartMOTORTASK(void *argument)
 {
     static float motor_dt;

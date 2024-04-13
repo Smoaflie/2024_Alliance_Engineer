@@ -36,9 +36,10 @@ uint8_t DaemonIsOnline(DaemonInstance *instance)
 
 void DaemonTask()
 {
-    while(1)
-    {
+    
     DaemonInstance *dins; // 提高可读性同时降低访存开销
+    for (;;)
+    {
     for (size_t i = 0; i < idx; ++i)
     {
 

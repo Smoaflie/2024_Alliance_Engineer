@@ -81,7 +81,7 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
             for (size_t i = 0; i < idx; ++i) {
                 if (dji_motor_instance[i]->motor_can_instance->can_handle == config->can_handle && dji_motor_instance[i]->motor_can_instance->rx_id == config->rx_id) {
                     LOGERROR("[dji_motor] ID crash. Check in debug mode, add dji_motor_instance to watch to get more information.");
-                    uint16_t can_bus = config->can_handle == &hfdcan1 ? 1 : 2;
+                    uint16_t can_bus = config->can_handle == &hfdcan1 ? 1 : config->can_handle == &hfdcan2?2:3;
                     while (1) // 6020的id 1-4和2006/3508的id 5-8会发生冲突(若有注册,即1!5,2!6,3!7,4!8) (1!5!,LTC! (((不是)
                         LOGERROR("[dji_motor] id [%d], can_bus [%d]", config->rx_id, can_bus);
                 }
@@ -204,12 +204,12 @@ DJIMotorInstance *DJIMotorInit(Motor_Init_Config_s *config)
     instance->motor_can_instance                = CANRegister(&config->can_init_config);
 
     // 注册守护线程
-    Daemon_Init_Config_s daemon_config = {
-        .callback     = DJIMotorLostCallback,
-        .owner_id     = instance,
-        .reload_count = 2, // 20ms未收到数据则丢失
-    };
-    instance->daemon = DaemonRegister(&daemon_config);
+    // Daemon_Init_Config_s daemon_config = {
+    //     .callback     = DJIMotorLostCallback,
+    //     .owner_id     = instance,
+    //     .reload_count = 20, // 20ms未收到数据则丢失
+    // };
+    // instance->daemon = DaemonRegister(&daemon_config);
 
     DJIMotorStop(instance);
     dji_motor_instance[idx++] = instance;
