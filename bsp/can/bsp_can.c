@@ -130,6 +130,26 @@ uint8_t CANTransmit(CANInstance *_instance, float timeout)
     return 1; // 发送成功
 }
 
+/* 单次发送函数 */
+uint8_t CANTransmit_once(CAN_HandleTypeDef* can_handle, uint32_t StdId, uint8_t* tx_buff, float timeout)
+{
+    if (!idx)
+    {
+        CANServiceInit(); // 判断是否进行过初始化,先进行硬件初始化
+        LOGINFO("[bsp_can] CAN Service Init");
+    }
+
+    static CANInstance tempTX_instance = {0};
+    tempTX_instance.txconf.DLC = 0x08;
+
+    tempTX_instance.can_handle = can_handle;
+    tempTX_instance.txconf.StdId = StdId;
+    memcpy(tempTX_instance.tx_buff,tx_buff,sizeof(tempTX_instance.tx_buff));
+
+    CANTransmit(&tempTX_instance, timeout);
+    return 1; // 发送成功
+}
+
 void CANSetDLC(CANInstance *_instance, uint8_t length)
 {
     // 发送长度错误!检查调用参数是否出错,或出现野指针/越界访问

@@ -1,5 +1,6 @@
 #include "motor_task.h"
 #include "LKmotor.h"
+#include "DRmotor.h"
 #include "HT04.h"
 #include "dji_motor.h"
 #include "dji_motor.h"
@@ -12,10 +13,8 @@ void MotorControlTask()
     // if(cnt%5==0) //200hz
     // if(cnt%10==0) //100hz
     DJIMotorControl();
-    
-    /* 如果有对应的电机则取消注释,可以加入条件编译或者register对应的idx判断是否注册了电机 */
-    // DRMotorControl();
-    // LKMotorControl();
+    DRMotorControl();
+    LKMotorControl();
 
     // legacy support
     // 由于ht04电机的反馈方式为接收到一帧消息后立刻回传,以此方式连续发送可能导致总线拥塞

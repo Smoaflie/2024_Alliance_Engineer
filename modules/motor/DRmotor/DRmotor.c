@@ -87,14 +87,10 @@ DRMotorInstance *DRMotorInit(Motor_Init_Config_s *config)
 
     //DR_PDA04电机每次上电都需要手动发送数据包开启实时状态反馈
     if(motor->motor_type == DR_PDA04){
-        CANInstance can_tmp_transmit_instance = {
-            .can_handle = motor->motor_can_ins->can_handle,
-            .tx_mailbox = motor->motor_can_ins->tx_mailbox,
-            .txconf = motor->motor_can_ins->txconf,
-            .tx_buff = {0xF1,0x55,0x03,0x00,0x01,0x00,0x00,0x00},
-            .txconf.StdId = (config->can_init_config.tx_id - 0x1d) + 0x1f,
-        };
-        CANTransmit(&can_tmp_transmit_instance, 2);
+        static uint8_t tx_buf_enable_PDA04_recall[] = {0xF1,0x55,0x03,0x00,0x01,0x00,0x00,0x00};
+        CANTransmit_once(motor->motor_can_ins->can_handle,
+                        (config->can_init_config.tx_id & (0x1f << 5)) + 0x1f,
+                        tx_buf_enable_PDA04_recall, 2);
     }
     
 
@@ -130,16 +126,12 @@ void DRMotorControl()
 
         //DR_B0x电机不支持实施状态反馈，需要自己发送查询命令
         if(motor->motor_type == DR_B0X){
-            CANInstance can_tmp_transmit_instance = {
-                .can_handle = motor->motor_can_ins->can_handle,
-                .tx_mailbox = motor->motor_can_ins->tx_mailbox,
-                .txconf = motor->motor_can_ins->txconf,
-                .tx_buff = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
-                .txconf.StdId = (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x1e,
-                .txconf.DLC = 8,    // Q: 如果不手动设置DLC，在运行一段时间后会发长度为0的包，不知道为什么
-            };
-            CANTransmit(&can_tmp_transmit_instance, 2);
+            static uint8_t tx_buf_B0X_recall[] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+            CANTransmit_once(motor->motor_can_ins->can_handle,
+                                (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x1e,
+                                tx_buf_B0X_recall, 2);
         }
+
 
         if ((setting->close_loop_type & ANGLE_LOOP) && setting->outer_loop_type == ANGLE_LOOP)
         {
