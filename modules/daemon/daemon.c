@@ -3,6 +3,7 @@
 #include "stdlib.h"
 #include "memory.h"
 #include "buzzer.h"
+#include "cmsis_os.h"
 
 // 用于保存所有的daemon instance
 static DaemonInstance *daemon_instances[DAEMON_MX_CNT] = {NULL};
@@ -36,18 +37,21 @@ uint8_t DaemonIsOnline(DaemonInstance *instance)
 
 void DaemonTask()
 {
-    DaemonInstance *dins; // 提高可读性同时降低访存开销
-    for (size_t i = 0; i < idx; ++i)
-    {
-
-        dins = daemon_instances[i];
-        if (dins->temp_count > 0) // 如果计数器还有值,说明上一次喂狗后还没有超时,则计数器减一
-            dins->temp_count--;
-        else if (dins->callback) // 等于零说明超时了,调用回调函数(如果有的话)
+    while(1){
+        DaemonInstance *dins; // 提高可读性同时降低访存开销
+        for (size_t i = 0; i < idx; ++i)
         {
-            dins->callback(dins->owner_id); // module内可以将owner_id强制类型转换成自身类型从而调用特定module的offline callback
-            // @todo 为蜂鸣器/led等增加离线报警的功能,非常关键!
+
+            dins = daemon_instances[i];
+            if (dins->temp_count > 0) // 如果计数器还有值,说明上一次喂狗后还没有超时,则计数器减一
+                dins->temp_count--;
+            else if (dins->callback) // 等于零说明超时了,调用回调函数(如果有的话)
+            {
+                dins->callback(dins->owner_id); // module内可以将owner_id强制类型转换成自身类型从而调用特定module的offline callback
+                // @todo 为蜂鸣器/led等增加离线报警的功能,非常关键!
+            }
         }
+        osDelay(1);
     }
 }
 // (需要id的原因是什么?) 下面是copilot的回答!
