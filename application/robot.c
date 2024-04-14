@@ -14,12 +14,9 @@
 #include "robot_task.h"
 #include "buzzer.h"
 #include "chassis.h"
-#include "robot_cmd.h"
-#include "first.h"
-#include "second.h"
 #include "lift.h"
-#include "forward.h"
-#include "horizontal.h"
+#include "first.h"
+#include "robot_cmd.h"
 
 void RobotInit()
 {
@@ -29,34 +26,25 @@ void RobotInit()
     __disable_irq();
 
     BSPInit();
-   //buzzer_one_note(Do_freq, 0.1);
+    //buzzer_one_note(Do_freq, 0.1);
     RobotCMDInit();
-    //buzzer_one_note(Re_freq, 0.1f);
-    First_Stretch_Init();
-    //buzzer_one_note(Mi_freq, 0.1f);
-   // Second_Stretch_Init();
-   // buzzer_one_note(Fa_freq, 0.1f);
-    //Lift_Init();
-   // buzzer_one_note(La_freq, 0.1f);
-   // ChassisInit();
+    //BuzzerPlay(RoboMaster_You);
+    //buzzer_one_note(La_freq, 1);
+    ChassisInit();                  
     //buzzer_one_note(So_freq, 0.1f);
-   // Forward_Init();
-    //buzzer_one_note(Fa_freq, 0.1f);
-    //Horizontal_Init();
-   // buzzer_one_note(Do_freq, 0.1);
-
-
+    Lift_Init();
+    First_Stretch_Init();
+    Second_Stretch_Init();
     // 初始化完成,开启中断
     __enable_irq();
 }
 
 void RobotTask()
 {
+    
     RobotCMDTask();
+    ChassisTask();
+    Lift_Task();
     First_Stretch_Task();
-    // Second_Stretch_Task();
-    // ChassisTask();
-    // Horizontal_Task();
-    // Lift_Task();
-    // Forward_Task();
+    Second_Stretch_Task();
 }

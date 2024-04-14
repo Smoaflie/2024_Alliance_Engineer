@@ -50,7 +50,6 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
     switch (motor->motor_type) {
         case M2006:
         case M3508:
-             motor_grouping = 0;
             if (motor_id < 4) // 根据ID分组
             {
                 motor_send_num = motor_id;
@@ -204,7 +203,7 @@ DJIMotorInstance *DJIMotorInit(Motor_Init_Config_s *config)
     config->can_init_config.id                  = instance;       // set id,eq to address(it is IdTypentity)
     instance->motor_can_instance                = CANRegister(&config->can_init_config);
 
-    // 注册守护线程
+    //注册守护线程
     // Daemon_Init_Config_s daemon_config = {
     //     .callback     = DJIMotorLostCallback,
     //     .owner_id     = instance,
@@ -323,9 +322,9 @@ void DJIMotorControl()
 
     // 遍历flag,检查是否要发送这一帧报文
     for (size_t i = 0; i < 9; ++i) {
-        //if (sender_enable_flag[i]) {
+        if (sender_enable_flag[i]) {
             // TODO:测试调试
             CANTransmit(&sender_assignment[i], 1);
-        //}
+        }
     }
 }

@@ -22,21 +22,20 @@ void Lift_Init()
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 0,
+                .Kp            = 15,
                 .Ki            = 0,
                 .Kd            = 0,
-                .DeadBand      = 0.1f,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .IntegralLimit = 0,
-                .MaxOut = 0,
+                .IntegralLimit =3000,
+                .MaxOut = 12000,
             },
             .speed_PID = {
-                .Kp            = 0,
+                .Kp            = 1,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .IntegralLimit = 0,
-                .MaxOut        = 0,
+                .IntegralLimit = 3000,
+                .MaxOut        = 15000,
             },
             //.other_angle_feedback_ptr = &left_angle_motor->measure.total_angle,
             // 还需要增加角速度额外反馈指针,注意方向,ins_task.md中有c板的bodyframe坐标系说明
@@ -58,20 +57,20 @@ void Lift_Init()
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 0,
+                .Kp            = 15,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .IntegralLimit = 0,
-                .MaxOut        = 0,
+                .IntegralLimit = 3000,
+                .MaxOut        = 12000,
             },
             .speed_PID = {
-                .Kp            = 0,
+                .Kp            = 1,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .IntegralLimit = 0,
-                .MaxOut        = 0,
+                .IntegralLimit = 3000,
+                .MaxOut        = 15000,
             },
             //.other_angle_feedback_ptr = &right_angle_motor->measure.total_angle,
             // 还需要增加角速度额外反馈指针,注意方向,ins_task.md中有c板的bodyframe坐标系说明
@@ -115,7 +114,7 @@ void Lift_Task()
             //DJIMotorChangeFeed(lift_left_motor, ANGLE_LOOP, OTHER_FEED);
             // DJIMotorChangeFeed(left_speed_motor, SPEED_LOOP, OTHER_FEED);
             //DJIMotorChangeFeed(lift_right_motor, ANGLE_LOOP, OTHER_FEED);
-            // DJIMotorChangeFeed(right_speed_motor, SPEED_LOOP, OTHER_FEED);
+            //DJIMotorChangeFeed(right_speed_motor, SPEED_LOOP, OTHER_FEED);
             DJIMotorSetRef(lift_left_motor, lift_cmd_recv.left); // yaw和pitch会在robot_cmd中处理好多圈和单圈
             DJIMotorSetRef(lift_right_motor, lift_cmd_recv.right);
             break;

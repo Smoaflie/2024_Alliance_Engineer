@@ -28,19 +28,19 @@ static uint8_t idx; // 全局CAN实例索引,每次有新的模块注册会自�
 static void CANAddFilter(CANInstance *_instance)
 {
     FDCAN_FilterTypeDef can_filter_conf;
-    //static uint8_t can1_filter_idx = 0, can2_filter_idx = 14, can3_filter_idx = 28; // 0-13给can1用,14-27给can2用,28-41给can3用
+    static uint8_t can1_filter_idx = 0, can2_filter_idx = 14, can3_filter_idx = 28; // 0-13给can1用,14-27给can2用,28-41给can3用
 
     can_filter_conf.IdType = FDCAN_STANDARD_ID;                       //标准ID
-	can_filter_conf.FilterIndex = 0;                                  //滤波器索引                   
-	can_filter_conf.FilterType = FDCAN_FILTER_RANGE;                   //允许接收两个ID
-	can_filter_conf.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;           //过滤器0关联到FIFO0  
-    can_filter_conf.FilterID1 = 0x000;                               //32位ID
-	can_filter_conf.FilterID2 = 0xfff;                               //接收ID1              //接收ID2
+	can_filter_conf.FilterIndex = (_instance->can_handle == &hfdcan1) ? (can1_filter_idx++) : ((_instance->can_handle == &hfdcan2) ? (can2_filter_idx++) : (can3_filter_idx++));                                  //滤波器索引                   
+	can_filter_conf.FilterType = FDCAN_FILTER_DUAL;                   //允许接收两个ID TODO: 后续可以优化使其能充分利用第二个ID位置
+	can_filter_conf.FilterConfig = (_instance->rx_id & 1) ? FDCAN_FILTER_TO_RXFIFO0 : FDCAN_FILTER_TO_RXFIFO1;           //过滤器0关联到FIFO0  
+	can_filter_conf.FilterID1 = 0x000;                               //32位ID接收ID1
+	can_filter_conf.FilterID2 = _instance->rx_id;                               //接收ID2
 	HAL_FDCAN_ConfigFilter(_instance->can_handle,&can_filter_conf);
     HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
 	HAL_FDCAN_ConfigFifoWatermark(&hfdcan1, FDCAN_CFG_RX_FIFO0, 1);
     HAL_FDCAN_ConfigGlobalFilter(&hfdcan2, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
-	HAL_FDCAN_ConfigFifoWatermark(&hfdcan2, FDCAN_CFG_RX_FIFO0, 1);
+	HAL_FDCAN_ConfigFifoWatermark(&hfdcan2, FDCAN_CFG_RX_FIFO1, 1);
     HAL_FDCAN_ConfigGlobalFilter(&hfdcan3, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
 	HAL_FDCAN_ConfigFifoWatermark(&hfdcan3, FDCAN_CFG_RX_FIFO0, 1); 		 				  
 	// HAL_FDCAN_ConfigGlobalFilter(_instance->can_handle, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
@@ -59,12 +59,12 @@ static void CANServiceInit()
 {
     HAL_FDCAN_Start(&hfdcan1);
     HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
-    //HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO1_NEW_MESSAGE,0);
+    HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO1_NEW_MESSAGE,0);
     HAL_FDCAN_Start(&hfdcan2);
-    //HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
     HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
+    HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO1_NEW_MESSAGE,0);
 	HAL_FDCAN_Start(&hfdcan3);
-    //HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
+    HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
     HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO1_NEW_MESSAGE,0);
 }
 
@@ -123,6 +123,7 @@ uint8_t CANTransmit(CANInstance *_instance, float timeout)
     static uint32_t busy_count;
     static volatile float wait_time __attribute__((unused)); // for cancel warning
     float dwt_start = DWT_GetTimeline_ms();
+    
     while (HAL_FDCAN_GetTxFifoFreeLevel(_instance->can_handle) == 0) // 等待邮箱空闲
     {
         if (DWT_GetTimeline_ms() - dwt_start > timeout) // 超时
