@@ -111,7 +111,8 @@
           "application",
           "application/test",
           "modules/encoder",
-          "modules/tool"
+          "modules/tool",
+          "modules/power_control"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",
