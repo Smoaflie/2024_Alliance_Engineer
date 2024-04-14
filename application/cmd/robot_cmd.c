@@ -9,7 +9,7 @@
 #include "message_center.h"
 #include "general_def.h"
 #include "dji_motor.h"
-//#include "forward.h"
+#include "forward.h"
 // bsp
 #include "bsp_dwt.h"
 #include "bsp_log.h"
@@ -299,7 +299,6 @@ static void MouseKeySet()
 
             // @todo 
             //为了防止干涉，这里应该判断伸出状态，再决定是否归位
-            //等转正了再完善（bushi）
             horizontal_cmd_send.Horizontal_mode=HORIZONTAL_INIT;
 
         }
@@ -394,58 +393,58 @@ void RobotCMDTask()
 //下面这个是前端的不用鸟它
 
 
-// int8_t mode;           // pitch和roll的模式
-// int8_t last_mode;
-// float last_angle;     // pitch的最后一次编码器角度
-// float relevant_angle; // pitch和roll的相对角度
-// // 动之前的roll编码器
-// float roll_last_angle; // roll的最后一次编码器角度
-// void mode_change();
+int8_t mode;           // pitch和roll的模式
+int8_t last_mode;
+float last_angle;     // pitch的最后一次编码器角度
+float relevant_angle; // pitch和roll的相对角度
+// 动之前的roll编码器
+float roll_last_angle; // roll的最后一次编码器角度
+void mode_change();
 
-// void control_forward()
-// {
-//     mode_change();
-//     if (mode ==PITCH_RUN_MODE) //pitch
-//     {
-//         last_angle = forward_fetch_data.new_left_angle;
-//     }
-//     if (mode == ROLL_RUN_MODE) //roll
-//     {
-//         relevant_angle = (forward_fetch_data.new_forward_angle - roll_last_angle) * Rotation_Ratio;
-//         last_angle     = forward_fetch_data.new_left_angle;
-//     }
-//     if (mode != ROLL_RUN_MODE && last_mode == ROLL_RUN_MODE) {
-//         relevant_angle = 0;
-//     }
-//     if (mode != ROLL_RUN_MODE) {
-//         roll_last_angle = forward_fetch_data.new_forward_angle;
-//     }
-//     forward_cmd_send.final_angle  = rc_data[TEMP].rc.rocker_l_ + rc_data[TEMP].rc.rocker_r1 + last_angle - relevant_angle; // 把roll动的时候的pitch编码器转过的角度减去
-//     forward_cmd_send.angel_output = PIDCalculate(encoder_pid, forward_fetch_data.new_left_angle,forward_cmd_send.final_angle);
+void control_forward()
+{
+    mode_change();
+    if (mode ==PITCH_RUN_MODE) //pitch
+    {
+        last_angle = forward_fetch_data.new_left_angle;
+    }
+    if (mode == ROLL_RUN_MODE) //roll
+    {
+        relevant_angle = (forward_fetch_data.new_forward_angle - roll_last_angle) * Rotation_Ratio;
+        last_angle     = forward_fetch_data.new_left_angle;
+    }
+    if (mode != ROLL_RUN_MODE && last_mode == ROLL_RUN_MODE) {
+        relevant_angle = 0;
+    }
+    if (mode != ROLL_RUN_MODE) {
+        roll_last_angle = forward_fetch_data.new_forward_angle;
+    }
+    forward_cmd_send.final_angle  = rc_data[TEMP].rc.rocker_l_ + rc_data[TEMP].rc.rocker_r1 + last_angle - relevant_angle; // 把roll动的时候的pitch编码器转过的角度减去
+    forward_cmd_send.angel_output = PIDCalculate(encoder_pid, forward_fetch_data.new_left_angle,forward_cmd_send.final_angle);
 
-//     if (mode == ROLL_RUN_MODE) {
-//         forward_cmd_send.angel_output1 = -forward_cmd_send.angel_output;
-//     } else {
-//         forward_cmd_send.angel_output1 = forward_cmd_send.angel_output;
-//     }
+    if (mode == ROLL_RUN_MODE) {
+        forward_cmd_send.angel_output1 = -forward_cmd_send.angel_output;
+    } else {
+        forward_cmd_send.angel_output1 = forward_cmd_send.angel_output;
+    }
 
-// }
+}
 
-// void mode_change()
-// {
+void mode_change()
+{
     
-//         if (((rc_data[TEMP].rc.rocker_l_ < 5)&&(rc_data[TEMP].rc.rocker_l_ > -5))&&((rc_data[TEMP].rc.rocker_r1 > 5)&&(rc_data[TEMP].rc.rocker_r1 < -5))) {
-//             mode = PITCH_RUN_MODE;
-//             forward_cmd_send.Forward_mode = PITCH;
-//         } else if (((rc_data[TEMP].rc.rocker_l_ > 5)&&(rc_data[TEMP].rc.rocker_l_ < -5))&&((rc_data[TEMP].rc.rocker_r1 < 5)&&(rc_data[TEMP].rc.rocker_r1 > -5))) {
-//             mode = ROLL_RUN_MODE;
-//             forward_cmd_send.Forward_mode = ROLL;
-//         } else if (((rc_data[TEMP].rc.rocker_l_ < 5)&&(rc_data[TEMP].rc.rocker_l_ > -5))&&((rc_data[TEMP].rc.rocker_r1 < 5)&&(rc_data[TEMP].rc.rocker_r1 > -5))) {
-//             mode = STOP_MODE;
-//             forward_cmd_send.Forward_mode = PITCH;
-//         }
-// }
-// void mode_record()
-// {
-//     last_mode = mode;
-// }
+        if (((rc_data[TEMP].rc.rocker_l_ < 5)&&(rc_data[TEMP].rc.rocker_l_ > -5))&&((rc_data[TEMP].rc.rocker_r1 > 5)&&(rc_data[TEMP].rc.rocker_r1 < -5))) {
+            mode = PITCH_RUN_MODE;
+            forward_cmd_send.Forward_mode = PITCH;
+        } else if (((rc_data[TEMP].rc.rocker_l_ > 5)&&(rc_data[TEMP].rc.rocker_l_ < -5))&&((rc_data[TEMP].rc.rocker_r1 < 5)&&(rc_data[TEMP].rc.rocker_r1 > -5))) {
+            mode = ROLL_RUN_MODE;
+            forward_cmd_send.Forward_mode = ROLL;
+        } else if (((rc_data[TEMP].rc.rocker_l_ < 5)&&(rc_data[TEMP].rc.rocker_l_ > -5))&&((rc_data[TEMP].rc.rocker_r1 < 5)&&(rc_data[TEMP].rc.rocker_r1 > -5))) {
+            mode = STOP_MODE;
+            forward_cmd_send.Forward_mode = PITCH;
+        }
+}
+void mode_record()
+{
+    last_mode = mode;
+}
