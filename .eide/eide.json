@@ -112,7 +112,8 @@
           "application/test",
           "modules/encoder",
           "modules/tool",
-          "modules/power_control"
+          "modules/power_control",
+          "modules/motor/DRmotor"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",
