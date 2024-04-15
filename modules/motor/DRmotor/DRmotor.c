@@ -89,7 +89,7 @@ DRMotorInstance *DRMotorInit(Motor_Init_Config_s *config)
     if(motor->motor_type == DR_PDA04){
         static uint8_t tx_buf_enable_PDA04_recall[] = {0xF1,0x55,0x03,0x00,0x01,0x00,0x00,0x00};
         CANTransmit_once(motor->motor_can_ins->can_handle,
-                        (config->can_init_config.tx_id - 0x1d) + 0x1f,
+                        (config->can_init_config.tx_id & (0x1f << 5)) + 0x1f,
                         tx_buf_enable_PDA04_recall, 2);
     }
     
@@ -131,6 +131,7 @@ void DRMotorControl()
                                 (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x1e,
                                 tx_buf_B0X_recall, 2);
         }
+
 
         if ((setting->close_loop_type & ANGLE_LOOP) && setting->outer_loop_type == ANGLE_LOOP)
         {

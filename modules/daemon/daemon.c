@@ -3,6 +3,7 @@
 #include "stdlib.h"
 #include "memory.h"
 #include "buzzer.h"
+#include "cmsis_os.h"
 
 // 用于保存所有的daemon instance
 static DaemonInstance *daemon_instances[DAEMON_MX_CNT] = {NULL};
@@ -36,8 +37,7 @@ uint8_t DaemonIsOnline(DaemonInstance *instance)
 
 void DaemonTask()
 {
-    while(1)
-    {
+    while(1){
         DaemonInstance *dins; // 提高可读性同时降低访存开销
         for (size_t i = 0; i < idx; ++i)
         {
@@ -51,8 +51,8 @@ void DaemonTask()
                 // @todo 为蜂鸣器/led等增加离线报警的功能,非常关键!
             }
         }
+        osDelay(1);
     }
-    
 }
 // (需要id的原因是什么?) 下面是copilot的回答!
 // 需要id的原因是因为有些module可能有多个实例,而我们需要知道具体是哪个实例offline

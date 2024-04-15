@@ -61,5 +61,5 @@ uint32_t CreateCallbackTask(char *name, void *cbk, void *ins, osPriority priorit
     //threadDef.instances       = 0;
     cbkid_list[sig_idx]       = osThreadCreate(&threadDef, (void *)&cbkinfo_list[sig_idx]);
 
-    return 0; // 返回信号量,同时增加索引
+    return cbkinfo_list[sig_idx++].sig; // 返回信号量,同时增加索引
 }

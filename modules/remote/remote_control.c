@@ -32,7 +32,6 @@ static void RectifyRCjoystick()
  *
  * @param sbus_buf 接收buffer
  */
-
 static void sbus_to_rc(const uint8_t *sbus_buf)
 {
     // 摇杆,直接解算时减去偏置
@@ -54,23 +53,15 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
 
     //  位域的按键值解算,直接memcpy即可,注意小端低字节在前,即lsb在第一位,msb在最后
     *(uint16_t *)&rc_ctrl[TEMP].key[KEY_PRESS] = (uint16_t)(sbus_buf[14] | (sbus_buf[15] << 8));
-    
-    if ((rc_ctrl[TEMP].key[KEY_PRESS].ctrl)&& (1-rc_ctrl[TEMP].key[KEY_PRESS].shift))// ctrl键按下
+    if (rc_ctrl[TEMP].key[KEY_PRESS].ctrl) // ctrl键按下
         rc_ctrl[TEMP].key[KEY_PRESS_WITH_CTRL] = rc_ctrl[TEMP].key[KEY_PRESS];
     else
         memset(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_CTRL], 0, sizeof(Key_t));
-
-    if ((1-rc_ctrl[TEMP].key[KEY_PRESS].ctrl)&& (rc_ctrl[TEMP].key[KEY_PRESS].shift)) // shift键按下
+    if (rc_ctrl[TEMP].key[KEY_PRESS].shift) // shift键按下
         rc_ctrl[TEMP].key[KEY_PRESS_WITH_SHIFT] = rc_ctrl[TEMP].key[KEY_PRESS];
     else
         memset(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_SHIFT], 0, sizeof(Key_t));
 
-     if ((rc_ctrl[TEMP].key[KEY_PRESS].ctrl)&& (rc_ctrl[TEMP].key[KEY_PRESS].shift)) // ctrl+shift键按下
-        rc_ctrl[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL] = rc_ctrl[TEMP].key[KEY_PRESS];
-    else
-        memset(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL], 0, sizeof(Key_t));
-
-    
     uint16_t key_now = rc_ctrl[TEMP].key[KEY_PRESS].keys,                   // 当前按键是否按下
         key_last = rc_ctrl[LAST].key[KEY_PRESS].keys,                       // 上一次按键是否按下
         key_with_ctrl = rc_ctrl[TEMP].key[KEY_PRESS_WITH_CTRL].keys,        // 当前ctrl组合键是否按下
@@ -112,9 +103,9 @@ static void RemoteControlRxCallback()
  */
 static void RCLostCallback(void *id)
 {
-    // memset(rc_ctrl, 0, sizeof(rc_ctrl)); // 清空遥控器数据
-    // USARTServiceInit(rc_usart_instance); // 尝试重新启动接收
-     LOGWARNING("[rc] remote control lost");
+    memset(rc_ctrl, 0, sizeof(rc_ctrl)); // 清空遥控器数据
+    USARTServiceInit(rc_usart_instance); // 尝试重新启动接收
+    LOGWARNING("[rc] remote control lost");
 }
 
 RC_ctrl_t *RemoteControlInit(UART_HandleTypeDef *rc_usart_handle)
@@ -127,7 +118,7 @@ RC_ctrl_t *RemoteControlInit(UART_HandleTypeDef *rc_usart_handle)
 
     // 进行守护进程的注册,用于定时检查遥控器是否正常工作
     Daemon_Init_Config_s daemon_conf = {
-        .reload_count = 500, // 100ms未收到数据视为离线,遥控器的接收频率实际上是1000/14Hz(大约70Hz)
+        .reload_count = 10, // 100ms未收到数据视为离线,遥控器的接收频率实际上是1000/14Hz(大约70Hz)
         .callback = RCLostCallback,
         .owner_id = NULL, // 只有1个遥控器,不需要owner_id
     };

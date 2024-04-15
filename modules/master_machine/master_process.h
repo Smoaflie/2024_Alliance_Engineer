@@ -6,7 +6,10 @@
 #include "daemon.h"
 #include "vision.h" // 可以在不修改代码的情况下更新model层
 
-#define Host_Instance_MX_CNT   1
+#define Host_Instance_MX_CNT 1
+
+// 模块回调函数,用于解析协议
+typedef void (*host_module_callback)();
 
 typedef enum {
     HOST_USART = 0, // 串口通信
@@ -17,13 +20,17 @@ typedef struct {
     void *comm_instance;      // 通信实例，会被转换为串口或USB通信实例
     host_comm_mode comm_mode; // 通信方式
     DaemonInstance *daemon;   // 守护进程
+    uint16_t rec_len;         // 接收长度
+    uint8_t  *rec_buf;        // 接收缓冲区
+    host_module_callback callback;   // 解析收到的数据的回调函数
 } HostInstance;
 
 typedef struct {
     host_comm_mode comm_mode;         // 通信方式
-    void *callback;                   // 解析收到的数据的回调函数
-    uint8_t RECV_SIZE;                // 接收缓冲区大小
-    UART_HandleTypeDef *usart_handle; // 串口通信对应的handle
+    UART_HandleTypeDef *usart_handle; // 串口模式下，串口通信对应的handle
+    host_module_callback callback;   // 解析收到的数据的回调函数
+    uint8_t RECV_SIZE;                // 接收数据大小
+    uint16_t rate;                    // 回报率，用以指示上位机发送数据的频率，用以配置看门狗（0则不设看门狗）
 } HostInstanceConf;
 
 /**

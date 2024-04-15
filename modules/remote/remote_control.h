@@ -23,13 +23,10 @@
 
 // 获取按键操作
 #define KEY_PRESS 0
-//////////////////////////////////// 这个宏定义暂时没用到。也不知道干啥的，注释了  czh
-//#define KEY_STATE 1
-//////////////////////////////////////
-
+#define KEY_STATE 1
 #define KEY_PRESS_WITH_CTRL 1
 #define KEY_PRESS_WITH_SHIFT 2
-#define KEY_PRESS_WITH_SHIFT_AND_CTRL 3
+
 // 检查接收值是否出错
 #define RC_CH_VALUE_MIN ((uint16_t)364)
 #define RC_CH_VALUE_OFFSET ((uint16_t)1024)
@@ -85,17 +82,10 @@ typedef union
         uint16_t c : 1;
         uint16_t v : 1;
         uint16_t b : 1;
+        uint16_t h : 1;
     };
     uint16_t keys; // 用于memcpy而不需要进行强制类型转换
 } Key_t;
-
-typedef enum{
-    PC_Walk=0,         //行走模式
-    PC_Get_Money,      //取矿模式
-    PC_To_RC,          //转为遥控器模式
-    PC_To_Begin_ALL,   //全部初始化
-    DA_MIAO_Reset_All, //达妙重新上电
-}PC_Mode_t;
 
 // @todo 当前结构体嵌套过深,需要进行优化
 typedef struct
@@ -119,7 +109,7 @@ typedef struct
         uint8_t press_r;
     } mouse;
 
-    Key_t key[4]; // 改为位域后的键盘索引,空间减少8倍,速度增加16~倍
+    Key_t key[3]; // 改为位域后的键盘索引,空间减少8倍,速度增加16~倍
 
     uint8_t key_count[3][16];
 } RC_ctrl_t;
