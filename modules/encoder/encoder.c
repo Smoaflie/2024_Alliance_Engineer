@@ -57,7 +57,7 @@ static void DecodeEncoder(CANInstance *_instance)
 static void EncoderLostCallback(void *encoder_ptr)
 {
     EncoderInstance_s *encoder = (EncoderInstance_s *)encoder_ptr;
-    uint16_t can_bus           = encoder->encoder_can_instance->can_handle == &hcan1 ? 1 : 2;
+    uint16_t can_bus           = encoder->encoder_can_instance->can_handle == &hfdcan1 ? 1 : (encoder->encoder_can_instance->can_handle ==&hfdcan2 ? 2 : 3);
     LOGWARNING("Encoder lost, can bus [%d] , id [%d]", can_bus, encoder->encoder_can_instance->tx_id);
 }
 

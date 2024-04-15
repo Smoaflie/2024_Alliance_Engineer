@@ -21,7 +21,7 @@
 #include "general_def.h"
 #include "bsp_dwt.h"
 #include "referee_UI.h"
-//#include "arm_math.h"
+#include "arm_math.h"
 
 /* 根据robot_def.h中的macro自动计算的参数 */
 #define HALF_WHEEL_BASE  (WHEEL_BASE / 2.0f)     // 半轴距
@@ -44,7 +44,7 @@ static Chassis_Upload_Data_s chassis_feedback_data; // 底盘回传的反馈数�
 
 static referee_info_t *referee_data; // 用于获取裁判系统的数据
 
-// static SuperCapInstance *cap;          //工程无超电，删了                             // 超级电容
+// static SuperCapInstance *cap;          // 超级电容
 static DJIMotorInstance *motor_lf, *motor_rf, *motor_lb, *motor_rb; // left right forward back
 
 /* 用于自旋变速策略的时间变量 */

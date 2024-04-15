@@ -48,7 +48,33 @@
 #define REDUCTION_RATIO_WHEEL  19.2f // 电机减速比,因为编码器量测的是转子的速度而不是输出轴的速度故需进行转换
 
 // 其他参数(尽量所有参数集中到此文件)
-#define BUZZER_SILENCE 0 // 蜂鸣器静音,1为静音,0为正常
+#define BUZZER_SILENCE 1 // 蜂鸣器静音,1为静音,0为正常
+
+// #define IMU_DEF_PARAM_WARNING
+// 编译warning,提醒开发者修改传感器参数
+#ifndef IMU_DEF_PARAM_WARNING
+#define IMU_DEF_PARAM_WARNING
+// #pragma message "check if you have configured the parameters in robot_def.h, IF NOT, please refer to the comments AND DO IT, otherwise the robot will have FATAL ERRORS!!!"
+#endif // !IMU_DEF_PARAM_WARNING
+
+// 陀螺仪默认环境温度
+#define BMI088_AMBIENT_TEMPERATURE 25.0f
+// 设置陀螺仪数据相较于云台的yaw,pitch,roll的方向
+#define BMI088_BOARD_INSTALL_SPIN_MATRIX \
+    {1.0f, 0.0f, 0.0f},                  \
+        {0.0f, -1.0f, 0.0f},             \
+    {                                    \
+        0.0f, 0.0f, -1.0f                \
+    }
+
+#define INS_YAW_ADDRESS_OFFSET   2  // 陀螺仪数据相较于云台的yaw的方向
+#define INS_PITCH_ADDRESS_OFFSET 1  // 陀螺仪数据相较于云台的pitch的方向
+#define INS_ROLL_ADDRESS_OFFSET  0  // 陀螺仪数据相较于云台的roll的方向
+
+// 陀螺仪校准数据，开启陀螺仪校准后可从INS中获取
+#define BMI088_PRE_CALI_GYRO_X_OFFSET -0.000267979165f
+#define BMI088_PRE_CALI_GYRO_Y_OFFSET 0.000386821659f
+#define BMI088_PRE_CALI_GYRO_Z_OFFSET 0.0041627204f
 
 // 检查是否出现主控板定义冲突,只允许一个开发板定义存在,否则编译会自动报错
 #if (defined(ONE_BOARD) && defined(CHASSIS_BOARD)) || \
@@ -69,13 +95,6 @@ typedef enum {
     ROBOT_READY,
 } Robot_Status_e;
 
-// 应用状态
-typedef enum {
-    APP_OFFLINE = 0,
-    APP_ONLINE,
-    APP_ERROR,
-} App_Status_e;
-
 // 底盘模式设置
 /**
  * @brief 后续考虑修改为云台跟随底盘,而不是让底盘去追云台,云台的惯量比底盘小.
@@ -87,55 +106,12 @@ typedef enum {
     CHASSIS_NO_FOLLOW,         // 不跟随，允许全向平移
 } chassis_mode_e;
 
-
-typedef enum{
-    
-    LIFT,
-    LIFT_STOP,
-    LIFT_INIT,
-}lift_mode_e;
-
-//一级伸出模式设定
-typedef enum{
-    FIRST_YAW,
-    FIRST_STRETCH,
-    FIRST_STOP,
-    FIRST_INIT,
-}first_stretch_mode_e;
-//二级伸出模式设定
-typedef enum{
-    SECOND_STRETCH,
-    SECOND_STOP,
-    SECOND_INIT,
-}second_stretch_mode_e;
-//横移模式设定
-typedef enum {
-    HORIZONTAL_ZERO_FORCE=0,
-    HORIZONTAL_MOVE,
-    HORIZONTAL_INIT,
-} Horizontal_mode_e;
-//前端模式设定
-typedef enum{
-    
-    ROLL,
-    PITCH,
-    FORWARD_STOP,
-    FORWARD_INIT_PITCH,
-    FORWARD_INIT_ROLL,
-}forward_mode_e;
 // 功率限制,从裁判系统获取,是否有必要保留?
 typedef struct
 { // 功率控制
     float chassis_power_mx;
 } Chassis_Power_Data_s;
 
-//////////////////待完善////////////////////////
-typedef struct{
-    //自动模式
-
-}Auto_Data_s;
-
-///////////////////////////////////////////////
 
 /* ----------------CMD应用发布的控制数据,应当由gimbal/chassis/shoot订阅---------------- */
 /**
@@ -157,53 +133,7 @@ typedef struct
 
 } Chassis_Ctrl_Cmd_s;
 
-typedef struct
-{ // 一级伸出角度控制
-    float left;
-    float right;
-    lift_mode_e lift_mode;
-
-} Lift_Ctrl_Cmd_s;
 // cmd发布的云台控制数据,由gimbal订阅
-typedef struct
-{ // 一级伸出角度控制
-    float first_left;
-    float first_right;
-    first_stretch_mode_e first_stretch_mode;
-
-} First_Stretch_Ctrl_Cmd_s;
-typedef struct
-{ // 一级伸出角度控制
-    float second_left;
-    float second_right;
-    second_stretch_mode_e second_stretch_mode;
-
-} Second_Stretch_Ctrl_Cmd_s;
-typedef struct
-{
-    // 控制部分
-    int32_t Horizontal_MechAngle;
-    // int32_t Up_MechAngle_left;
-    // int32_t Up_MechAngle_right;
-    Horizontal_mode_e Horizontal_mode;
-    // UI部分
-    //  ...
-} Horizontal_Ctrl_Cmd_s;
-typedef struct
-{ 
-   forward_mode_e Forward_mode;
-   // 记录最后一次的pitch编码器的角度
-    float last_angle;     // pitch的最后一次编码器角度
-    float relevant_angle; // pitch和roll的相对角度
-    // 动之前的roll编码器
-    float roll_last_angle; // roll的最后一次编码器角度
-    float final_angle;     // 最后的角度
-    int8_t mode;           // pitch和roll的模式
-    int8_t last_mode;
-    int16_t angel_output;
-    int16_t angel_output1;
-}Forward_Ctrl_Cmd_s; 
-
 
 
 /* ----------------gimbal/shoot/chassis发布的反馈数据----------------*/
@@ -227,46 +157,6 @@ typedef struct
     Enemy_Color_e enemy_color; // 0 for blue, 1 for red
 
 } Chassis_Upload_Data_s;
-
-typedef struct
-{
-    DJIMotorInstance *lift_left_speed_data,*lift_right_speed_data;
-    float new_left_encoder;
-    float new_right_encoder;
-
-} Lift_Upload_Data_s;
-
-typedef struct
-{ 
-    DJIMotorInstance *first_stretch_left_speed_data,*first_stretch_right_speed_data;
-    EncoderInstance_s *first_stretch_left_angle_data,*first_stretch_right_angle_data;
-    float new_left_encoder;
-    float new_right_encoder;
-
-}First_Stretch_Upload_Data_s; 
-typedef struct
-{ 
-    DJIMotorInstance *second_stretch_left_speed_data,*second_stretch_right_speed_data;
-    float new_left_angle;
-    float new_right_angle;
-
-}Second_Stretch_Upload_Data_s; 
-
-typedef struct
-{
-#if defined(CHASSIS_BOARD) || defined(GIMBAL_BOARD) 
-    // attitude_t chassis_imu_data;
-#endif
-    // 后续增加真实横移量
-    float Horizontal_Movement; //暂定左正右负
-    float now_angel;
-} Horizontal_Upload_Data_s;
-typedef struct
-{ 
-   float new_left_angle;
-    float new_forward_angle;
-
-}Forward_Upload_Data_s; 
 
 #pragma pack() // 开启字节对齐,结束前面的#pragma pack(1)
 

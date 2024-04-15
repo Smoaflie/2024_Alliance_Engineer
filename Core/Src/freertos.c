@@ -51,8 +51,8 @@
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 2048 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for Buzzer */
 osThreadId_t BuzzerHandle;
@@ -68,19 +68,12 @@ const osThreadAttr_t Daemon_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for robottask */
-osThreadId_t robottaskHandle;
-const osThreadAttr_t robottask_attributes = {
-  .name = "robottask",
-  .stack_size = 1028 * 4,
-  .priority = (osPriority_t) osPriorityNormal1,
-};
-/* Definitions for startmotor */
-osThreadId_t startmotorHandle;
-const osThreadAttr_t startmotor_attributes = {
-  .name = "startmotor",
+/* Definitions for instask */
+osThreadId_t instaskHandle;
+const osThreadAttr_t instask_attributes = {
+  .name = "instask",
   .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityNormal1,
+  .priority = (osPriority_t) osPriorityRealtime7,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -88,11 +81,10 @@ const osThreadAttr_t startmotor_attributes = {
 
 /* USER CODE END FunctionPrototypes */
 
-void INIT(void *argument);
+void StartDefaultTask(void *argument);
 void BuzzerTask(void *argument);
 void DaemonTask(void *argument);
-void StartROBOTTASK(void *argument);
-void StartMOTORTASK(void *argument);
+void StartINSTASK(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -125,7 +117,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(INIT, NULL, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* creation of Buzzer */
   BuzzerHandle = osThreadNew(BuzzerTask, NULL, &Buzzer_attributes);
@@ -133,11 +125,8 @@ void MX_FREERTOS_Init(void) {
   /* creation of Daemon */
   DaemonHandle = osThreadNew(DaemonTask, NULL, &Daemon_attributes);
 
-  /* creation of robottask */
-  robottaskHandle = osThreadNew(StartROBOTTASK, NULL, &robottask_attributes);
-
-  /* creation of startmotor */
-  startmotorHandle = osThreadNew(StartMOTORTASK, NULL, &startmotor_attributes);
+  /* creation of instask */
+  instaskHandle = osThreadNew(StartINSTASK, NULL, &instask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -149,24 +138,24 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_INIT */
+/* USER CODE BEGIN Header_StartDefaultTask */
 /**
   * @brief  Function implementing the defaultTask thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_INIT */
-__weak void INIT(void *argument)
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
-  /* USER CODE BEGIN INIT */
+  /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END INIT */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* USER CODE BEGIN Header_BuzzerTask */
@@ -205,40 +194,22 @@ __weak void DaemonTask(void *argument)
   /* USER CODE END DaemonTask */
 }
 
-/* USER CODE BEGIN Header_StartROBOTTASK */
+/* USER CODE BEGIN Header_StartINSTASK */
 /**
-* @brief Function implementing the robottask thread.
+* @brief Function implementing the instask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartROBOTTASK */
-__weak void StartROBOTTASK(void *argument)
+/* USER CODE END Header_StartINSTASK */
+__weak void StartINSTASK(void *argument)
 {
-  /* USER CODE BEGIN StartROBOTTASK */
+  /* USER CODE BEGIN StartINSTASK */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END StartROBOTTASK */
-}
-
-/* USER CODE BEGIN Header_StartMOTORTASK */
-/**
-* @brief Function implementing the startmotor thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartMOTORTASK */
-__weak void StartMOTORTASK(void *argument)
-{
-  /* USER CODE BEGIN StartMOTORTASK */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartMOTORTASK */
+  /* USER CODE END StartINSTASK */
 }
 
 /* Private application code --------------------------------------------------*/
