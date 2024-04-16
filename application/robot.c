@@ -15,6 +15,7 @@
 #include "buzzer.h"
 #include "chassis.h"
 #include "robot_cmd.h"
+#include "test.h"
 
 void RobotInit()
 {
@@ -24,17 +25,13 @@ void RobotInit()
     __disable_irq();
 
     BSPInit();
-    //buzzer_one_note(Do_freq, 0.1);
-    RobotCMDInit();
-    //buzzer_one_note(La_freq, 1);
-    // ChassisInit();                  
-    //buzzer_one_note(So_freq, 0.1f);
+    buzzer_one_note(Do_freq, 0.1);
+    selfTestInit();
     // 初始化完成,开启中断
     __enable_irq();
 }
 
 void RobotTask()
 {
-    RobotCMDTask();
-    // ChassisTask();
+    selfTestTask();
 }

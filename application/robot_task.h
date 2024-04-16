@@ -36,9 +36,8 @@ __attribute__((noreturn)) void TestTask(void *argument)
     BuzzerPlay(StartUP_sound);
 
     while (1) {
-        // RobotCMDTask();
-        // RobotTask();
-        // MotorControlTask();
+        RobotTask();
+        MotorControlTask();
 
         osDelay(2);
     }

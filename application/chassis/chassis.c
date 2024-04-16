@@ -42,7 +42,6 @@ static Subscriber_t *chassis_sub;                   // 用于订阅底盘的控�
 static Chassis_Ctrl_Cmd_s chassis_cmd_recv;         // 底盘接收到的控制命令
 static Chassis_Upload_Data_s chassis_feedback_data; // 底盘回传的反馈数据
 
-static referee_info_t *referee_data; // 用于获取裁判系统的数据
 
 // static SuperCapInstance *cap;          // 超级电容
 static DJIMotorInstance *motor_lf, *motor_rf, *motor_lb, *motor_rb; // left right forward back

@@ -75,6 +75,13 @@ const osThreadAttr_t instask_attributes = {
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityRealtime7,
 };
+/* Definitions for Test */
+osThreadId_t TestHandle;
+const osThreadAttr_t Test_attributes = {
+  .name = "Test",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -85,6 +92,7 @@ void StartDefaultTask(void *argument);
 void BuzzerTask(void *argument);
 void DaemonTask(void *argument);
 void StartINSTASK(void *argument);
+void TestTask(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -127,6 +135,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of instask */
   instaskHandle = osThreadNew(StartINSTASK, NULL, &instask_attributes);
+
+  /* creation of Test */
+  TestHandle = osThreadNew(TestTask, NULL, &Test_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -210,6 +221,24 @@ __weak void StartINSTASK(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartINSTASK */
+}
+
+/* USER CODE BEGIN Header_TestTask */
+/**
+* @brief Function implementing the Test thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_TestTask */
+__weak void TestTask(void *argument)
+{
+  /* USER CODE BEGIN TestTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END TestTask */
 }
 
 /* Private application code --------------------------------------------------*/

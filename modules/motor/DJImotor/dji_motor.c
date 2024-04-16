@@ -53,22 +53,10 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
             if (motor_id < 4) // 根据ID分组
             {
                 motor_send_num = motor_id;
-                if (config->can_handle == &hfdcan1) {
-                    motor_grouping = 1;
-                } else if (config->can_handle == &hfdcan2) {
-                    motor_grouping = 4;
-                } else if (config->can_handle == &hfdcan3) {
-                    motor_grouping = 7;
-                }
+                motor_grouping = config->can_handle == &hfdcan1 ? 1 : (config->can_handle == &hfdcan2 ? 4 : 7);
             } else {
                 motor_send_num = motor_id - 4;
-                if (config->can_handle == &hfdcan1) {
-                    motor_grouping = 0;
-                } else if (config->can_handle == &hfdcan2) {
-                    motor_grouping = 3;
-                } else if (config->can_handle == &hfdcan3) {
-                    motor_grouping = 6;
-                }
+                motor_grouping = config->can_handle == &hfdcan1 ? 0 : (config->can_handle == &hfdcan2 ? 3 : 6);
             }
 
             // 计算接收id并设置分组发送id
@@ -81,7 +69,7 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
             for (size_t i = 0; i < idx; ++i) {
                 if (dji_motor_instance[i]->motor_can_instance->can_handle == config->can_handle && dji_motor_instance[i]->motor_can_instance->rx_id == config->rx_id) {
                     LOGERROR("[dji_motor] ID crash. Check in debug mode, add dji_motor_instance to watch to get more information.");
-                    uint16_t can_bus = config->can_handle == &hfdcan1 ? 1 : config->can_handle == &hfdcan2?2:3;
+                    uint8_t can_bus = motor->motor_can_instance->can_handle == &hfdcan1 ? 1 : (motor->motor_can_instance->can_handle == &hfdcan2 ? 2 : 3);
                     while (1) // 6020的id 1-4和2006/3508的id 5-8会发生冲突(若有注册,即1!5,2!6,3!7,4!8) (1!5!,LTC! (((不是)
                         LOGERROR("[dji_motor] id [%d], can_bus [%d]", config->rx_id, can_bus);
                 }
@@ -91,10 +79,10 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
         case GM6020:
             if (motor_id < 4) {
                 motor_send_num = motor_id;
-                motor_grouping = config->can_handle == &hfdcan1 ? 0 : 3;
+                motor_grouping = config->can_handle == &hfdcan1 ? 0 : (config->can_handle == &hfdcan2 ? 3 : 6);
             } else {
                 motor_send_num = motor_id - 4;
-                motor_grouping = config->can_handle == &hfdcan1 ? 2 : 5;
+                motor_grouping = config->can_handle == &hfdcan1 ? 2 : (config->can_handle == &hfdcan2 ? 5 : 8);
             }
 
             config->rx_id                      = 0x204 + motor_id + 1; // 把ID+1,进行分组设置
@@ -106,13 +94,7 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
                 if (dji_motor_instance[i]->motor_can_instance->can_handle == config->can_handle && dji_motor_instance[i]->motor_can_instance->rx_id == config->rx_id) {
                     LOGERROR("[dji_motor] ID crash. Check in debug mode, add dji_motor_instance to watch to get more information.");
                     uint16_t can_bus;
-                    if (motor->motor_can_instance->can_handle == &hfdcan1) {
-                        can_bus = 1;
-                    } else if (motor->motor_can_instance->can_handle == &hfdcan2) {
-                        can_bus = 2;
-                    } else if (motor->motor_can_instance->can_handle == &hfdcan3) {
-                        can_bus = 3;
-                    }
+                    can_bus = motor->motor_can_instance->can_handle == &hfdcan1 ? 1 : (motor->motor_can_instance->can_handle == &hfdcan2 ? 2 : 3);
                     while (1) // 6020的id 1-4和2006/3508的id 5-8会发生冲突(若有注册,即1!5,2!6,3!7,4!8) (1!5!,LTC! (((不是)
                         LOGERROR("[dji_motor] id [%d], can_bus [%d]", config->rx_id, can_bus);
                 }
@@ -165,13 +147,7 @@ static void DJIMotorLostCallback(void *motor_ptr)
 {
     uint16_t can_bus;
     DJIMotorInstance *motor = (DJIMotorInstance *)motor_ptr;
-    if (motor->motor_can_instance->can_handle == &hfdcan1) {
-        can_bus = 1;
-    } else if (motor->motor_can_instance->can_handle == &hfdcan2) {
-        can_bus = 2;
-    } else if (motor->motor_can_instance->can_handle == &hfdcan3) {
-        can_bus = 3;
-    }
+    can_bus                 = motor->motor_can_instance->can_handle == &hfdcan1 ? 1 : (motor->motor_can_instance->can_handle == &hfdcan2 ? 2 : 3);
     LOGWARNING("[dji_motor] Motor lost, can bus [%d] , id [%d]", can_bus, motor->motor_can_instance->tx_id);
 }
 
@@ -203,13 +179,13 @@ DJIMotorInstance *DJIMotorInit(Motor_Init_Config_s *config)
     config->can_init_config.id                  = instance;       // set id,eq to address(it is IdTypentity)
     instance->motor_can_instance                = CANRegister(&config->can_init_config);
 
-    //注册守护线程
-    // Daemon_Init_Config_s daemon_config = {
-    //     .callback     = DJIMotorLostCallback,
-    //     .owner_id     = instance,
-    //     .reload_count = 20, // 20ms未收到数据则丢失
-    // };
-    // instance->daemon = DaemonRegister(&daemon_config);
+    // 注册守护线程
+    Daemon_Init_Config_s daemon_config = {
+        .callback     = DJIMotorLostCallback,
+        .owner_id     = instance,
+        .reload_count = 20, // 20ms未收到数据则丢失
+    };
+    instance->daemon = DaemonRegister(&daemon_config);
 
     DJIMotorStop(instance);
     dji_motor_instance[idx++] = instance;
