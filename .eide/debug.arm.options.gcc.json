@@ -22,6 +22,6 @@
         "remove-unused-input-sections": true,
         "LD_FLAGS": "-TSTM32H723VGTX_FLASH.ld",
         "$toolName": "auto",
-        "LIB_FLAGS": "modules/algorithm/AHRS.lib"
+        "LIB_FLAGS": "-larm_cortexM7lfdp_math modules/algorithm/AHRS.lib"
     }
 }

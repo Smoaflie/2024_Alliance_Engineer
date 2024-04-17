@@ -34,12 +34,12 @@ void selfTestTask()
 
     if(!HAL_GPIO_ReadPin(KEY_GPIO_Port,KEY_Pin))
     {
-        C_board_LEDSet(0xd633ff);
+        DM_board_LEDSet(0xd633ff);
         DRMotorSetRef(test_motor,0);
     }
     else
     {
-        C_board_LEDSet(0x33ffff);
+        DM_board_LEDSet(0x33ffff);
         DRMotorStop(test_motor);
     }
     DRMotorControl();

@@ -19,8 +19,8 @@
 #include "arm.h"
 #include "decode.h"
 
-#define assorted_yaw_encoder_offset  162828
-#define assorted_roll_encoder_offset 180089
+#define assorted_up_encoder_offset  162828
+#define assorted_down_encoder_offset 180089
 #define tail_motor_encoder_offset    22504
 #define tail_roll_encoder_offset     0 // 152746
 
@@ -45,7 +45,7 @@ static DJIMotorInstance *tail_motor;                              //  控制末�
 static DJIMotorInstance *tail_roll_motor;                         //  控制末端roll吸盘的2006电机
 
 // 编码器实例
-static EncoderInstance_s *assorted_yaw_encoder, *assorted_roll_encoder, *tail_motor_encoder, *tail_roll_encoder; // 四个编码器，大YAW不另设编码器
+static EncoderInstance_s *assorted_up_encoder, *assorted_down_encoder, *tail_motor_encoder, *tail_roll_encoder; // 四个编码器，大YAW不另设编码器
 
 // PID实例
 static PIDInstance *assorted_yaw_pid, *assorted_roll_pid; // 中段两个2006电机只有速度环，在机械臂任务中通过这两个PID计算出二者的应达到的速度
@@ -299,12 +299,12 @@ void ArmInit()
     };
     //编码器初始化
     encoder_config.can_init_config.rx_id        = 0x1fb;
-    encoder_config.offset                       = assorted_yaw_encoder_offset;
-    assorted_yaw_encoder                        = EncoderInit(&encoder_config);
+    encoder_config.offset                       = assorted_up_encoder_offset;
+    assorted_up_encoder                        = EncoderInit(&encoder_config);
     encoder_config.can_init_config.can_handle   = &hfdcan1;
     encoder_config.can_init_config.rx_id        = 0x2ff;
-    encoder_config.offset                       = assorted_roll_encoder_offset;
-    assorted_roll_encoder                       = EncoderInit(&encoder_config);
+    encoder_config.offset                       = assorted_down_encoder_offset;
+    assorted_down_encoder                       = EncoderInit(&encoder_config);
     encoder_config.can_init_config.rx_id        = 0x3ff;
     encoder_config.offset                       = tail_motor_encoder_offset;
     tail_motor_encoder                          = EncoderInit(&encoder_config);
@@ -352,8 +352,8 @@ static void set_mid_rAy_angle(float roll_angle, float yaw_angle)
     VAL_LIMIT(roll_angle, -180, 180);
     VAL_LIMIT(yaw_angle, -79, 79);
     float speed_yaw, speed_roll, speed_up, speed_down;
-    speed_roll = PIDCalculate(assorted_roll_pid, assorted_roll_encoder->measure.total_angle, roll_angle);
-    speed_yaw  = PIDCalculate(assorted_yaw_pid, assorted_yaw_encoder->measure.total_angle, yaw_angle);
+    speed_roll = PIDCalculate(assorted_roll_pid, assorted_down_encoder->measure.total_angle, roll_angle);
+    speed_yaw  = PIDCalculate(assorted_yaw_pid, assorted_up_encoder->measure.total_angle, yaw_angle);
 
     speed_up   = speed_yaw - speed_roll;
     speed_down = speed_yaw + speed_roll;
@@ -396,7 +396,7 @@ void ArmTask()
     SubGetMessage(arm_controller_sub, &arm_cmd_rec_data);
 
     if (flag) {
-        C_board_LEDSet(0xd633ff);
+        DM_board_LEDSet(0xd633ff);
 
         DRMotorEnable(mid_yaw_motor);
         DJIMotorEnable(assorted_motor_up);
@@ -430,7 +430,7 @@ void ArmTask()
             DJIMotorSetRef(tail_roll_motor, *tail_roll_motor->motor_controller.other_angle_feedback_ptr + 3);
         }
     } else {
-        C_board_LEDSet(0x33ffff);
+        DM_board_LEDSet(0x33ffff);
 
         DRMotorStop(mid_yaw_motor);
         DJIMotorStop(assorted_motor_up);

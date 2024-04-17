@@ -45,7 +45,7 @@ void ChassisInit()
 {
     // 四个轮子的参数一样,改tx_id和反转标志位即可
     Motor_Init_Config_s chassis_motor_config = {
-        .can_init_config.can_handle   = &hfdcan1,
+        .can_init_config.can_handle   = &hfdcan3,
         .controller_param_init_config = {
             .speed_PID = {
                 .Kp            = 2, // 4.5
