@@ -43,6 +43,8 @@ void C_boardLEDRegister(void);
 
 void C_board_LEDSet(uint32_t color);
 
+void DM_board_LEDSet(uint32_t color);
+
 void LEDSet(LEDInstance *_led, float brightness);
 
 void LEDSwitch(LEDInstance *_led, uint8_t led_switch);

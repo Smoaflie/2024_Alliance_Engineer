@@ -46,13 +46,8 @@ __attribute__((noreturn)) void TestTask(void *argument)
     BuzzerPlay(StartUP_sound);
 
     while (1) {
-        // C_board_LEDSet(0x33ffff);
-        // /*osDelay(500);
-        // C_board_LEDSet(0xd633ff);
-        // osDelay(500);*/
-        // RobotCMDTask();
-        // RobotTask();
-        // MotorControlTask();
+        RobotTask();
+        MotorControlTask();
 
         osDelay(2);
     }

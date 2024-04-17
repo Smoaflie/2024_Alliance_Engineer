@@ -14,6 +14,7 @@
 #include "stdlib.h"
 #include "memory.h"
 #include "user_lib.h"
+#include "bsp_spi.h"
 
 static uint8_t idx;
 static LEDInstance *LED[LED_MAX_NUM] = {NULL};
@@ -41,7 +42,7 @@ void C_boardLEDRegister(void)
     C_board_LEDInstance *c_led_ins = (C_board_LEDInstance *)zmalloc(sizeof(C_board_LEDInstance));
     LED_Init_Config_s led_config   = {
           .pwm_config = {
-             // .htim      = &htim5,
+            // .htim      = &htim5,
               .channel   = 0,
               .period    = 0.001f,
               .dutyratio = 0,
@@ -104,4 +105,38 @@ void LEDSwitch(LEDInstance *_led, uint8_t led_switch)
         _led->led_switch = 0;
         PWMSetPeriod(_led->led_pwm, 0);
     }
+}
+/**
+ * @brief :  达妙H7板LED颜色设置
+ * @param color 颜色 0xRRGGBB
+ * @return
+ */
+void DM_board_LEDSet(uint32_t color)
+{
+    // 达妙板子的LED模组为WS2812B-3528
+    // 它根据时序控制颜色，这里采用SPi模拟时序
+    // 因此需根据数据手册及时钟树信息配置正确的SPI发送数据
+    static uint8_t txbuf[24];
+    static uint8_t WS2812_HighLevel = 0xf0;
+    static uint8_t WS2812_LowLevel  = 0xC0;
+    for (int i = 0; i < 8; i++)
+    {
+        txbuf[7-i]  = (((color>>(i+8))&0x01) ? WS2812_HighLevel : WS2812_LowLevel)>>1;
+        txbuf[15-i] = (((color>>(i+16))&0x01) ? WS2812_HighLevel : WS2812_LowLevel)>>1;
+        txbuf[23-i] = (((color>>i)&0x01) ? WS2812_HighLevel : WS2812_LowLevel)>>1;
+    }
+    //todo: 后续可加入DMA，减小开支（基本没有意义的优化x
+    HAL_SPI_Transmit(&hspi6, (uint8_t *)txbuf, 24, 1);
+
+    /* 以下为详细解析： 
+       为方便计算，将SPI时钟树调为24Mhz，SPi分频4，则其波特率为6Mbit/s
+       查询WS2812B-3528数据手册，以下为关键参数：
+       数据格式：8位表示一个颜色，共24位，高位在前，按GRB顺序
+       时钟信号：
+       T0H：0.22~0.38us T0L：0.58~1us
+       T1H：0.58~1us    T1L：0.58~1us
+       单个信号周期为0.8~2us，结合SPi6的时钟频率(0.17us/bit)
+       可计算出用2个字节表示一个信号
+       需注意SPI未进行传输时电平为高，因此需先拉低电平通知WS2812B（代码中用移位实现）
+       其他可直接看代码理解*/
 }
