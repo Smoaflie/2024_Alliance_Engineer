@@ -116,7 +116,8 @@
           "USB_DEVICE/Target",
           "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
           "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
-          "modules/motor/DRmotor"
+          "modules/motor/DRmotor",
+          "application/test"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",
