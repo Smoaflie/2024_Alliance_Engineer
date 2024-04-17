@@ -15,30 +15,24 @@
 #include "ins_task.h"
 #include "master_process.h"
 #include "stdint.h"
-#include "dji_motor.h"
-#include "encoder.h"
 
 /* 开发板类型定义,烧录时注意不要弄错对应功能;修改定义后需要重新编译,只能存在一个定义! */
 #define ONE_BOARD // 单板控制整车
 // #define CHASSIS_BOARD //底盘板
 // #define GIMBAL_BOARD  //云台板
+#define ARM_BOARD   // 臂臂
+#define ROBOT_TEST
 
 #define VISION_USE_VCP // 使用虚拟串口发送视觉数据
 // #define VISION_USE_UART // 使用串口发送视觉数据
 
 /* 机器人重要参数定义,注意根据不同机器人进行修改,浮点数需要以.0或f结尾,无符号以u结尾 */
 // 云台参数
-#define YAW_CHASSIS_ALIGN_ECD     1356 // 云台和底盘对齐指向相同方向时的电机编码器值,若对云台有机械改动需要修改
+#define YAW_CHASSIS_ALIGN_ECD     2711 // 云台和底盘对齐指向相同方向时的电机编码器值,若对云台有机械改动需要修改
 #define YAW_ECD_GREATER_THAN_4096 0    // ALIGN_ECD值是否大于4096,是为1,否为0;用于计算云台偏转角度
-#define PITCH_HORIZON_ECD         4073 // 云台处于水平位置时编码器值,若对云台有机械改动需要修改
-#define PITCH_POS_UP_LIMIT_ECD    3670 // 云台竖直方向高处限位编码器值,若对云台有机械改动需要修改
-#define PITCH_POS_DOWN_LIMIT_ECD  4455 // 云台竖直方向低处限位编码器值,若对云台有机械改动需要修改
-#define PITCH_FEED_TYPE           1    // 云台PITCH轴反馈值来源:编码器为0,陀螺仪为1
-#define PITCH_ECD_UP_ADD          0    // 云台抬升时编码器变化趋势,增为1,减为0 (陀螺仪变化方向应相同)
-// 发射参数
-#define ONE_BULLET_DELTA_ANGLE 36    // 发射一发弹丸拨盘转动的距离,由机械设计图纸给出
-#define REDUCTION_RATIO_LOADER 49.0f // 拨盘电机的减速比,英雄需要修改为3508的19.0f
-#define NUM_PER_CIRCLE         10    // 拨盘一圈的装载量
+#define PITCH_HORIZON_ECD         3412 // 云台处于水平位置时编码器值,若对云台有机械改动需要修改
+#define PITCH_MAX_ANGLE           0    // 云台竖直方向最大角度 (注意反馈如果是陀螺仪，则填写陀螺仪的角度)
+#define PITCH_MIN_ANGLE           0    // 云台竖直方向最小角度 (注意反馈如果是陀螺仪，则填写陀螺仪的角度)
 // 机器人底盘修改的参数,单位为mm(毫米)
 #define WHEEL_BASE             350   // 纵向轴距(前进后退方向)
 #define TRACK_WIDTH            300   // 横向轮距(左右平移方向)
@@ -47,34 +41,33 @@
 #define RADIUS_WHEEL           60    // 轮子半径
 #define REDUCTION_RATIO_WHEEL  19.2f // 电机减速比,因为编码器量测的是转子的速度而不是输出轴的速度故需进行转换
 
+//陀螺仪默认环境温度
+#define BMI088_AMBIENT_TEMPERATURE 25.0f
+
+#define GYRO2GIMBAL_DIR_YAW           1 // 陀螺仪数据相较于云台的yaw的方向,1为相同,-1为相反
+#define GYRO2GIMBAL_DIR_PITCH         1 // 陀螺仪数据相较于云台的pitch的方向,1为相同,-1为相反
+#define GYRO2GIMBAL_DIR_ROLL          1 // 陀螺仪数据相较于云台的roll的方向,1为相同,-1为相反
+
 // 其他参数(尽量所有参数集中到此文件)
 #define BUZZER_SILENCE 1 // 蜂鸣器静音,1为静音,0为正常
 
-// #define IMU_DEF_PARAM_WARNING
-// 编译warning,提醒开发者修改传感器参数
-#ifndef IMU_DEF_PARAM_WARNING
-#define IMU_DEF_PARAM_WARNING
-// #pragma message "check if you have configured the parameters in robot_def.h, IF NOT, please refer to the comments AND DO IT, otherwise the robot will have FATAL ERRORS!!!"
-#endif // !IMU_DEF_PARAM_WARNING
-
+// 陀螺仪校准数据，开启陀螺仪校准后可从INS中获取
+#define BMI088_PRE_CALI_GYRO_X_OFFSET -0.000909539289f
+#define BMI088_PRE_CALI_GYRO_Y_OFFSET 0.00354450056f
+#define BMI088_PRE_CALI_GYRO_Z_OFFSET 0.000225723968f
 // 陀螺仪默认环境温度
 #define BMI088_AMBIENT_TEMPERATURE 25.0f
 // 设置陀螺仪数据相较于云台的yaw,pitch,roll的方向
 #define BMI088_BOARD_INSTALL_SPIN_MATRIX \
-    {1.0f, 0.0f, 0.0f},                  \
-        {0.0f, -1.0f, 0.0f},             \
+    {0.0f, -1.0f, 0.0f},                  \
+        {1.0f, 0.0f, 0.0f},             \
     {                                    \
-        0.0f, 0.0f, -1.0f                \
+        0.0f, 0.0f, 1.0f                \
     }
 
 #define INS_YAW_ADDRESS_OFFSET   2  // 陀螺仪数据相较于云台的yaw的方向
 #define INS_PITCH_ADDRESS_OFFSET 1  // 陀螺仪数据相较于云台的pitch的方向
 #define INS_ROLL_ADDRESS_OFFSET  0  // 陀螺仪数据相较于云台的roll的方向
-
-// 陀螺仪校准数据，开启陀螺仪校准后可从INS中获取
-#define BMI088_PRE_CALI_GYRO_X_OFFSET -0.000267979165f
-#define BMI088_PRE_CALI_GYRO_Y_OFFSET 0.000386821659f
-#define BMI088_PRE_CALI_GYRO_Z_OFFSET 0.0041627204f
 
 // 检查是否出现主控板定义冲突,只允许一个开发板定义存在,否则编译会自动报错
 #if (defined(ONE_BOARD) && defined(CHASSIS_BOARD)) || \
@@ -95,6 +88,13 @@ typedef enum {
     ROBOT_READY,
 } Robot_Status_e;
 
+// 应用状态
+typedef enum {
+    APP_OFFLINE = 0,
+    APP_ONLINE,
+    APP_ERROR,
+} App_Status_e;
+
 // 底盘模式设置
 /**
  * @brief 后续考虑修改为云台跟随底盘,而不是让底盘去追云台,云台的惯量比底盘小.
@@ -104,14 +104,23 @@ typedef enum {
     CHASSIS_ZERO_FORCE = 0,    // 电流零输入
     CHASSIS_ROTATE,            // 小陀螺模式
     CHASSIS_NO_FOLLOW,         // 不跟随，允许全向平移
+    CHASSIS_FOLLOW_GIMBAL_YAW, // 跟随模式，底盘叠加角度环控制
 } chassis_mode_e;
 
-// 功率限制,从裁判系统获取,是否有必要保留?
-typedef struct
-{ // 功率控制
-    float chassis_power_mx;
-} Chassis_Power_Data_s;
+// 云台模式设置
+typedef enum {
+    GIMBAL_ZERO_FORCE = 0, // 电流零输入
+    GIMBAL_FREE_MODE,      // 云台自由运动模式,即与底盘分离(底盘此时应为NO_FOLLOW)反馈值为电机total_angle;似乎可以改为全部用IMU数据?
+    GIMBAL_GYRO_MODE,      // 云台陀螺仪反馈模式,反馈值为陀螺仪pitch,total_yaw_angle,底盘可以为小陀螺和跟随模式
+} gimbal_mode_e;
 
+typedef enum {
+    LOAD_STOP = 0,  // 停止发射
+    LOAD_REVERSE,   // 反转
+    LOAD_1_BULLET,  // 单发
+    LOAD_3_BULLET,  // 三发
+    LOAD_BURSTFIRE, // 连发
+} loader_mode_e;
 
 /* ----------------CMD应用发布的控制数据,应当由gimbal/chassis/shoot订阅---------------- */
 /**
@@ -134,7 +143,14 @@ typedef struct
 } Chassis_Ctrl_Cmd_s;
 
 // cmd发布的云台控制数据,由gimbal订阅
+typedef struct
+{ // 云台角度控制
+    float yaw;
+    float pitch;
+    float chassis_rotate_wz;
 
+    gimbal_mode_e gimbal_mode;
+} Gimbal_Ctrl_Cmd_s;
 
 /* ----------------gimbal/shoot/chassis发布的反馈数据----------------*/
 /**
@@ -157,6 +173,26 @@ typedef struct
     Enemy_Color_e enemy_color; // 0 for blue, 1 for red
 
 } Chassis_Upload_Data_s;
+
+typedef struct
+{
+    INS_Instance *gimbal_imu_data;
+    uint16_t yaw_motor_single_round_angle;
+} Gimbal_Upload_Data_s;
+
+
+/* ----------------臂臂的末端位姿变换数据----------------*/
+/**
+ * @brief 由cmd订阅和发送.
+ *
+ */
+typedef struct{
+    float Translation_x;
+    float Translation_y;
+    float Position_z;
+    float Rotation_yaw;
+    uint8_t state;
+}Arm_Cmd_Data_s;
 
 #pragma pack() // 开启字节对齐,结束前面的#pragma pack(1)
 

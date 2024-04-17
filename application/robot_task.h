@@ -1,3 +1,6 @@
+/* 注意该文件应只用于任务初始化,只能被robot.c包含*/
+#pragma once
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
@@ -13,6 +16,13 @@
 #include "buzzer.h"
 
 #include "bsp_log.h"
+#include "led.h"
+#include "buzzer.h"
+#include "ins_task.h"
+#include "chassis.h"
+#include "user_lib.h"
+
+#include "robot_cmd.h"
 
 __attribute__((noreturn)) void StartINSTASK(void *argument)
 {
@@ -36,6 +46,10 @@ __attribute__((noreturn)) void TestTask(void *argument)
     BuzzerPlay(StartUP_sound);
 
     while (1) {
+        // C_board_LEDSet(0x33ffff);
+        // /*osDelay(500);
+        // C_board_LEDSet(0xd633ff);
+        // osDelay(500);*/
         // RobotCMDTask();
         // RobotTask();
         // MotorControlTask();
@@ -43,4 +57,3 @@ __attribute__((noreturn)) void TestTask(void *argument)
         osDelay(2);
     }
 }
-

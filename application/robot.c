@@ -13,8 +13,19 @@
 #include "robot_def.h"
 #include "robot_task.h"
 #include "buzzer.h"
-#include "chassis.h"
-#include "robot_cmd.h"
+
+#define ROBOT_DEF_PARAM_WARNING
+// 编译warning,提醒开发者修改机器人参数
+#ifndef ROBOT_DEF_PARAM_WARNING
+#define ROBOT_DEF_PARAM_WARNING
+#pragma message "check if you have configured the parameters in robot_def.h, IF NOT, please refer to the comments AND DO IT, otherwise the robot will have FATAL ERRORS!!!"
+#endif // !ROBOT_DEF_PARAM_WARNING
+
+#include "test.h"
+#include "arm.h"
+
+#include "dji_motor.h"
+#include "DRmotor.h"
 
 void RobotInit()
 {
@@ -24,17 +35,35 @@ void RobotInit()
     __disable_irq();
 
     BSPInit();
-    //buzzer_one_note(Do_freq, 0.1);
+
+selfTestInit();
     RobotCMDInit();
-    //buzzer_one_note(La_freq, 1);
-    // ChassisInit();                  
-    //buzzer_one_note(So_freq, 0.1f);
+    #ifdef CHASSIS_BOARD
+    ChassisInit();
+    #endif
+    #ifdef ARM_BOARD
+    // ArmInit();
+    #endif
+
+    #ifdef ONE_BOARD
+    ArmInit();
+    ChassisInit();
+    #endif 
     // 初始化完成,开启中断
     __enable_irq();
 }
 
 void RobotTask()
 {
-    RobotCMDTask();
-    // ChassisTask();
+    #ifdef ARM_BOARD
+    // ArmTask();
+    #endif
+    #ifdef CHASSIS_BOARD
+    ChassisTask();
+    #endif
+
+    #ifdef ONE_BOARD
+    ArmTask();
+    ChassisTask();
+    #endif 
 }

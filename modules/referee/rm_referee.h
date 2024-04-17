@@ -62,11 +62,9 @@ typedef struct
 	Referee_Interactive_Flag_t Referee_Interactive_Flag;
 	// 为UI绘制以及交互数据所用
 	chassis_mode_e chassis_mode;			 // 底盘模式
-	Chassis_Power_Data_s Chassis_Power_Data; // 功率控制
 
 	// 上一次的模式，用于flag判断
 	chassis_mode_e chassis_last_mode;
-	Chassis_Power_Data_s Chassis_last_Power_Data;
 
 } Referee_Interactive_info_t;
 
