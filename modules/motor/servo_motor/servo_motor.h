@@ -81,10 +81,14 @@ typedef struct
      *TIM_CHANNEL_ALL
      */
     uint32_t Channel;
+
+    uint8_t state;  //失能0|使能1状态标志 
 } ServoInstance;
 
 ServoInstance *ServoInit(Servo_Init_Config_s *Servo_Init_Config);
 void Servo_Motor_FreeAngle_Set(ServoInstance *Servo_Motor, int16_t S_angle);
 void Servo_Motor_Type_Select(ServoInstance *Servo_Motor,int16_t mode);
 void ServeoMotorControl();
+void Servo_Motor_Start(ServoInstance *Servo_Motor);
+void Servo_Motor_Stop(ServoInstance *Servo_Motor);
 #endif // SERVO_MOTOR_H

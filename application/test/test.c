@@ -7,40 +7,32 @@
 #include "message_center.h"
 #include "general_def.h"
 #include "LKmotor.h"
-#include "DRmotor.h"
+#include "servo_motor.h"
 #include "led.h"
 // bsp
 #include "encoder.h"
 #include "bsp_dwt.h"
 #include "bsp_log.h"
-
-
-static DRMotorInstance *test_motor; // 电机实例
-static EncoderInstance_s *assorted_yaw_encoder;
+#include "DRmotor.h"
+static USARTInstance* imu_usart_instance;
+static float gimbal_yaw_angle;
+static uint8_t gimbal_rec[100];
+void imu_usart_callback(){
+    memcpy(gimbal_rec,imu_usart_instance->recv_buff,82);
+    memcpy((uint8_t*)&gimbal_yaw_angle,imu_usart_instance->recv_buff+62,4);
+}
 void selfTestInit()
 {
-    Encoder_Init_Config_s encoder_config = {
-        .can_init_config = {
-            .can_handle = &hfdcan1,
-        }};
-    encoder_config.can_init_config.rx_id = 0x1df;
-    assorted_yaw_encoder                      = EncoderInit(&encoder_config);
+    USART_Init_Config_s uart_conf;
+    uart_conf.module_callback = imu_usart_callback;
+    uart_conf.usart_handle = &huart8;
+    uart_conf.recv_buff_size = 82;
+    imu_usart_instance = USARTRegister(&uart_conf);
 }
 
+float LKangle = 0,gimbalangle=0;
 /* 机器人机械臂控制核心任务 */
 void selfTestTask()
 {
-    DRMotorEnable(test_motor);
 
-    if(!HAL_GPIO_ReadPin(KEY_GPIO_Port,KEY_Pin))
-    {
-        DM_board_LEDSet(0xd633ff);
-        DRMotorSetRef(test_motor,0);
-    }
-    else
-    {
-        DM_board_LEDSet(0x33ffff);
-        DRMotorStop(test_motor);
-    }
-    DRMotorControl();
 }

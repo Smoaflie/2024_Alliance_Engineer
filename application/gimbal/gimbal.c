@@ -1,0 +1,100 @@
+// app
+#include "robot_def.h"
+#include "robot_cmd.h"
+// module
+#include "remote_control.h"
+#include "master_process.h"
+#include "message_center.h"
+#include "general_def.h"
+#include "LKmotor.h"
+#include "servo_motor.h"
+#include "led.h"
+// bsp
+#include "encoder.h"
+#include "bsp_dwt.h"
+#include "bsp_log.h"
+#include "servo_motor.h"
+
+static USARTInstance* imu_usart_instance;
+static LKMotorInstance* motor;
+static ServoInstance* gimbalmoto;
+
+static Subscriber_t *gimbal_sub;                   // 用于订阅云台的控制命令
+static Gimbal_Ctrl_Cmd_s gimbal_cmd_recv; // 云台应用接收的信息
+static float gimbal_yaw_angle;
+static uint8_t gimbal_rec[100];
+static void imu_usart_callback(){
+    memcpy(gimbal_rec,imu_usart_instance->recv_buff,82);
+    memcpy((uint8_t*)&gimbal_yaw_angle,imu_usart_instance->recv_buff+62,4);
+}
+void GIMBALInit()
+{
+    Motor_Init_Config_s config ={
+        .can_init_config = {
+            .can_handle = &hfdcan2,
+        },
+        .controller_param_init_config = {
+            .angle_PID = {
+                .Kp            = 1, // 0
+                .Ki            = 0,    // 0
+                .Kd            = 0,    // 0
+                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
+                .IntegralLimit = 0,
+                .MaxOut        = 30,
+            },
+            .speed_PID = {
+                .Kp            = 40, // 0
+                .Ki            = 0,  // 0
+                .Kd            = 0,      // 0
+                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
+                .IntegralLimit = 100,
+                .MaxOut        = 1000, // 20000
+            },
+        },
+        .controller_setting_init_config = {
+            .angle_feedback_source = MOTOR_FEED,
+            .speed_feedback_source = MOTOR_FEED,
+            .outer_loop_type       = ANGLE_LOOP,
+            .close_loop_type       = SPEED_LOOP | ANGLE_LOOP,
+            .motor_reverse_flag    = MOTOR_DIRECTION_NORMAL,
+        },
+        .motor_type            = LK_MS5005,
+        .can_init_config.tx_id = 1};
+    motor = LKMotorInit(&config);
+
+    Servo_Init_Config_s servo_config = {
+        // 舵机安装选择的定时器及通道
+        // C板有常用的7路PWM输出:TIM1-1,2,3,4 TIM8-1,2,3
+        .htim    = &htim2,
+        .Channel = TIM_CHANNEL_1,
+        // 舵机的初始化模式和类型
+        .Servo_Angle_Type = Start_mode,
+        .Servo_type       = Servo180,
+    };
+    gimbalmoto = ServoInit(&servo_config);
+    
+    gimbal_sub = SubRegister("gimbal_cmd", sizeof(gimbal_cmd_recv));
+    USART_Init_Config_s uart_conf;
+    uart_conf.module_callback = imu_usart_callback;
+    uart_conf.usart_handle = &huart8;
+    uart_conf.recv_buff_size = 82;
+    imu_usart_instance = USARTRegister(&uart_conf);
+}
+
+/* 机器人机械臂控制核心任务 */
+void GIMBALTask()
+{
+    SubGetMessage(gimbal_sub, &gimbal_cmd_recv);
+    if(gimbal_cmd_recv.gimbal_mode == GIMBAL_ZERO_FORCE)    
+    {
+        LKMotorStop(motor);
+        Servo_Motor_Stop(gimbalmoto);
+    }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_GYRO_MODE)
+    {
+        Servo_Motor_Start(gimbalmoto);
+        LKMotorEnable(motor);
+        LKMotorSetRef(motor,gimbal_cmd_recv.yaw);
+    }
+    LKMotorControl();
+    
+}

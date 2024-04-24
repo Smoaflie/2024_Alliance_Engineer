@@ -58,7 +58,7 @@ typedef struct _Matrix {
 // 向量点乘
 #define vectorDotProduct(v1, v2) (((v1).x * (v2).x + (v1).y * (v2).y + (v1).z * (v2).z))
 
-const float height = 0.3, arm1 = 0.26f, arm2 = 0.21f, arm3 = 0.16f, arm4 = 0.05f;
+const float height = 0.3, arm1 = 0.227f, arm2 = 0.208f, arm3 = 0.203f, arm4 = 0.057f;
 
 static float Matrix_data_keep[row_max * column_max]; // 矩阵数据保留空间
 static Matrix Matrix_keep = {4,4,Matrix_data_keep};
@@ -117,8 +117,8 @@ Vector3 quaternionToVector3(Quaternion q)
 float angleBetweenVector3(Vector3 v1, Vector3 v2)
 {
     float dot       = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
-    float magV1     = sqrt(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
-    float magV2     = sqrt(v2.x * v2.x + v2.y * v2.y + v2.z * v2.z);
+    float magV1     = sqrtf(v1.x * v1.x + v1.y * v1.y + v1.z * v1.z);
+    float magV2     = sqrtf(v2.x * v2.x + v2.y * v2.y + v2.z * v2.z);
     float angle_rad = acosf(limit(dot / (magV1 * magV2), 1, -1));
     // float angle_deg = angle_rad * 180.0 / M_PI;
 
@@ -131,7 +131,7 @@ Quaternion transformToQuaternion(float *m)
     float tr = ((float (*)[4])m)[0][0] + ((float (*)[4])m)[1][1] + ((float (*)[4])m)[2][2];
 
     if (tr > 0) {
-        float s = sqrt(tr + 1.0);
+        float s = sqrtf(tr + 1.0);
         q.w      = s / 2.0;
         q.x      = (((float (*)[4])m)[2][1] - ((float (*)[4])m)[1][2]) / (2.0 * s);
         q.y      = (((float (*)[4])m)[0][2] - ((float (*)[4])m)[2][0]) / (2.0 * s);
@@ -147,7 +147,7 @@ Quaternion transformToQuaternion(float *m)
         j = (i + 1) % 3;
         k = (j + 1) % 3;
 
-        float s = sqrt((((float (*)[4])m)[i][i] - ((float (*)[4])m)[j][j] - ((float (*)[4])m)[k][k]) + 1.0);
+        float s = sqrtf((((float (*)[4])m)[i][i] - ((float (*)[4])m)[j][j] - ((float (*)[4])m)[k][k]) + 1.0);
 
         q_[i] = s / 2.0;
         if (s != 0) s = 0.5 / s;
@@ -162,7 +162,7 @@ Quaternion transformToQuaternion(float *m)
         q.z = q_[2];
     }
 
-    float s = sqrt(q.w*q.w + q.x*q.x + q.y*q.y + q.z*q.z);
+    float s = sqrtf(q.w*q.w + q.x*q.x + q.y*q.y + q.z*q.z);
     q.w = q.w / s;
     q.x = q.x / s;
     q.y = q.y / s;
@@ -226,100 +226,93 @@ float get_triangle_angle(float side_1, float side_2, float side_3)
 // 更新关节位姿及角度
 uint8_t Update_angle(Transform target, arm_controller_data_s *pub_s)
 {
-    // 大yaw 计划不加入逆解
-    pub.big_yaw_angle = 0;
+    /* 变换矩阵命名约定：A_B__参考坐标__(类型p/q)_m */
+    /* 向量命名约定：A_B__参考坐标__(类型p/q/vec) vec为单位向量 */
 
-    // 确定 yaw关节角度
-    // 由于big_yaw不移动，将origin设为mid_yaw
-    /* 变换矩阵命名约定：名称__参考坐标__(类型p/q)_m */
-    // Matrix target__tail__p_m = {
-    //     .column = 3,
-    //     .row    = 1,
-    // };
-    float target__tail__p_m_data[3] = {arm4, 0, 0};
-    Matrix target__tail__p_m        = {1, 3, target__tail__p_m_data};
+    /* 
+    arm1 2  3  4
+    H || || ||||
+    H \/ \/ \/\/
+    H\     ---、
+    H \   /    O<- 吸盘target
+    H  \ /           \---/
+    arm1/2/3/4 指的是他们对应模型的末端位置 target=arm4
+    */
+    /* 获取arm3末端位置 基准坐标系 */
+    float target_arm3__arm3__p_m_data[3] = {arm4, 0, 0};
+    Matrix target_arm3__arm3__p_m        = {1, 3, target_arm3__arm3__p_m_data};
 
-    float target__origin__q_m_data[3][3] = {
+    float target_arm3__origin__q_m_data[3][3] = {
         {1 - 2 * powf(target.localRotation.y, 2) - 2 * powf(target.localRotation.z, 2), 2 * (target.localRotation.x * target.localRotation.y - target.localRotation.z * target.localRotation.w), 2 * (target.localRotation.x * target.localRotation.z + target.localRotation.y * target.localRotation.w)},
         {2 * (target.localRotation.x * target.localRotation.y + target.localRotation.z * target.localRotation.w), 1 - 2 * powf(target.localRotation.x, 2) - 2 * powf(target.localRotation.z, 2), 2 * (target.localRotation.y * target.localRotation.z - target.localRotation.x * target.localRotation.w)},
         {2 * (target.localRotation.x * target.localRotation.z - target.localRotation.y * target.localRotation.w), 2 * (target.localRotation.y * target.localRotation.z + target.localRotation.x * target.localRotation.w), 1 - 2 * powf(target.localRotation.x, 2) - 2 * powf(target.localRotation.y, 2)},
     };
-
-    Matrix target__origin__q_m = {3, 3, (float *)target__origin__q_m_data};
-
-    Vector3 target_tail__origin__p;
-    M_mul(&Matrix_keep, &target__tail__p_m, &target__origin__q_m);
-    memcpy(&target_tail__origin__p, Matrix_keep.data, 3 * sizeof(float));
-
-    Vector3 tail__origin__p = Vector3_sub(target.localPosition, target_tail__origin__p);
+    Matrix target_arm3__origin__q_m = {3, 3, (float *)target_arm3__origin__q_m_data};
+    Vector3 target_arm3__origin__p;
+    M_mul(&Matrix_keep, &target_arm3__arm3__p_m, &target_arm3__origin__q_m);    // 向量x旋转矩阵
+    memcpy(&target_arm3__origin__p, Matrix_keep.data, 3 * sizeof(float));
+    target.localPosition.z = 0;//将臂臂放在同一个平面内
+    Vector3 arm3_origin__origin__p = Vector3_sub(target.localPosition, target_arm3__origin__p);
 
     // 确定 Z轴高度
-    pub.height                 = tail__origin__p.z;
-    Vector3 mid_yaw__origin__p = {arm1, 0, pub.height};
-    // tail__mid_yaw__p arm2 arm3 组成一个三角形，根据几何关系计算mid_yaw和YawAndRoll的yaw旋转角度
-    Vector3 tail__mid_yaw__p = Vector3_sub(tail__origin__p, mid_yaw__origin__p);
-    float n                  = vectorMagnitude(tail__mid_yaw__p);
+    // pub.height                 = arm4_origin__origin__p.z;
+
+    /* 获取arm2末端位置 基准坐标系 */
+    Vector3 arm3_arm2__origin__p = {arm3,0,0};
+    Vector3 arm2_origin__origin__p = Vector3_sub(arm3_origin__origin__p, arm3_arm2__origin__p);
+
+    // arm1_origin arm2_arm1 arm2_origin 组成一个三角形，根据几何关系计算mid_yaw和YawAndRoll的yaw旋转角度
+    float n                  = vectorMagnitude(arm2_origin__origin__p); //取模
     // 如果构不成三角形
-    if(n > (arm2+arm3)) return 0;
+    if(n > (arm1+arm2)) return 0; //退出，不做更改
     Vector3 left_vector      = {0, 1, 0};
-    float a1                 = angleBetweenVector3(left_vector, tail__mid_yaw__p);
-    a1 += get_triangle_angle(n, arm2, arm3); // a1为左轴与mid_yaw之间的夹角
-    pub.mid_yaw_angle = M_PI / 2 - a1;
+    float a1                 = angleBetweenVector3(left_vector, arm2_origin__origin__p); //a为临时变量，不用管他是什么意思
+    a1 += get_triangle_angle(n, arm1, arm2); // 此时a1为左轴与mid_yaw之间的夹角
+    pub.big_yaw_angle = a1 - (M_PI / 2); //范围为±90 向右侧偏转为正
 
-    // 可同理得assorted_yaw的偏转角度
-    float a2               = get_triangle_angle(arm2, arm3, n);
-    a2                     = M_PI - a2;
-    pub.assorted_yaw_angle = a2;
-    /* @note 该解法能避免在(1,0,0)方向上有歧义解，但会导致assorted_yaw不会向反方向旋转 */
+    // 可同理得mid_yaw_angle的偏转角度
+    a1               = get_triangle_angle(arm1, arm2, n);
+    a1                     = -(M_PI - a1); //范围为±90 向右侧偏转为正(但实际只会向左偏转，所以始终是负值——没有为什么，因为这是这种解法没法避免的问题（）)
+    pub.mid_yaw_angle = a1;
 
-    // 确定 assorted_roll关节角度
-    // 计算assorted__origin__q_m，通过两个欧拉角旋转矩阵相乘得到，过程略
-    float assorted__origin__q_data[3][3] = {
-        {cosf(pub.mid_yaw_angle) * cosf(pub.assorted_yaw_angle) - sinf(pub.mid_yaw_angle) * sinf(pub.assorted_yaw_angle), -cosf(pub.mid_yaw_angle) * sinf(pub.assorted_yaw_angle) - sinf(pub.mid_yaw_angle) * cosf(pub.assorted_yaw_angle), 0},
-        {sinf(pub.mid_yaw_angle) * cosf(pub.assorted_yaw_angle) + cosf(pub.mid_yaw_angle) * sinf(pub.assorted_yaw_angle), -sinf(pub.mid_yaw_angle) * sinf(pub.assorted_yaw_angle) + cosf(pub.mid_yaw_angle) * cosf(pub.assorted_yaw_angle), 0},
-        {0, 0, 1},
-    };
+    // 使用的解法为使arm3始终指向前方，可据此得到assorted_yaw_angle
+    a1 = get_triangle_angle(n, arm2, arm1) + (get_triangle_angle(arm1, n,arm2)-pub.big_yaw_angle);
+    pub.assorted_yaw_angle = a1;
 
-    Matrix assorted__origin__q = {3, 3, (float *)assorted__origin__q_data};
-
-    float tmp_data[3]             = {1, 0, 0};
-    Matrix main_vector__origin__p = {3, 3, tmp_data};
-
-    // 获得三条向量，通过法向量计算夹角
-    M_mul(&Matrix_keep, &main_vector__origin__p, &assorted__origin__q);
-    Vector3 assorted_main_vector__origin__p;
-    memcpy(&assorted_main_vector__origin__p, Matrix_keep.data, 3 * 4);
-    Vector3 target_p_vec = quaternionToVector3(target.localRotation);
+    // 之后确定 assorted_roll关节角度
+    // 通过三条向量arm3x指向，target指向，加上up基准向量，通过法向量计算夹角
+    Vector3 arm3x_origin__origin__vec = {1,0,0};    //该向量只包含了arm3x轴方向
+    Vector3 target_origin__origin__vec = quaternionToVector3(target.localRotation);
     // 先计算tail_motor的旋转角度`大小`
-    a1 = angleBetweenVector3(target_p_vec, assorted_main_vector__origin__p);
-    // 如tail_motor未偏转，则assorted_roll保持不动（法向量计算法会出问题）
+    a1 = angleBetweenVector3(target_origin__origin__vec, arm3x_origin__origin__vec);
+    // 如tail_motor未偏转，则assorted_roll保持不动（法向量计算法会出问题，故取0.0001的误差）
     if (a1 <= 0.0001 && a1 >= -0.0001)
         pub.assorted_roll_angle = pub.assorted_roll_angle;
     else {
-        Vector3 left__assorted__vec = {assorted__origin__q_data[1][0], assorted__origin__q_data[1][1], 0};
-        Vector3 n_1             = crossProduct(assorted_main_vector__origin__p, left__assorted__vec);
-        Vector3 n_2       = crossProduct(assorted_main_vector__origin__p, target_p_vec);
-        a2                = angleBetweenVector3(n_1, n_2);
+        Vector3 up_vector = {0,0,1};
+        Vector3 n_1             = crossProduct(arm3x_origin__origin__vec, up_vector);
+        Vector3 n_2       = crossProduct(arm3x_origin__origin__vec, target_origin__origin__vec);
+        float a2                = angleBetweenVector3(n_1, n_2);
 
-        pub.assorted_roll_angle = a2 - M_PI/2;
+        if(n_2.z < 0)
+            pub.assorted_roll_angle = a2;
+        else
+            pub.assorted_roll_angle = -a2;
     }
 
     // 再借助assorted_roll的偏转角度通过向量法计算tail_motor的偏转方向
-    Vector3 up__assorted_roll__vec;
-    float up__assorted_roll__q_data[] = {0, sinf(pub.assorted_roll_angle), cosf(pub.assorted_roll_angle)};
-    Matrix  up__assorted_roll__q = {1,3,up__assorted_roll__q_data};
-    M_mul(&Matrix_keep,&up__assorted_roll__q,&assorted__origin__q);
-    memcpy(&up__assorted_roll__vec,Matrix_keep.data,3*sizeof(float));
-    a1                             = angleBetweenVector3(up__assorted_roll__vec, target_p_vec);
-    pub.tail_motor_angle           = M_PI/2 - a1;
+    Vector3 up__arm3__vec = {0, sinf(pub.assorted_roll_angle), cosf(pub.assorted_roll_angle)};
+    a1                             = angleBetweenVector3(up__arm3__vec, target_origin__origin__vec);
+    pub.tail_motor_angle           = (M_PI / 2) - a1;
 
     // 将弧度转换为角度
+    pub.big_yaw_angle       = pub.big_yaw_angle * 180.0 / M_PI;
     pub.mid_yaw_angle       = pub.mid_yaw_angle * 180.0 / M_PI;
     pub.assorted_yaw_angle  = pub.assorted_yaw_angle * 180.0 / M_PI;
     pub.assorted_roll_angle = -pub.assorted_roll_angle * 180.0 / M_PI;
     pub.tail_motor_angle    = pub.tail_motor_angle * 180.0 / M_PI;
-    if (limit_bool(pub.mid_yaw_angle, 90, -90) && limit_bool(pub.assorted_yaw_angle, 90, -90) &&
-        limit_bool(pub.assorted_roll_angle, 180, -180) && limit_bool(pub.tail_motor_angle, 90, -90)) {
+    if (limit_bool(pub.big_yaw_angle, 90, -90) && limit_bool(pub.mid_yaw_angle, 90, -90) && limit_bool(pub.assorted_yaw_angle, 90, -90) 
+        && limit_bool(pub.assorted_roll_angle, 180, -180) && limit_bool(pub.tail_motor_angle, 90, -90)) {
         memcpy(pub_s, &pub, sizeof(arm_controller_data_s));
         return 1;
     } else {

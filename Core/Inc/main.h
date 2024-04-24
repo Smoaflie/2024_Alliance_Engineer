@@ -59,6 +59,12 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define Power_5V_EN_Pin GPIO_PIN_15
 #define Power_5V_EN_GPIO_Port GPIOC
+#define Z_limit_detect_Pin GPIO_PIN_2
+#define Z_limit_detect_GPIO_Port GPIOA
+#define YAW_limit_detect_Pin GPIO_PIN_9
+#define YAW_limit_detect_GPIO_Port GPIOE
+#define airPump_contro_Pin GPIO_PIN_13
+#define airPump_contro_GPIO_Port GPIOE
 #define KEY_Pin GPIO_PIN_15
 #define KEY_GPIO_Port GPIOA
 

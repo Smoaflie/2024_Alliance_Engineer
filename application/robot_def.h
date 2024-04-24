@@ -114,13 +114,12 @@ typedef enum {
     GIMBAL_GYRO_MODE,      // 云台陀螺仪反馈模式,反馈值为陀螺仪pitch,total_yaw_angle,底盘可以为小陀螺和跟随模式
 } gimbal_mode_e;
 
+// 臂臂模式设置
 typedef enum {
-    LOAD_STOP = 0,  // 停止发射
-    LOAD_REVERSE,   // 反转
-    LOAD_1_BULLET,  // 单发
-    LOAD_3_BULLET,  // 三发
-    LOAD_BURSTFIRE, // 连发
-} loader_mode_e;
+    ARM_ZERO_FORCE = 0, // 电流零输入
+    ARM_FREE_MODE,      // 臂臂自由移动
+    ARM_REFER_MODE,      // 臂臂自定义控制器
+} arm_mode_e;
 
 /* ----------------CMD应用发布的控制数据,应当由gimbal/chassis/shoot订阅---------------- */
 /**
@@ -181,7 +180,7 @@ typedef struct
 } Gimbal_Upload_Data_s;
 
 
-/* ----------------臂臂的末端位姿变换数据----------------*/
+/* ----------------臂臂的收发数据----------------*/
 /**
  * @brief 由cmd订阅和发送.
  *
@@ -189,11 +188,25 @@ typedef struct
 typedef struct{
     float Translation_x;
     float Translation_y;
+    float Roatation_Vertical;
+    float Roatation_Horizontal;
+    // 上四个为控制末端位姿，下两个为控制臂指向
     float Position_z;
     float Rotation_yaw;
-    uint8_t state;
+    arm_mode_e mode;
+    uint8_t init_flag;
 }Arm_Cmd_Data_s;
 
+typedef struct{
+    uint8_t init_flag;
+}Arm_State_Data_s;
 #pragma pack() // 开启字节对齐,结束前面的#pragma pack(1)
+
+/* 一些自定义的宏定义，有点shiXD */
+#define Z_motor_init_clt 0x01
+#define Big_Yaw_motor_init_clt 0x02
+#define Z_motor_pub_reset 0x04
+#define Big_Yaw_motor_pub_reset 0x08
+#define Reset_arm_cmd_param_flag 0x10
 
 #endif // !ROBOT_DEF_H

@@ -17,6 +17,7 @@ ServoInstance *ServoInit(Servo_Init_Config_s *Servo_Init_Config)
     servo->Channel = Servo_Init_Config->Channel;
 
     HAL_TIM_PWM_Start(Servo_Init_Config->htim, Servo_Init_Config->Channel);
+    servo->state = 1;
     servo_motor_instance[servo_idx++] = servo;
     return servo;
 }
@@ -74,6 +75,23 @@ void Servo_Motor_Type_Select(ServoInstance *Servo_Motor, int16_t mode)
     Servo_Motor->Servo_Angle_Type = mode;
 }
 
+//舵机使能
+void Servo_Motor_Start(ServoInstance *Servo_Motor){
+    if(Servo_Motor->state == 0)
+    {
+        HAL_TIM_PWM_Start(Servo_Motor->htim, Servo_Motor->Channel);
+        Servo_Motor->state = 1;
+    }
+    
+}
+//舵机失能
+void Servo_Motor_Stop(ServoInstance *Servo_Motor){
+    if(Servo_Motor->state == 1)
+    {
+        HAL_TIM_PWM_Stop(Servo_Motor->htim, Servo_Motor->Channel);
+        Servo_Motor->state = 0;
+    }
+}
 /**
  * @brief 舵机输出控制
  *
@@ -87,7 +105,7 @@ void ServeoMotorControl()
         if (servo_motor_instance[i])
         {
             Servo_Motor = servo_motor_instance[i];
-
+            if(Servo_Motor->state == 0) continue;
             switch (Servo_Motor->Servo_type)
             {
             case Servo180:

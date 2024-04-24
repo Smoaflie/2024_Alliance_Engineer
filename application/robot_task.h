@@ -14,41 +14,46 @@
 #include "daemon.h"
 #include "HT04.h"
 #include "buzzer.h"
-
+#include "LKmotor.h"
+#include "DRmotor.h"
 #include "bsp_log.h"
 #include "led.h"
 #include "buzzer.h"
 #include "ins_task.h"
 #include "chassis.h"
 #include "user_lib.h"
+#include "gimbal.h"
 
 #include "robot_cmd.h"
 
-__attribute__((noreturn)) void StartINSTASK(void *argument)
+uint32_t feed_dwt_cntt,feed_dtt;
+
+void TestTask(void *argument)
 {
     UNUSED(argument);
-    static uint32_t ins_time;
-    static float ins_dt;
-    LOGINFO("[freeRTOS] INS Task Start");
+    DWT_GetDeltaT(&feed_dwt_cntt);
+
     while (1) {
-        INS_Task();
-        ins_dt = 1000 * DWT_GetDeltaT(&ins_time);
-        if (ins_dt > 1.2f)
-            LOGERROR("[freeRTOS] INS Task is being DELAY! dt = [%f]ms", &ins_dt);
-        osDelay(1);
+        static GPIO_PinState key1_state;
+        key1_state = HAL_GPIO_ReadPin(Z_limit_detect_GPIO_Port,Z_limit_detect_Pin);
+        
+
+        RobotTask();
+        feed_dtt = DWT_GetDeltaT(&feed_dwt_cntt);
+
+
+        MotorControlTask();
+        osDelay(1); 
     }
 }
 
-__attribute__((noreturn)) void TestTask(void *argument)
-{
+void motorControlTask(void *argument){
     UNUSED(argument);
-    osDelay(500);
-    BuzzerPlay(StartUP_sound);
-
-    while (1) {
-        RobotTask();
-        MotorControlTask();
-
+    while(1)
+    {
+        
+        // GIMBALTask();
+        // LKMotorControl();
         osDelay(2);
     }
 }

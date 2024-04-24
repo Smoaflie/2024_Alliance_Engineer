@@ -51,7 +51,7 @@ void DaemonTask()
                 // @todo 为蜂鸣器/led等增加离线报警的功能,非常关键!
             }
         }
-        osDelay(1);
+        osDelay(10);
     }
 }
 // (需要id的原因是什么?) 下面是copilot的回答!

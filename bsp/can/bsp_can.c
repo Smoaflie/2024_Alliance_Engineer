@@ -37,15 +37,6 @@ static void CANAddFilter(CANInstance *_instance)
 	can_filter_conf.FilterID1 = 0x000;                               //32位ID接收ID1
 	can_filter_conf.FilterID2 = _instance->rx_id;                               //接收ID2
 	HAL_FDCAN_ConfigFilter(_instance->can_handle,&can_filter_conf);
-    HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
-	HAL_FDCAN_ConfigFifoWatermark(&hfdcan1, FDCAN_CFG_RX_FIFO0, 1);
-    HAL_FDCAN_ConfigGlobalFilter(&hfdcan2, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
-	HAL_FDCAN_ConfigFifoWatermark(&hfdcan2, FDCAN_CFG_RX_FIFO1, 1);
-    HAL_FDCAN_ConfigGlobalFilter(&hfdcan3, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
-	HAL_FDCAN_ConfigFifoWatermark(&hfdcan3, FDCAN_CFG_RX_FIFO0, 1); 		 				  
-	// HAL_FDCAN_ConfigGlobalFilter(_instance->can_handle, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
-	// HAL_FDCAN_ConfigFifoWatermark(_instance->can_handle, FDCAN_CFG_RX_FIFO0, 1);
-    // HAL_FDCAN_ConfigFifoWatermark(_instance->can_handle, FDCAN_CFG_RX_FIFO1, 1);
     
 }
 
@@ -66,6 +57,16 @@ static void CANServiceInit()
 	HAL_FDCAN_Start(&hfdcan3);
     HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
     HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO1_NEW_MESSAGE,0);
+
+    HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
+	HAL_FDCAN_ConfigFifoWatermark(&hfdcan1, FDCAN_CFG_RX_FIFO0, 1);
+	HAL_FDCAN_ConfigFifoWatermark(&hfdcan1, FDCAN_CFG_RX_FIFO1, 1);
+    HAL_FDCAN_ConfigGlobalFilter(&hfdcan2, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
+	HAL_FDCAN_ConfigFifoWatermark(&hfdcan2, FDCAN_CFG_RX_FIFO0, 1);
+	HAL_FDCAN_ConfigFifoWatermark(&hfdcan2, FDCAN_CFG_RX_FIFO1, 1);
+    HAL_FDCAN_ConfigGlobalFilter(&hfdcan3, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
+	HAL_FDCAN_ConfigFifoWatermark(&hfdcan3, FDCAN_CFG_RX_FIFO0, 1);
+	HAL_FDCAN_ConfigFifoWatermark(&hfdcan3, FDCAN_CFG_RX_FIFO1, 1); 		 				  
 }
 
 /* ----------------------- two extern callable function -----------------------*/
@@ -157,7 +158,7 @@ uint8_t CANTransmit_once(FDCAN_HandleTypeDef* can_handle, uint32_t StdId, uint8_
     tempTX_instance.txconf.DataLength = FDCAN_DLC_BYTES_8;
 
     tempTX_instance.can_handle = can_handle;
-    tempTX_instance.txconf.IdType = StdId;
+    tempTX_instance.txconf.Identifier = StdId;
     memcpy(tempTX_instance.tx_buff,tx_buff,sizeof(tempTX_instance.tx_buff));
 
     CANTransmit(&tempTX_instance, timeout);

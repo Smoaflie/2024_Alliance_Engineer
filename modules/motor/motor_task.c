@@ -9,12 +9,15 @@
 
 void MotorControlTask()
 {
-    // static uint8_t cnt = 0; 设定不同电机的任务频率
-    // if(cnt%5==0) //200hz
-    // if(cnt%10==0) //100hz
+    static uint8_t cnt = 0; //设定不同电机的任务频率
+    cnt++;
+    if(cnt%2==0)
+    {
+        DRMotorControl();  
+    }
     DJIMotorControl();
-    DRMotorControl();
-    LKMotorControl();
+     
+    
 
     // legacy support
     // 由于ht04电机的反馈方式为接收到一帧消息后立刻回传,以此方式连续发送可能导致总线拥塞

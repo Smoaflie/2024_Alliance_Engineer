@@ -20,7 +20,9 @@
             "*.cxx": "cpp",
             "*.cc": "cpp",
             "cstdint": "c",
-            "cstdlib": "c"
+            "cstdlib": "c",
+            "type_traits": "c",
+            "typeinfo": "c"
         },
         "[yaml]": {
             "editor.insertSpaces": true,

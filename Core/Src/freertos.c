@@ -59,7 +59,7 @@ osThreadId_t BuzzerHandle;
 const osThreadAttr_t Buzzer_attributes = {
   .name = "Buzzer",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityBelowNormal,
 };
 /* Definitions for Daemon */
 osThreadId_t DaemonHandle;
@@ -68,19 +68,19 @@ const osThreadAttr_t Daemon_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for instask */
-osThreadId_t instaskHandle;
-const osThreadAttr_t instask_attributes = {
-  .name = "instask",
-  .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityRealtime7,
-};
 /* Definitions for Test */
 osThreadId_t TestHandle;
 const osThreadAttr_t Test_attributes = {
   .name = "Test",
   .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
+/* Definitions for motorControl */
+osThreadId_t motorControlHandle;
+const osThreadAttr_t motorControl_attributes = {
+  .name = "motorControl",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -91,8 +91,8 @@ const osThreadAttr_t Test_attributes = {
 void StartDefaultTask(void *argument);
 void BuzzerTask(void *argument);
 void DaemonTask(void *argument);
-void StartINSTASK(void *argument);
 void TestTask(void *argument);
+void motorControlTask(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -133,11 +133,11 @@ void MX_FREERTOS_Init(void) {
   /* creation of Daemon */
   DaemonHandle = osThreadNew(DaemonTask, NULL, &Daemon_attributes);
 
-  /* creation of instask */
-  instaskHandle = osThreadNew(StartINSTASK, NULL, &instask_attributes);
-
   /* creation of Test */
   TestHandle = osThreadNew(TestTask, NULL, &Test_attributes);
+
+  /* creation of motorControl */
+  motorControlHandle = osThreadNew(motorControlTask, NULL, &motorControl_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -161,11 +161,11 @@ void StartDefaultTask(void *argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
+  UNUSED(argument);
+  while(1){
+    
   }
+  // osThreadTerminate(defaultTaskHandle); // 避免空置和切换占用cpu
   /* USER CODE END StartDefaultTask */
 }
 
@@ -205,24 +205,6 @@ __weak void DaemonTask(void *argument)
   /* USER CODE END DaemonTask */
 }
 
-/* USER CODE BEGIN Header_StartINSTASK */
-/**
-* @brief Function implementing the instask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartINSTASK */
-__weak void StartINSTASK(void *argument)
-{
-  /* USER CODE BEGIN StartINSTASK */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartINSTASK */
-}
-
 /* USER CODE BEGIN Header_TestTask */
 /**
 * @brief Function implementing the Test thread.
@@ -239,6 +221,24 @@ __weak void TestTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END TestTask */
+}
+
+/* USER CODE BEGIN Header_motorControlTask */
+/**
+* @brief Function implementing the motorControl thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_motorControlTask */
+__weak void motorControlTask(void *argument)
+{
+  /* USER CODE BEGIN motorControlTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END motorControlTask */
 }
 
 /* Private application code --------------------------------------------------*/

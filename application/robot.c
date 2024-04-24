@@ -26,6 +26,7 @@
 
 #include "dji_motor.h"
 #include "DRmotor.h"
+#include "gimbal.h"
 
 void RobotInit()
 {
@@ -36,34 +37,22 @@ void RobotInit()
 
     BSPInit();
 
-selfTestInit();
-    RobotCMDInit();
-    #ifdef CHASSIS_BOARD
-    ChassisInit();
-    #endif
-    #ifdef ARM_BOARD
-    // ArmInit();
-    #endif
+    // RobotCMDInit();
 
-    #ifdef ONE_BOARD
-    ArmInit();
-    ChassisInit();
-    #endif 
+    // ChassisInit();
+    // GIMBALInit();
+    // ArmInit();
+
+    selfTestInit();
+
     // 初始化完成,开启中断
     __enable_irq();
 }
 
 void RobotTask()
 {
-    #ifdef ARM_BOARD
+    // RobotCMDTask();
     // ArmTask();
-    #endif
-    #ifdef CHASSIS_BOARD
-    ChassisTask();
-    #endif
-
-    #ifdef ONE_BOARD
-    ArmTask();
-    ChassisTask();
-    #endif 
+    // ChassisTask();
+    // selfTestTask();
 }

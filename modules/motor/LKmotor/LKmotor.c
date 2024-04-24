@@ -50,7 +50,7 @@ static void LKMotorDecode(CANInstance *_instance)
 static void LKMotorLostCallback(void *motor_ptr)
 {
     LKMotorInstance *motor = (LKMotorInstance *)motor_ptr;
-    LOGWARNING("[LKMotor] motor lost, id: %d", motor->motor_can_ins->tx_id);
+    LOGWARNING("[LKMotor] motor lost, id: %x", motor->motor_can_ins->tx_id);
 }
 
 LKMotorInstance *LKMotorInit(Motor_Init_Config_s *config)
@@ -82,14 +82,15 @@ LKMotorInstance *LKMotorInit(Motor_Init_Config_s *config)
     config->can_init_config.id = motor;
     config->can_init_config.can_module_callback = LKMotorDecode;
     config->can_init_config.rx_id = 0x140 + config->can_init_config.tx_id;
-    config->can_init_config.tx_id = config->can_init_config.tx_id + 0x280 - 1; // 这样在发送写入buffer的时候更方便,因为下标从0开始,LK多电机发送id为0x280
-    motor->motor_can_ins = CANRegister(&config->can_init_config);
-
-    if (idx == 0) // 用第一个电机的can instance发送数据
-    {
-        sender_instance = motor->motor_can_ins;
-        sender_instance->tx_id = 0x280; //  修改tx_id为0x280,用于多电机发送,不用管其他LKMotorInstance的tx_id,它们仅作初始化用
-    }
+    // 多电机发送需要在上位机中开启，因为臂臂上只有一个LK电机，暂时不用
+    // config->can_init_config.tx_id = config->can_init_config.tx_id + 0x280 - 1; // 这样在发送写入buffer的时候更方便,因为下标从0开始,LK多电机发送id为0x280
+    // if (idx == 0) // 用第一个电机的can instance发送数据
+    // {
+    //     sender_instance = motor->motor_can_ins;
+    //     sender_instance->tx_id = 0x280; //  修改tx_id为0x280,用于多电机发送,不用管其他LKMotorInstance的tx_id,它们仅作初始化用
+    // }
+    config->can_init_config.tx_id = 0x140 + config->can_init_config.tx_id;
+    motor->motor_can_ins = CANRegister(&config->can_init_config);    
 
     LKMotorStop(motor);
     DWT_GetDeltaT(&motor->measure.feed_dwt_cnt);
@@ -154,17 +155,28 @@ void LKMotorControl()
 
         set = pid_ref;
         
+        // 同上，暂时不采用多电机发送
         // 这里随便写的,为了兼容多电机命令.后续应该将tx_id以更好的方式表达电机id,单独使用一个CANInstance,而不是用第一个电机的CANInstance
-        memcpy(sender_instance->tx_buff + (motor->motor_can_ins->tx_id - 0x280) * 2, &set, sizeof(uint16_t));
+        // memcpy(sender_instance->tx_buff + (motor->motor_can_ins->tx_id - 0x280) * 2, &set, sizeof(uint16_t));
+        memcpy(motor->motor_can_ins->tx_buff + 4, (uint8_t*)&set, sizeof(uint16_t));
+        motor->motor_can_ins->tx_buff[0] = 0xA0;
 
         if (motor->stop_flag == MOTOR_STOP)
         { // 若该电机处于停止状态,直接将发送buff置零
-            memset(sender_instance->tx_buff + (motor->motor_can_ins->tx_id - 0x280) * 2, 0, sizeof(uint16_t));
+            // 同上，暂时不采用多电机发送
+            // memset(sender_instance->tx_buff + (motor->motor_can_ins->tx_id - 0x280) * 2, 0, sizeof(uint16_t));
+            memset(motor->motor_can_ins->tx_buff + 4, 0, sizeof(uint16_t));
         }
+        CANTransmit(motor->motor_can_ins, 2);
+        
+        // static uint8_t tx_buf_B0X_recall[] = {0x9A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        // CANTransmit_once(motor->motor_can_ins->can_handle,
+        //                     0x141,
+        //                     tx_buf_B0X_recall, 1);
     }
 
-    if (idx) // 如果有电机注册了
-        CANTransmit(sender_instance, 0.2);
+    // if (idx) // 如果有电机注册了
+    //     CANTransmit(sender_instance, 0.2);
 }
 
 void LKMotorStop(LKMotorInstance *motor)

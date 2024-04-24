@@ -29,7 +29,7 @@
       "toolchain": "GCC",
       "compileConfig": {
         "cpuType": "Cortex-M7",
-        "floatingPointHardware": "double",
+        "floatingPointHardware": "single",
         "scatterFilePath": "",
         "useCustomScatterFile": true,
         "storageLayout": {
