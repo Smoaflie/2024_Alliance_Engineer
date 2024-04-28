@@ -9,6 +9,7 @@
 #include "LKmotor.h"
 #include "servo_motor.h"
 #include "led.h"
+#include "crc16.h"
 // bsp
 #include "encoder.h"
 #include "bsp_dwt.h"
@@ -22,11 +23,20 @@ static ServoInstance* gimbalmoto;
 static Subscriber_t *gimbal_sub;                   // 用于订阅云台的控制命令
 static Gimbal_Ctrl_Cmd_s gimbal_cmd_recv; // 云台应用接收的信息
 static float gimbal_yaw_angle;
-static uint8_t gimbal_rec[100];
-static void imu_usart_callback(){
-    memcpy(gimbal_rec,imu_usart_instance->recv_buff,82);
-    memcpy((uint8_t*)&gimbal_yaw_angle,imu_usart_instance->recv_buff+62,4);
-}
+static uint8_t gimbal_rec[30];
+// static void imu_usart_callback(){
+//     uint16_t crc,payload_len;
+//     memcpy(gimbal_rec,imu_usart_instance->recv_buff,imu_usart_instance->recv_buff_size);
+//     if(gimbal_rec[0]==0x5A && gimbal_rec[1]==0xA5)
+//     {
+//         payload_len = gimbal_rec[2] + (gimbal_rec[3]<<8);
+//         // crc = gimbal_rec[4] + (gimbal_rec[5]<<8);
+//         // uint16_t crc_d  =crc_16(gimbal_rec+6,payload_len);
+//         // if(crc == crc_d)
+//         if(payload_len == 7)
+//             gimbal_yaw_angle = (int16_t)(gimbal_rec[11]+(gimbal_rec[12]<<8))*0.01f;
+//     }
+// }
 void GIMBALInit()
 {
     Motor_Init_Config_s config ={
@@ -74,11 +84,11 @@ void GIMBALInit()
     gimbalmoto = ServoInit(&servo_config);
     
     gimbal_sub = SubRegister("gimbal_cmd", sizeof(gimbal_cmd_recv));
-    USART_Init_Config_s uart_conf;
-    uart_conf.module_callback = imu_usart_callback;
-    uart_conf.usart_handle = &huart8;
-    uart_conf.recv_buff_size = 82;
-    imu_usart_instance = USARTRegister(&uart_conf);
+    // USART_Init_Config_s uart_conf;
+    // uart_conf.module_callback = imu_usart_callback;
+    // uart_conf.usart_handle = &huart9;
+    // uart_conf.recv_buff_size = 13;
+    // imu_usart_instance = USARTRegister(&uart_conf);
 }
 
 /* 机器人机械臂控制核心任务 */
@@ -92,9 +102,8 @@ void GIMBALTask()
     }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_GYRO_MODE)
     {
         Servo_Motor_Start(gimbalmoto);
+        Servo_Motor_FreeAngle_Set(gimbalmoto,gimbal_cmd_recv.pitch);
         LKMotorEnable(motor);
         LKMotorSetRef(motor,gimbal_cmd_recv.yaw);
-    }
-    LKMotorControl();
-    
+    }    
 }

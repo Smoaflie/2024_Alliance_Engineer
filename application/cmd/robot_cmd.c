@@ -18,18 +18,19 @@
 static Publisher_t *chassis_cmd_pub;        // 底盘控制消息发布者
 static Publisher_t *gimbal_cmd_pub;        // 云台控制消息发布者
 static Publisher_t *arm_cmd_pub;    // 机械臂控制信息发布者
-
-static Subscriber_t *arm_state_sub; // 机械臂状态接收者
+static Publisher_t *airpump_cmd_pub;// 气阀/气泵控制信息发布者
 
 static Chassis_Ctrl_Cmd_s chassis_cmd_send; // 发送给底盘应用的信息,包括控制信息和UI绘制相关
 static Gimbal_Ctrl_Cmd_s gimbal_cmd_send; // 发送给云台应用的信息
 static Arm_Cmd_Data_s arm_cmd_data; // 发送给机械臂应用的信息
-static Arm_State_Data_s arm_state;
+static Airpump_Cmd_Data_s airpump_cmd_send; // 发送给气阀/气泵控制应用的信息
 
 static RC_ctrl_t *rc_data;                  // 遥控器数据,初始化时返回
 
 static Robot_Status_e robot_state; // 机器人整体工作状态
 
+static int8_t dial_flag = 0;
+static uint8_t pump_state = 0;
 
 
 void RobotCMDInit()
@@ -40,7 +41,7 @@ void RobotCMDInit()
     chassis_cmd_pub = PubRegister("chassis_cmd", sizeof(Chassis_Ctrl_Cmd_s));
     gimbal_cmd_pub = PubRegister("gimbal_cmd", sizeof(Gimbal_Ctrl_Cmd_s));
     arm_cmd_pub     = PubRegister("arm_cmd", sizeof(Arm_Cmd_Data_s));
-    arm_state_sub = SubRegister("arm_state",sizeof(Arm_State_Data_s));
+    airpump_cmd_pub = PubRegister("airpump_cmd",sizeof(Airpump_Cmd_Data_s));
 
     memset(&arm_cmd_data, 0, sizeof(arm_cmd_data));
 }
@@ -51,53 +52,89 @@ void RobotCMDInit()
  */
 static void RemoteControlSet()
 {
+
+    static int16_t dial_cnt = 0;
+    if(rc_data->rc.dial == 660) dial_cnt++;
+    else if(rc_data->rc.dial <=-580) dial_cnt--;
+    else    dial_cnt=0;
+    if(dial_cnt>100)    dial_flag=1;
+    else if(dial_cnt<-100)  dial_flag=-1;
+    else dial_flag = 0;
     // 左侧开关状态为[下],控制底盘云台
     if (switch_is_down(rc_data->rc.switch_left)) {
-        arm_cmd_data.mode = ARM_ZERO_FORCE;
-        if (switch_is_mid(rc_data->rc.switch_right)) // 右侧开关状态[中],底盘跟随云台
-        {
-            // chassis_cmd_send.chassis_mode = CHASSIS_ROTATE;
-            chassis_cmd_send.chassis_mode = CHASSIS_NO_FOLLOW;
-            gimbal_cmd_send.gimbal_mode   = GIMBAL_GYRO_MODE;
-        } else if (switch_is_up(rc_data->rc.switch_right)) // 右侧开关状态[上],底盘和云台分离,底盘保持不转动
-        {
-            chassis_cmd_send.chassis_mode = CHASSIS_NO_FOLLOW;
-            gimbal_cmd_send.gimbal_mode   = GIMBAL_GYRO_MODE;
-        }
-        // 底盘参数,目前没有加入小陀螺(调试似乎暂时没有必要),系数需要调整
-        gimbal_cmd_send.yaw -= rc_data->rc.rocker_r_/660.0*0.5;
-        gimbal_cmd_send.pitch -= rc_data->rc.rocker_r1/660.0*0.2;
+        chassis_cmd_send.chassis_mode = CHASSIS_ROTATE_CONTRO; // 底盘使能
+        gimbal_cmd_send.gimbal_mode   = GIMBAL_GYRO_MODE; // 云台使能
+        arm_cmd_data.mode = ARM_FIXED; // 臂臂固定
+        
+        // 左摇杆控制底盘移动，右摇杆控制底盘旋转和云台pitch
+        // gimbal_cmd_send.yaw -= rc_data->rc.rocker_r_/660.0*0.5; // 未安装陀螺仪，暂不让云台电机旋转
+        gimbal_cmd_send.pitch -= rc_data->rc.rocker_r1/660.0*0.2; // 云台pitch
+        chassis_cmd_send.vx = 10.0f * (float)rc_data->rc.rocker_l_; // 底盘水平方向
+        chassis_cmd_send.vy = 10.0f * (float)rc_data->rc.rocker_l1; // 底盘竖值方向
+        chassis_cmd_send.wz = 2500.0f * (float)rc_data->rc.rocker_r_/660.0; // 底盘旋转
+        /* 限幅 */
         VAL_LIMIT(gimbal_cmd_send.pitch, 0, 65);
-        chassis_cmd_send.vx = 10.0f * (float)rc_data->rc.rocker_l_; // _水平方向
-        chassis_cmd_send.vy = 10.0f * (float)rc_data->rc.rocker_l1; // 1数值方向
-        // chassis_cmd_send.wz = 100.0f * (float)rc_data->rc.rocker_l1/660.0; // 1数值方向
+
     }
     // 左侧开关为[中]，控制底盘臂臂
     if (switch_is_mid(rc_data->rc.switch_left)) {
-        chassis_cmd_send.chassis_mode = CHASSIS_NO_FOLLOW;
-        gimbal_cmd_send.gimbal_mode   = GIMBAL_GYRO_MODE;
-        arm_cmd_data.mode = ARM_FREE_MODE;
-        chassis_cmd_send.vx = 10.0f * (float)rc_data->rc.rocker_l_; // _水平方向
-        chassis_cmd_send.vy = 10.0f * (float)rc_data->rc.rocker_l1; // 1数值方向
-        // arm_cmd_data.Translation_x = rc_data->rc.rocker_l1 / 660.0 *0.0001;
-        // arm_cmd_data.Translation_y = -rc_data->rc.rocker_l_/ 660.0 *0.0001;
-        arm_cmd_data.Position_z -= 0.5 * rc_data->rc.rocker_r1 / 660.0;
-        arm_cmd_data.Rotation_yaw += 0.06 * rc_data->rc.rocker_r_ / 660.0;
-        /* 限幅 */
-        LIMIT_MIN_MAX(arm_cmd_data.Position_z, -616, 616);
-        LIMIT_MIN_MAX(arm_cmd_data.Rotation_yaw, -180, 180);
+        chassis_cmd_send.chassis_mode = CHASSIS_ROTATE_CONTRO; // 底盘使能
+        gimbal_cmd_send.gimbal_mode   = GIMBAL_GYRO_MODE; // 云台使能
+        arm_cmd_data.mode = ARM_POSE_CONTRO_MODE; // 臂臂位置控制
+
+        // 左摇杆控制底盘移动，右摇杆控制臂的旋转和竖直平移
+        chassis_cmd_send.vx = 10.0f * (float)rc_data->rc.rocker_l_; // 底盘水平方向
+        chassis_cmd_send.vy = 10.0f * (float)rc_data->rc.rocker_l1; // 底盘竖值方向
+        arm_cmd_data.Position_z = 0.5 * rc_data->rc.rocker_r1 / 660.0; // 臂竖直平移
+        arm_cmd_data.Rotation_yaw = 0.06 * rc_data->rc.rocker_r_ / 660.0; // 臂的旋转
+
+        // 拨轮向上吸盘顺时针旋转，向下吸盘逆时针旋转
+        if(dial_flag == 1)  arm_cmd_data.sucker_state = 1;
+        else if(dial_flag == -1)  arm_cmd_data.sucker_state = -1;
+        else arm_cmd_data.sucker_state = 0;
+
+        // 右侧开关为[上]，气泵打开（切换，需切换右侧开关后才能触发一次）
+        if(switch_is_up(rc_data->rc.switch_right) && !(pump_state & 0x01)){
+            airpump_cmd_send.mode |= 0x01;
+            pump_state |= 0x01;
+        }else{
+            airpump_cmd_send.mode &= ~0x01;
+            pump_state &= ~0x01;
+        }
+        // 右侧开关为[下]，重置臂臂位置
+        if(switch_is_down(rc_data->rc.switch_right)){
+            arm_cmd_data.init_flag |= Reset_arm_cmd_param_flag;
+        }
     }
-    // 左侧开关为[上]，自由控制臂臂
+    // 左侧开关为[上]，控制臂臂
     if (switch_is_up(rc_data->rc.switch_left)) {
-        // gimbal_cmd_send.gimbal_mode   = GIMBAL_GYRO_MODE;
-        // chassis_cmd_send.chassis_mode = CHASSIS_NO_FOLLOW;
         arm_cmd_data.mode = ARM_REFER_MODE;
-        // chassis_cmd_send.vx = 10.0f * (float)rc_data->rc.rocker_l_; // _水平方向
-        // chassis_cmd_send.vy = 10.0f * (float)rc_data->rc.rocker_l1; // 1数值方向
-        arm_cmd_data.Translation_x = rc_data->rc.rocker_l1 / 660.0 *0.00015;
-        arm_cmd_data.Translation_y = -rc_data->rc.rocker_l_/ 660.0 *0.00015;
-        arm_cmd_data.Roatation_Vertical = -rc_data->rc.rocker_r_/ 660.0 *0.0015;
-        arm_cmd_data.Roatation_Horizontal  = rc_data->rc.rocker_r1/ 660.0 *0.0015;
+        chassis_cmd_send.chassis_mode = CHASSIS_NO_FOLLOW; // 底盘使能
+        gimbal_cmd_send.gimbal_mode   = GIMBAL_GYRO_MODE; // 云台使能
+        // 左摇杆控制臂臂前后移动，右摇杆控制roll&pitch
+        arm_cmd_data.Translation_x = -rc_data->rc.rocker_l1 / 660.0 *0.0002;
+        arm_cmd_data.Translation_y = rc_data->rc.rocker_l_/ 660.0 *0.0002;
+        arm_cmd_data.Roatation_Horizontal = rc_data->rc.rocker_r_/ 660.0 *0.08 ;
+        arm_cmd_data.Roatation_Vertical  = -rc_data->rc.rocker_r1/ 660.0 *0.08 ;
+
+        // 拨轮向上气盘顺时针旋转，向下气盘逆时针旋转
+        if(dial_flag == 1)  arm_cmd_data.sucker_state = 1;
+        else if(dial_flag == -1)  arm_cmd_data.sucker_state = -1;
+        else arm_cmd_data.sucker_state = 0;
+
+        // 拨轮向上吸盘顺时针旋转，向下吸盘逆时针旋转
+        if(dial_flag == 1)  arm_cmd_data.sucker_state = 1;
+        else if(dial_flag == -1)  arm_cmd_data.sucker_state = -1;
+        else arm_cmd_data.sucker_state = 0;
+
+        // 右侧开关为[上]，气泵打开（切换，需切换右侧开关后才能触发一次）
+        if(switch_is_up(rc_data->rc.switch_right) && !(pump_state & 0x01)){
+            airpump_cmd_send.mode |= 0x01;
+            pump_state |= 0x01;
+        }else{
+            airpump_cmd_send.mode &= ~0x01;
+            pump_state &= ~0x01;
+        }
     }
 }
 
@@ -148,19 +185,20 @@ static void EmergencyHandler()
     }
 
     // 双下为急停
-    if (robot_state == ROBOT_STOP ||  (switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right) || flag == 0)) // 还需添加重要应用和模块离线的判断
+    if (robot_state == ROBOT_STOP ||  (switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) || flag == 0) // 还需添加重要应用和模块离线的判断
     {
-        DM_board_LEDSet(0xd633ff);
+        // DM_board_LEDSet(0xd633ff);
         if(robot_state == ROBOT_READY)LOGERROR("[CMD] emergency stop!");
         robot_state                   = ROBOT_STOP;
         gimbal_cmd_send.gimbal_mode   = GIMBAL_ZERO_FORCE;
         chassis_cmd_send.chassis_mode = CHASSIS_ZERO_FORCE;
         arm_cmd_data.mode             = ARM_ZERO_FORCE;
         gimbal_cmd_send.gimbal_mode   = GIMBAL_ZERO_FORCE;
+        airpump_cmd_send.mode = 0;
     }
     // 遥控器右侧开关为[上],恢复正常运行
     if (switch_is_up(rc_data->rc.switch_right) && flag == 1) {
-        DM_board_LEDSet(0x33ffff);
+        // DM_board_LEDSet(0x33ffff);
         if(robot_state == ROBOT_STOP)   LOGINFO("[CMD] reinstate, robot ready");
         robot_state = ROBOT_READY;
     }
@@ -169,21 +207,9 @@ static void EmergencyHandler()
 /* 机器人核心控制任务,200Hz频率运行(必须高于视觉发送频率) */
 void RobotCMDTask()
 {
-    SubGetMessage(arm_state_sub,&arm_state);
-    arm_cmd_data.init_flag = arm_state.init_flag;
-    if(arm_cmd_data.init_flag & Reset_arm_cmd_param_flag){
-        if(arm_cmd_data.init_flag & Big_Yaw_motor_pub_reset)
-        {
-            arm_cmd_data.Position_z = 0;
-            arm_cmd_data.init_flag &= ~(Big_Yaw_motor_pub_reset);
-        }
-        if(arm_cmd_data.init_flag & Z_motor_pub_reset)
-        {
-            arm_cmd_data.Rotation_yaw = 0;
-            arm_cmd_data.init_flag &= ~(Z_motor_pub_reset);
-        }
-        arm_cmd_data.init_flag &= ~(Reset_arm_cmd_param_flag);    
-    }
+    // 清零arm初始化控制标志
+    arm_cmd_data.init_flag = 0;
+
     RemoteControlSet();
     EmergencyHandler(); // 处理模块离线和遥控器急停等紧急情况
         // DM_board_LEDSet(0x00000000);
@@ -191,4 +217,5 @@ void RobotCMDTask()
     PubPushMessage(arm_cmd_pub, (void *)&arm_cmd_data);
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(gimbal_cmd_pub, (void *)&gimbal_cmd_send);
+    PubPushMessage(airpump_cmd_pub, (void *)&airpump_cmd_send);
 }

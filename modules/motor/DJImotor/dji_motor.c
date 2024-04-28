@@ -134,11 +134,10 @@ static void DecodeDJIMotor(CANInstance *_instance)
                             CURRENT_SMOOTH_COEF * (float)((int16_t)(rxbuff[4] << 8 | rxbuff[5]));
     measure->temperature = rxbuff[6];
 
-    if ((int16_t)(measure->ecd - measure->last_ecd) > 4096 && measure->ecd_init_flag)
+    if ((int16_t)(measure->ecd - measure->last_ecd) > 4096)
         measure->total_round--;
-    else if ((int16_t)(measure->ecd - measure->last_ecd) < -4096 && measure->ecd_init_flag)
+    else if ((int16_t)(measure->ecd - measure->last_ecd) < -4096)
         measure->total_round++;
-    measure->ecd_init_flag = 1;
 
     measure->total_angle = measure->total_round * 360 + measure->angle_single_round;
 }

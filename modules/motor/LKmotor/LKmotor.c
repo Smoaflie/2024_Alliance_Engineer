@@ -7,7 +7,7 @@
 
 static uint8_t idx;
 static LKMotorInstance *lkmotor_instance[LK_MOTOR_MX_CNT] = {NULL};
-static CANInstance *sender_instance; // 多电机发送时使用的caninstance(当前保存的是注册的第一个电机的caninstance)
+// static CANInstance *sender_instance; // 多电机发送时使用的caninstance(当前保存的是注册的第一个电机的caninstance)
 // 后续考虑兼容单电机和多电机指令.
 
 /**

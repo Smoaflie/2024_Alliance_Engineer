@@ -22,7 +22,8 @@
             "cstdint": "c",
             "cstdlib": "c",
             "type_traits": "c",
-            "typeinfo": "c"
+            "typeinfo": "c",
+            "limits": "c"
         },
         "[yaml]": {
             "editor.insertSpaces": true,

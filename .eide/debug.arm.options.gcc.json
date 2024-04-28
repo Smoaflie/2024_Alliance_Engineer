@@ -7,8 +7,8 @@
         "output-debug-info": "enable"
     },
     "c/cpp-compiler": {
-        "language-c": "c11",
-        "language-cpp": "c++11",
+        "language-c": "gnu17",
+        "language-cpp": "gnu++17",
         "optimization": "level-0",
         "warnings": "all-warnings",
         "one-elf-section-per-function": true,

@@ -1,23 +1,48 @@
 
+
+Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:371:46, State=BP_STATE_DISABLED
+OpenDocument="startup_stm32h723vgtx.s", FilePath="d:/Documents/github/2024_Engineer/Core/Startup/startup_stm32h723vgtx.s", Line=51
+OpenDocument="main.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/main.c", Line=67
+OpenDocument="tasks.c", FilePath="d:/Documents/github/2024_Engineer/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3418
+OpenDocument="decode.h", FilePath="d:/Documents/github/2024_Engineer/application/arm/decode.h", Line=65
+OpenDocument="arm.c", FilePath="d:/Documents/github/2024_Engineer/application/arm/arm.c", Line=350
+OpenDocument="bsp_dwt.c", FilePath="d:/Documents/github/2024_Engineer/bsp/dwt/bsp_dwt.c", Line=83
+OpenDocument="robot.c", FilePath="d:/Documents/github/2024_Engineer/application/robot.c", Line=4
+OpenDocument="stm32h7xx_it.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/stm32h7xx_it.c", Line=97
+OpenDocument="cmsis_gcc.h", FilePath="d:/Documents/github/2024_Engineer/Drivers/CMSIS/Include/cmsis_gcc.h", Line=189
+OpenDocument="bsp_can.c", FilePath="d:/Documents/github/2024_Engineer/bsp/can/bsp_can.c", Line=119
+OpenDocument="_default_types.h", FilePath="d:/program files/arm-gnu-toolchain-12.3.rel1-mingw-w64-i686-arm-none-eabi/arm-none-eabi/include/machine/_default_types.h", Line=0
+OpenDocument="airpump.c", FilePath="d:/Documents/github/2024_Engineer/application/airpump/airpump.c", Line=13
+OpenDocument="airpump.h", FilePath="d:/Documents/github/2024_Engineer/application/airpump/airpump.h", Line=0
+OpenDocument="robot_task.h", FilePath="d:/Documents/github/2024_Engineer/application/robot_task.h", Line=63
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Source Files", DockArea=LEFT, x=0, y=1, w=556, h=274, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=300, h=629, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=556, h=354, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Terminal", DockArea=BOTTOM, x=2, y=0, w=568, h=317, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Data Sampling", DockArea=BOTTOM, x=3, y=0, w=264, h=317, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
-OpenWindow="Timeline", DockArea=BOTTOM, x=1, y=0, w=885, h=317, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="5 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="0;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="690;-3", CodeGraphLegendShown=0, CodeGraphLegendPosition="704;0"
-OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=200, h=317, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=300, h=669, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=0, w=560, h=653, TabPos=1, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
+OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=560, h=653, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Terminal", DockArea=BOTTOM, x=0, y=0, w=960, h=277, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=BOTTOM, x=1, y=0, w=959, h=277, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=FLOATING, x=626, y=432, w=962, h=260, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="2 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="55;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="459;0", CodeGraphLegendShown=0, CodeGraphLegendPosition="464;35"
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
-TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[239;100;100;100;854]
+TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;500]
+TableHeader="Break & Tracepoints", SortCol="", SortOrder="DESCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;105;455]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Refresh"], ColWidths=[192;236;111]
+TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
+TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
+TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[200;100;100;351]
 TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time"], ColWidths=[100;100]
 TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[363;100;100;100;100;100;100;107;107]
-TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
-TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Refresh"], ColWidths=[192;236;128]
-TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
-WatchedExpression="assorted_yaw_angle", Window=Watched Data 1
-WatchedExpression="assorted_roll_angle", Window=Watched Data 1
-WatchedExpression="mid_yaw_motor", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="arm_cmd_data", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="target_vec", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="arm_controller_TF.localPosition.z", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="gimbal_yaw_angle", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="arm_controller_TF", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="arm_origin_place", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="arm_param_t", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="TransformationMatrix_target_origin__origin__q_data", Window=Watched Data 1
+WatchedExpression="TF_X", Window=Watched Data 1
+WatchedExpression="b", Window=Watched Data 1
+WatchedExpression="d", Window=Watched Data 1
+WatchedExpression="c", Window=Watched Data 1
+WatchedExpression="new_TF.localPosition.x", Window=Watched Data 1
+WatchedExpression="assorted_roll_angle", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="arm_state_data_pub", Window=Watched Data 1
+WatchedExpression="roll_angle", Window=Watched Data 1
+WatchedExpression="tail_motor", Window=Watched Data 1
+WatchedExpression="rc_data->rc.dial", Window=Watched Data 1
+WatchedExpression="dial_flag", RefreshRate=5, Window=Watched Data 1

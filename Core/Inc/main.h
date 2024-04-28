@@ -63,10 +63,14 @@ void Error_Handler(void);
 #define Z_limit_detect_GPIO_Port GPIOA
 #define YAW_limit_detect_Pin GPIO_PIN_9
 #define YAW_limit_detect_GPIO_Port GPIOE
-#define airPump_contro_Pin GPIO_PIN_13
-#define airPump_contro_GPIO_Port GPIOE
+#define redLight_detect_Pin GPIO_PIN_13
+#define redLight_detect_GPIO_Port GPIOE
 #define KEY_Pin GPIO_PIN_15
 #define KEY_GPIO_Port GPIOA
+#define airpump_linear_Pin GPIO_PIN_0
+#define airpump_linear_GPIO_Port GPIOE
+#define airpump_arm_Pin GPIO_PIN_1
+#define airpump_arm_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
 

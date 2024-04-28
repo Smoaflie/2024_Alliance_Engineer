@@ -105,6 +105,7 @@ typedef enum {
     CHASSIS_ROTATE,            // 小陀螺模式
     CHASSIS_NO_FOLLOW,         // 不跟随，允许全向平移
     CHASSIS_FOLLOW_GIMBAL_YAW, // 跟随模式，底盘叠加角度环控制
+    CHASSIS_ROTATE_CONTRO      // 旋转受控模式，底盘旋转由操作手直接控制
 } chassis_mode_e;
 
 // 云台模式设置
@@ -117,8 +118,9 @@ typedef enum {
 // 臂臂模式设置
 typedef enum {
     ARM_ZERO_FORCE = 0, // 电流零输入
-    ARM_FREE_MODE,      // 臂臂自由移动
-    ARM_REFER_MODE,      // 臂臂自定义控制器
+    ARM_POSE_CONTRO_MODE,      // 臂臂位置控制模式
+    ARM_REFER_MODE,      // 臂臂控制器
+    ARM_FIXED,          // 保持位置
 } arm_mode_e;
 
 /* ----------------CMD应用发布的控制数据,应当由gimbal/chassis/shoot订阅---------------- */
@@ -193,9 +195,15 @@ typedef struct{
     // 上四个为控制末端位姿，下两个为控制臂指向
     float Position_z;
     float Rotation_yaw;
-    arm_mode_e mode;
-    uint8_t init_flag;
+    arm_mode_e mode; // 臂臂模式
+    int8_t sucker_state; // 吸盘状态
+    uint8_t init_flag; // 初始化标志
 }Arm_Cmd_Data_s;
+
+/* 气阀/气泵控制 */
+typedef struct{
+    uint8_t mode;
+}Airpump_Cmd_Data_s;
 
 typedef struct{
     uint8_t init_flag;

@@ -28,7 +28,7 @@
 #define z_speed_limit               15000
 #define middle_speed_limit          25
 #define assorted_speed_limit        30000
-#define tail_motor_speed_limit      40000
+#define tail_motor_speed_limit      70000
 #define tail_roll_speed_limit       10000
 
 #define z_motor_ReductionRatio      46.185567f
@@ -52,14 +52,15 @@ static PIDInstance *assorted_yaw_pid, *assorted_roll_pid; // 中段两个2006电
 
 // 臂关节角度控制
 static Transform arm_controller_TF;
+static arm_controller_data_s arm_param_t;
+static arm_controller_data_s arm_origin_place;
 static arm_controller_data_s arm_controller_data;
 static arm_controller_data_s arm_recv_controller_data; // 自定义控制器的控制数据
 
-static Subscriber_t *arm_cmd_data_sub;// 臂臂控制信息收发
-static Publisher_t *arm_state_data_pub;// 臂臂状态发送
+static Subscriber_t *arm_cmd_data_sub;  // 臂臂控制信息收发
 
 // 臂臂控制数据
-static Arm_Cmd_Data_s arm_cmd_data;
+static Arm_Cmd_Data_s arm_cmd_recv_data;
 
 static HostInstance *host_instance; // 上位机接口
 static uint8_t host_rec_flag;       // 上位机接收标志位
@@ -67,8 +68,11 @@ static uint8_t host_rec_flag;       // 上位机接收标志位
 static DRMotorInstance *big_yaw_motor; // 大YAW电机
 static DJIMotorInstance *z_motor;      // Z轴电机
 
-static GPIO_PinState Z_limit_sensor_gpio, big_yaw_limit_sensor_gpio;// 限位传感器io
-static Arm_State_Data_s arm_state; // 臂臂状态
+static GPIO_PinState Z_limit_sensor_gpio, big_yaw_limit_sensor_gpio; // 限位传感器io
+static Arm_State_Data_s arm_state;                                   // 臂臂状态
+
+static uint8_t Control_ARM_flag = 0;
+static Vector3 arm_rc_contro_place;
 // 上位机解析回调函数
 static void HOST_RECV_CALLBACK()
 {
@@ -88,8 +92,8 @@ void ArmInit()
 {
     arm_state.init_flag = 0;
     memset(&arm_controller_TF, 0, sizeof(arm_controller_TF));
-    arm_controller_TF.localPosition.z = 0.31f;
-    arm_controller_TF.localPosition.x =0.695f;
+    arm_controller_TF.localPosition.z = 0;
+    arm_controller_TF.localPosition.x = 0.695f;
 
     Encoder_Init_Config_s encoder_config;
     // 编码器初始化
@@ -112,7 +116,7 @@ void ArmInit()
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 12.0, // 0
+                .Kp            = 1.5, // 0
                 .Ki            = 0,    // 0
                 .Kd            = 0,    // 0
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
@@ -124,7 +128,7 @@ void ArmInit()
                 .Ki            = 1.604,  // 0
                 .Kd            = 0,      // 0
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
-                .IntegralLimit = 0,
+                .IntegralLimit = 0.5,
                 .MaxOut        = 10, // 20000
             },
         },
@@ -165,7 +169,7 @@ void ArmInit()
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 2000, // 0
+                .Kp            = 20000, // 0
                 .Ki            = 0,    // 0
                 .Kd            = 0,    // 0
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
@@ -220,10 +224,10 @@ void ArmInit()
         .controller_setting_init_config = {
             .angle_feedback_source = OTHER_FEED,
             .speed_feedback_source = MOTOR_FEED,
-            // .outer_loop_type       = SPEED_LOOP,
-            // .close_loop_type       = SPEED_LOOP,
-            .outer_loop_type    = ANGLE_LOOP,
-            .close_loop_type    = ANGLE_LOOP | SPEED_LOOP,
+            .outer_loop_type       = SPEED_LOOP,
+            .close_loop_type       = SPEED_LOOP,
+            // .outer_loop_type    = ANGLE_LOOP,
+            // .close_loop_type    = ANGLE_LOOP | SPEED_LOOP,
             .motor_reverse_flag = MOTOR_DIRECTION_NORMAL,
         },
         .motor_type = M2006,
@@ -275,9 +279,9 @@ void ArmInit()
                 .DeadBand      = 80,
             },
             .speed_PID = {
-                .Kp            = 1,//1.2,   // 4.5
-                .Ki            = 0,//0.8,   // 0
-                .Kd            = 0,//0.006, // 0
+                .Kp            = 1.2,   // 1.2,   // 4.5
+                .Ki            = 0.8,   // 0.8,   // 0
+                .Kd            = 0.006, // 0.006, // 0
                 .IntegralLimit = 200,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .MaxOut        = 20000,
@@ -329,9 +333,8 @@ void ArmInit()
     assorted_yaw_pid  = PIDRegister(&assorted_yaw_pid_config);
     assorted_roll_pid = PIDRegister(&assorted_roll_pid_config);
     // 消息收发初始化
-    arm_cmd_data_sub = SubRegister("arm_cmd", sizeof(Arm_Cmd_Data_s));
-    arm_state_data_pub = PubRegister("arm_state", sizeof(Arm_State_Data_s));
-    host_instance    = HostInit(&host_conf); // 上位机通信串口
+    arm_cmd_data_sub   = SubRegister("arm_cmd", sizeof(Arm_Cmd_Data_s));
+    host_instance      = HostInit(&host_conf); // 上位机通信串口
 }
 
 /* 一些私有函数 */
@@ -343,9 +346,12 @@ static void set_big_yaw_angle(float angle)
 }
 static void set_z_height(float z_height)
 {
-    VAL_LIMIT(z_height, -615, 615);
+    if (arm_state.init_flag & Z_motor_init_clt)
+        VAL_LIMIT(z_height, -575, 30);
+    else
+        VAL_LIMIT(z_height, -575, 575);
     z_height *= z_motor_ReductionRatio;
-    DJIMotorSetRef(z_motor, -z_height);
+    DJIMotorSetRef(z_motor, z_height);
 }
 static void set_mid_yaw_angle(float angle)
 {
@@ -354,24 +360,26 @@ static void set_mid_yaw_angle(float angle)
 }
 static void set_mid_rAy_angle(float roll_angle, float yaw_angle)
 {
-    VAL_LIMIT(roll_angle, -180, 180);
+    roll_angle = roll_angle - 360 * (int16_t)(roll_angle / 360);
+    roll_angle = roll_angle > 180 ? (roll_angle - 360) : (roll_angle < -180 ? (roll_angle + 360) : roll_angle);
+    // VAL_LIMIT(roll_angle, -180, 180);
     VAL_LIMIT(yaw_angle, -90, 85);
     float speed_yaw, speed_roll, speed_up, speed_down;
-    static float assorted_yaw_angle,assorted_roll_angle;
+    static float assorted_yaw_angle, assorted_roll_angle;
     assorted_yaw_angle = assorted_yaw_encoder->measure.total_angle;
     // todo:shi
     assorted_roll_angle = assorted_up_encoder->measure.total_angle;
     assorted_roll_angle = (assorted_roll_angle + assorted_yaw_encoder->measure.total_angle) / 2.0;
     assorted_roll_angle = assorted_roll_angle - 360 * (int16_t)(assorted_roll_angle / 360);
-    assorted_roll_angle = assorted_roll_angle >180?assorted_roll_angle-360:(assorted_roll_angle <-180?assorted_roll_angle+360:assorted_roll_angle);
+    assorted_roll_angle = assorted_roll_angle > 180 ? (assorted_roll_angle - 360) : (assorted_roll_angle < -180 ? (assorted_roll_angle + 360) : assorted_roll_angle);
 
     // 过零点处理
-    if(limit_bool(assorted_roll_angle-roll_angle,180,-180)){
-        if(assorted_roll_angle-roll_angle > 180)    roll_angle +=360;
-        if(assorted_roll_angle-roll_angle < -180)   roll_angle -=360;
+    if (!limit_bool(assorted_roll_angle - roll_angle, 180, -180)) {
+        if (assorted_roll_angle - roll_angle > 180) roll_angle += 360;
+        if (assorted_roll_angle - roll_angle < -180) roll_angle -= 360;
     }
-    speed_roll                  = PIDCalculate(assorted_roll_pid, assorted_roll_angle, roll_angle);
-    speed_yaw                   = -PIDCalculate(assorted_yaw_pid, assorted_yaw_angle, yaw_angle);
+    speed_roll = PIDCalculate(assorted_roll_pid, assorted_roll_angle, roll_angle);
+    speed_yaw  = -PIDCalculate(assorted_yaw_pid, assorted_yaw_angle, yaw_angle);
 
     speed_up   = speed_yaw - speed_roll;
     speed_down = speed_yaw + speed_roll;
@@ -384,40 +392,42 @@ static void set_tail_motor_angle(float angle)
     VAL_LIMIT(angle, -90, 90);
     DJIMotorSetRef(tail_motor, angle);
 }
-static void set_tail_roll_angle(float angle)
-{
-    VAL_LIMIT(angle, -90, 90);
-    DJIMotorSetRef(tail_roll_motor, angle);
-}
+// static void set_tail_roll_angle(float angle)
+// {
+//     VAL_LIMIT(angle, -90, 90);
+//     DJIMotorSetRef(tail_roll_motor, angle);
+// }
 
 // 设置各关节目标角度
 static void set_arm_angle(arm_controller_data_s *data)
 {
     set_z_height(data->height);
     // if(data->height*z_motor_ReductionRatio < 30)
-    set_big_yaw_angle(data->big_yaw_angle);
-    set_mid_yaw_angle(data->mid_yaw_angle);
-    set_mid_rAy_angle(data->assorted_roll_angle, -data->assorted_yaw_angle);
-    set_tail_motor_angle(data->tail_motor_angle);
+    set_big_yaw_angle(-data->big_yaw_angle);
+    set_mid_yaw_angle(-data->mid_yaw_angle);
+    set_mid_rAy_angle(data->assorted_roll_angle, data->assorted_yaw_angle);
+    set_tail_motor_angle(-data->tail_motor_angle);
 }
 
 // Z轴寻找标定位（原理为等待触发Z限位开关）
 static void Z_limit_sensor_detect()
 {
-    Z_limit_sensor_gpio = HAL_GPIO_ReadPin(YAW_limit_detect_GPIO_Port, YAW_limit_detect_Pin);
-    if (Z_limit_sensor_gpio == GPIO_PIN_RESET && (z_motor->measure.total_round > 10 || z_motor->measure.total_round < -10)) {
-        z_motor->measure.total_round = 0;
-        DJIMotorStop(z_motor);
+    Z_limit_sensor_gpio = HAL_GPIO_ReadPin(Z_limit_detect_GPIO_Port, Z_limit_detect_Pin);
+    if (Z_limit_sensor_gpio == GPIO_PIN_RESET) {
         arm_state.init_flag |= Z_motor_init_clt;
-        
-        arm_state.init_flag |= Z_motor_pub_reset;
-        arm_state.init_flag |= Reset_arm_cmd_param_flag;
+        if ((z_motor->measure.total_round > 2 || z_motor->measure.total_round < -2)) {
+            z_motor->measure.total_round = 0;
+            DJIMotorStop(z_motor);
+
+            arm_state.init_flag |= Z_motor_pub_reset;
+            arm_state.init_flag |= Reset_arm_cmd_param_flag;
+        }
     }
 }
 
 // YAW寻找标定位（原理为等待触发YAW限位开关）
-static void big_yaw_limit_sensor_detect()
-{
+// static void big_yaw_limit_sensor_detect()
+// {
     // if(big_yaw_limit_sensor_gpio ==GPIO_PIN_RESET && (big_yaw_motor->measure.total_angle > 50 ||big_yaw_motor->measure.total_angle<-50 )){
     //     uint8_t tx_buf_reset[] = {0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     //     CANTransmit_once(big_yaw_motor->motor_can_ins->can_handle,
@@ -428,57 +438,111 @@ static void big_yaw_limit_sensor_detect()
     // arm_state.init_flag |= Big_Yaw_motor_pub_reset;
     // arm_state.init_flag |= Reset_arm_cmd_param_flag;
     // }
-}
+// }
 
 // 根据控制数据对末端TF进行变换
-static void ControlArm(Arm_Cmd_Data_s *data, Transform *TF)
+static uint8_t ControlArm(Transform *TF)
 {
-    float TransformationMatrix_data[16] = {
-        cosf(data->Roatation_Vertical) * cosf(data->Roatation_Horizontal), -sinf(data->Roatation_Vertical), cosf(data->Roatation_Vertical) * sinf(data->Roatation_Horizontal), data->Translation_x,
-        sinf(data->Roatation_Vertical) * cosf(data->Roatation_Horizontal), cosf(data->Roatation_Vertical), sinf(data->Roatation_Vertical) * sinf(data->Roatation_Horizontal), data->Translation_y,
-        -sinf(data->Roatation_Horizontal), 0, cosf(data->Roatation_Horizontal), 0,
-        0, 0, 0, 1};
-    Matrix TransformationMatrix = {4, 4, TransformationMatrix_data};
+    /* 原逆解算式，直接计算末端位姿的变换矩阵 */
+    // 原末端位姿变换矩阵
+    // float last_TransformationMatrix_data[16] = {
+    //     1 - 2 * powf(TF->localRotation.y, 2) - 2 * powf(TF->localRotation.z, 2), 2 * (TF->localRotation.x * TF->localRotation.y - TF->localRotation.z * TF->localRotation.w), 2 * (TF->localRotation.x * TF->localRotation.z + TF->localRotation.y * TF->localRotation.w), TF->localPosition.x,
+    //     2 * (TF->localRotation.x * TF->localRotation.y + TF->localRotation.z * TF->localRotation.w), 1 - 2 * powf(TF->localRotation.x, 2) - 2 * powf(TF->localRotation.z, 2), 2 * (TF->localRotation.y * TF->localRotation.z - TF->localRotation.x * TF->localRotation.w), TF->localPosition.y,
+    //     2 * (TF->localRotation.x * TF->localRotation.z - TF->localRotation.y * TF->localRotation.w), 2 * (TF->localRotation.y * TF->localRotation.z + TF->localRotation.x * TF->localRotation.w), 1 - 2 * powf(TF->localRotation.x, 2) - 2 * powf(TF->localRotation.y, 2), TF->localPosition.z,
+    //     0, 0, 0, 1};
+    // Matrix last_TransformationMatrix = {4, 4, last_TransformationMatrix_data};
 
-    float last_TransformationMatrix_data[16] = {
-        1 - 2 * powf(TF->localRotation.y, 2) - 2 * powf(TF->localRotation.z, 2), 2 * (TF->localRotation.x * TF->localRotation.y - TF->localRotation.z * TF->localRotation.w), 2 * (TF->localRotation.x * TF->localRotation.z + TF->localRotation.y * TF->localRotation.w), TF->localPosition.x,
-        2 * (TF->localRotation.x * TF->localRotation.y + TF->localRotation.z * TF->localRotation.w), 1 - 2 * powf(TF->localRotation.x, 2) - 2 * powf(TF->localRotation.z, 2), 2 * (TF->localRotation.y * TF->localRotation.z - TF->localRotation.x * TF->localRotation.w), TF->localPosition.y,
-        2 * (TF->localRotation.x * TF->localRotation.z - TF->localRotation.y * TF->localRotation.w), 2 * (TF->localRotation.y * TF->localRotation.z + TF->localRotation.x * TF->localRotation.w), 1 - 2 * powf(TF->localRotation.x, 2) - 2 * powf(TF->localRotation.y, 2), TF->localPosition.z,
-        0, 0, 0, 1};
-    Matrix last_TransformationMatrix = {4, 4, last_TransformationMatrix_data};
+    // float TransformationMatrix_data[16] = {
+    //     cosf(data->Roatation_Vertical) * cosf(data->Roatation_Horizontal), -sinf(data->Roatation_Vertical), cosf(data->Roatation_Vertical) * sinf(data->Roatation_Horizontal), data->Translation_x,
+    //     sinf(data->Roatation_Vertical) * cosf(data->Roatation_Horizontal), cosf(data->Roatation_Vertical), sinf(data->Roatation_Vertical) * sinf(data->Roatation_Horizontal), data->Translation_y,
+    //     -sinf(data->Roatation_Horizontal), 0, cosf(data->Roatation_Horizontal), 0,
+    //     0, 0, 0, 1};
+    // Matrix TransformationMatrix = {4, 4, TransformationMatrix_data};
+    // M_mul(&Matrix_keep, &last_TransformationMatrix, &TransformationMatrix);
 
-    M_mul(&Matrix_keep, &last_TransformationMatrix, &TransformationMatrix);
+    /* 改版逆解算式，从arm2处重构TF树 */
+    // arm2处的旋转矩阵
+    float arm3_roll_angle_new                            = degree2rad_limited(arm_origin_place.assorted_roll_angle);
+    float TransformationMatrix_arm2_origin__origin__q_data[9] = {
+        1, 0, 0,
+        0, cosf(arm3_roll_angle_new),   -sinf(arm3_roll_angle_new),
+        0, sinf(arm3_roll_angle_new),   cosf(arm3_roll_angle_new),
+        };
+    Matrix TransformationMatrix_arm2_origin__origin__q_m = {3, 3, TransformationMatrix_arm2_origin__origin__q_data};
+    // arm3相对于arm2的旋转矩阵
+    float arm4_pitch_angle_new                           = degree2rad_limited(arm_origin_place.tail_motor_angle);
+    float TransformationMatrix_arm3_arm2__arm2__q_data[9] = {
+        cosf(arm4_pitch_angle_new),0, sinf(arm4_pitch_angle_new),
+        0, 1, 0,
+        -sinf(arm4_pitch_angle_new),0,  cosf(arm4_pitch_angle_new),
+    };
+    Matrix TransformationMatrix_arm3_arm2__arm2__q_m = {3, 3, TransformationMatrix_arm3_arm2__arm2__q_data};
+    // target旋转矩阵
+    float TransformationMatrix_target_origin__origin__q_data[9];
+    Matrix TransformationMatrix_target_origin__origin__q_m = {3,3,TransformationMatrix_target_origin__origin__q_data};
+    M_mul(&TransformationMatrix_target_origin__origin__q_m,&TransformationMatrix_arm2_origin__origin__q_m,&TransformationMatrix_arm3_arm2__arm2__q_m);
+    // sub平移矩阵
+    float TransformationMatrix_target_sub__origin__p_data[3] = {-arm_cmd_recv_data.Translation_x,-arm_cmd_recv_data.Translation_y,0};
+    Matrix TransformationMatrix_target_sub__origin__p_m = {3,1,TransformationMatrix_target_sub__origin__p_data};
+    M_mul(&Matrix_keep, &TransformationMatrix_target_origin__origin__q_m,&TransformationMatrix_target_sub__origin__p_m);
+    Vector3 sub_vec;
+    memcpy((float*)&sub_vec,(float*)&Matrix_data_keep,sizeof(Vector3));
+    arm_rc_contro_place.x += sub_vec.x;
+    arm_rc_contro_place.y += sub_vec.y;
+    arm_rc_contro_place.z += sub_vec.z;
+    // arm4平移矩阵
+    float TransformationMartix_target_arm3__origin__p_data[3] = {arm4,0,0};
+    Matrix TransformationMartix_target_arm3__origin__p_m = {3,1,TransformationMartix_target_arm3__origin__p_data};
+    M_mul(&Matrix_keep, &TransformationMatrix_target_origin__origin__q_m,&TransformationMartix_target_arm3__origin__p_m);
 
+    // 获取最终位姿
     Transform new_TF = {
         .localPosition = {
-            .x = Matrix_data_keep[3],
-            .y = Matrix_data_keep[7],
-            .z = Matrix_data_keep[11],
+            .x = arm1+arm2+arm3 + Matrix_data_keep[0] + arm_rc_contro_place.x,
+            .y = Matrix_data_keep[1] + arm_rc_contro_place.y,
+            .z = Matrix_data_keep[2] + arm_rc_contro_place.z,
         },
-        .localRotation = transformToQuaternion((float *)Matrix_data_keep),
     };
+    rotationToQuaternion((float *)TransformationMatrix_target_origin__origin__q_data,&new_TF.localRotation);
 
-    //判断末端位置是否超出有效解范围
-    float TF_X ;
-    static Vector3 target_vec;
-    target_vec = quaternionToVector3(new_TF.localRotation);
-    TF_X= sqrtf(new_TF.localPosition.x*new_TF.localPosition.x+new_TF.localPosition.y*new_TF.localPosition.y);
-    arm_controller_data_s update_data;
-        if(limit_bool(TF_X,0.695f,0.5108f) && target_vec.x >= 0)
-        {
-            memcpy(TF, &new_TF, sizeof(Transform));
-            if (Update_angle(new_TF, &update_data))
-                memcpy(&arm_controller_data,&update_data,sizeof(arm_controller_data_s));
+    // 判断末端位置是否超出有效解范围
+    float TF_X;
+    TF_X       = sqrtf(new_TF.localPosition.x * new_TF.localPosition.x + new_TF.localPosition.y * new_TF.localPosition.y);
+    if (limit_bool(TF_X,0.695f,0.5108f) && limit_bool(new_TF.localPosition.z,0.03,-0.575))
+    {
+        memcpy(TF, &new_TF, sizeof(Transform));
+
+        arm_controller_data_s update_data;
+        if(Update_angle(new_TF, &update_data)) {
+            if (Control_ARM_flag == 0){
+                arm_origin_place.big_yaw_angle-=update_data.big_yaw_angle;
+                arm_origin_place.height-=TF->localPosition.z * 1000;
+            }
+            arm_param_t.big_yaw_angle      = arm_origin_place.big_yaw_angle + update_data.big_yaw_angle;
+            arm_param_t.mid_yaw_angle      = update_data.mid_yaw_angle;
+            arm_param_t.assorted_yaw_angle = update_data.assorted_yaw_angle;
+            arm_param_t.assorted_roll_angle = arm_origin_place.assorted_roll_angle;
+            arm_param_t.tail_motor_angle = arm_origin_place.tail_motor_angle;
+            arm_param_t.height = arm_origin_place.height + TF->localPosition.z * 1000;
+            memcpy(&arm_controller_data,&arm_param_t,sizeof(arm_controller_data));
+            return 2;
         }
-            
-    arm_controller_data.height = TF->localPosition.z*1000;
+        
+        return 1;
+    }
+    arm_rc_contro_place.x -= sub_vec.x;
+    arm_rc_contro_place.y -= sub_vec.y;
+    arm_rc_contro_place.z -= sub_vec.z;
+    return 0;
 }
 
 /* 机器人机械臂控制核心任务 */
 void ArmTask()
 {
-    SubGetMessage(arm_cmd_data_sub, &arm_cmd_data);
-
+    if(!SubGetMessage(arm_cmd_data_sub, &arm_cmd_recv_data))    return;
+    arm_state.init_flag |= arm_cmd_recv_data.init_flag;
+    if(arm_state.init_flag & Reset_arm_cmd_param_flag)
+        memset(&arm_param_t,0,sizeof(arm_param_t));
     DRMotorEnable(big_yaw_motor);
     DRMotorEnable(mid_yaw_motor);
     DJIMotorEnable(assorted_motor_up);
@@ -490,33 +554,54 @@ void ArmTask()
     Z_limit_sensor_detect();
     // big_yaw_limit_sensor_detect();
 
-    if (arm_cmd_data.mode == ARM_FREE_MODE) {
-        arm_controller_data.height        = arm_cmd_data.Position_z;
-        arm_controller_data.big_yaw_angle = arm_cmd_data.Rotation_yaw;
-        // arm_controller_data.mid_yaw_angle       = 0;
-        // arm_controller_data.assorted_yaw_angle  = 0;
-        // arm_controller_data.assorted_roll_angle = 0;
-        // arm_controller_data.tail_motor_angle    = 0;
-        // arm_controller_data.height        = arm_cmd_data.Position_z + arm_recv_controller_data.height;
-        // arm_controller_data.big_yaw_angle = arm_cmd_data.Rotation_yaw + arm_recv_controller_data.big_yaw_angle;
-    } else if (arm_cmd_data.mode == ARM_REFER_MODE) {
-        ControlArm(&arm_cmd_data, &arm_controller_TF);
+    if(arm_cmd_recv_data.sucker_state == 1){
+        DJIMotorSetRef(tail_roll_motor,10000);
+    }else if(arm_cmd_recv_data.sucker_state == -1){
+        DJIMotorSetRef(tail_roll_motor,-10000);
+    }else{
+        DJIMotorSetRef(tail_roll_motor,0);
+    }
+    if (arm_cmd_recv_data.mode == ARM_POSE_CONTRO_MODE) {
+        Control_ARM_flag = 0;
+
+        arm_param_t.height        += arm_cmd_recv_data.Position_z;
+        arm_param_t.big_yaw_angle -= arm_cmd_recv_data.Rotation_yaw;
+    } else if (arm_cmd_recv_data.mode == ARM_REFER_MODE) {
+        if (Control_ARM_flag == 0) {
+            memcpy(&arm_origin_place,&arm_param_t,sizeof(arm_param_t));
+            // memset(&arm_rc_contro_place,0,sizeof(arm_rc_contro_place));
+            ControlArm(&arm_controller_TF);
+            Control_ARM_flag = 1;
+        }else{
+            arm_origin_place.assorted_roll_angle += arm_cmd_recv_data.Roatation_Horizontal;
+            arm_origin_place.tail_motor_angle += arm_cmd_recv_data.Roatation_Vertical;
+            LIMIT_MIN_MAX(arm_origin_place.tail_motor_angle,-90,90);
+            if(!ControlArm(&arm_controller_TF))
+            {
+                arm_origin_place.assorted_roll_angle -= arm_cmd_recv_data.Roatation_Horizontal;
+                arm_origin_place.tail_motor_angle -= arm_cmd_recv_data.Roatation_Vertical;
+            }
+        }
         /* 下方为自定义控制器 */
         // if(host_rec_flag == 1){
-        //     arm_controller_data.big_yaw_angle = arm_recv_controller_data.big_yaw_angle;
-        //     memcpy((uint8_t *)&arm_controller_data + 8, (uint8_t *)&arm_recv_controller_data + 8, sizeof(arm_recv_controller_data) - 8);
+        //     arm_param_t.big_yaw_angle = arm_recv_controller_data.big_yaw_angle;
+        //     memcpy((uint8_t *)&arm_param_t + 8, (uint8_t *)&arm_recv_controller_data + 8, sizeof(arm_recv_controller_data) - 8);
         //     host_rec_flag = 0;
         // }
-    } else if (arm_cmd_data.mode == ARM_ZERO_FORCE) {
+    } else if (arm_cmd_recv_data.mode == ARM_ZERO_FORCE) {
+        Control_ARM_flag = 0;
+
         DRMotorStop(mid_yaw_motor);
         DJIMotorStop(assorted_motor_up);
         DJIMotorStop(assorted_motor_down);
         DJIMotorStop(tail_motor);
         DRMotorStop(big_yaw_motor);
         DJIMotorStop(z_motor);
-        // DJIMotorStop(tail_roll_motor);
+        DJIMotorStop(tail_roll_motor);
+    }else if(arm_cmd_recv_data.mode == ARM_FIXED){
+        Control_ARM_flag = 0;
+        
     }
-    set_arm_angle(&arm_controller_data);
-    
-    PubPushMessage(arm_state_data_pub,&arm_state);
+    set_arm_angle(&arm_param_t);
+
 }

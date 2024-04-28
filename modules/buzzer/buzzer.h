@@ -59,4 +59,6 @@ void buzzer_silence(void);
 
 void buzzer_one_note(uint16_t Note, float delay);
 
+void BuzzerTask(void *argument);
+
 #endif // !BUZZER_H

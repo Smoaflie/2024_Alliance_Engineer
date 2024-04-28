@@ -27,7 +27,7 @@
 #include "dji_motor.h"
 #include "DRmotor.h"
 #include "gimbal.h"
-
+#include "airpump.h"
 void RobotInit()
 {
     // 关闭中断,防止在初始化过程中发生中断
@@ -37,13 +37,13 @@ void RobotInit()
 
     BSPInit();
 
-    // RobotCMDInit();
+    RobotCMDInit();
 
-    // ChassisInit();
-    // GIMBALInit();
-    // ArmInit();
-
-    selfTestInit();
+    ChassisInit();
+    ArmInit();
+    GIMBALInit();
+    AIRPUMPInit();
+    // selfTestInit();
 
     // 初始化完成,开启中断
     __enable_irq();

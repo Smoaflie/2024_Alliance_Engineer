@@ -409,7 +409,7 @@ uint8_t BMI088Acquire_IT_Status(BMI088Instance *bmi088)
         return 0;
 }
 
-#pragma message ("REMEMBER TO CHANGE CALI PARAMETERS IF YOU CHOOSE NOT TO CALIBRATE ONLINE(parameters in robot_def.h)")
+// #pragma message ("REMEMBER TO CHANGE CALI PARAMETERS IF YOU CHOOSE NOT TO CALIBRATE ONLINE(parameters in robot_def.h)")
 #define GYRO_CALIBRATE_TIME 20000 // 20s
 /**
  * @brief BMI088 gyro 标定

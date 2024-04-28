@@ -118,7 +118,8 @@
           "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
           "modules/motor/DRmotor",
           "application/test",
-          "application/arm"
+          "application/arm",
+          "application/airpump"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",
