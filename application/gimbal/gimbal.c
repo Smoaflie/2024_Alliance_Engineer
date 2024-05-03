@@ -94,7 +94,7 @@ void GIMBALInit()
 /* 机器人机械臂控制核心任务 */
 void GIMBALTask()
 {
-    SubGetMessage(gimbal_sub, &gimbal_cmd_recv);
+    while(!SubGetMessage(gimbal_sub, &gimbal_cmd_recv));
     if(gimbal_cmd_recv.gimbal_mode == GIMBAL_ZERO_FORCE)    
     {
         LKMotorStop(motor);

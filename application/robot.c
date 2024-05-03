@@ -36,14 +36,18 @@ void RobotInit()
     __disable_irq();
 
     BSPInit();
-
+#ifndef ROBOT_TEST
     RobotCMDInit();
 
     ChassisInit();
     ArmInit();
     GIMBALInit();
     AIRPUMPInit();
-    // selfTestInit();
+#endif
+
+#ifdef ROBOT_TEST
+    selfTestInit();
+#endif
 
     // 初始化完成,开启中断
     __enable_irq();

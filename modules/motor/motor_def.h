@@ -28,6 +28,7 @@ typedef enum
     CURRENT_LOOP = 0b0001,
     SPEED_LOOP = 0b0010,
     ANGLE_LOOP = 0b0100,
+    TORQUE_LOOP = 0b1000,
 
     // only for checking
     SPEED_AND_CURRENT_LOOP = 0b0011,
@@ -94,6 +95,7 @@ typedef struct
     PIDInstance current_PID;
     PIDInstance speed_PID;
     PIDInstance angle_PID;
+    PIDInstance torque_PID;
 
     float pid_ref; // 将会作为每个环的输入和输出顺次通过串级闭环
 } Motor_Controller_s;
@@ -128,6 +130,7 @@ typedef struct
     PID_Init_Config_s current_PID;
     PID_Init_Config_s speed_PID;
     PID_Init_Config_s angle_PID;
+    PID_Init_Config_s torque_PID;
 } Motor_Controller_Init_s;
 
 /* 用于初始化CAN电机的结构体,各类电机通用 */

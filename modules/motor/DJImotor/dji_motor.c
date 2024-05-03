@@ -164,6 +164,7 @@ DJIMotorInstance *DJIMotorInit(Motor_Init_Config_s *config)
     PIDInit(&instance->motor_controller.current_PID, &config->controller_param_init_config.current_PID);
     PIDInit(&instance->motor_controller.speed_PID, &config->controller_param_init_config.speed_PID);
     PIDInit(&instance->motor_controller.angle_PID, &config->controller_param_init_config.angle_PID);
+    PIDInit(&instance->motor_controller.torque_PID, &config->controller_param_init_config.torque_PID);
     instance->motor_controller.other_angle_feedback_ptr = config->controller_param_init_config.other_angle_feedback_ptr;
     instance->motor_controller.other_speed_feedback_ptr = config->controller_param_init_config.other_speed_feedback_ptr;
     instance->motor_controller.current_feedforward_ptr  = config->controller_param_init_config.current_feedforward_ptr;
@@ -245,21 +246,35 @@ void DJIMotorControl()
         pid_ref          = motor_controller->pid_ref; // 保存设定值,防止motor_controller->pid_ref在计算过程中被修改
 
         // pid_ref会顺次通过被启用的闭环充当数据的载体
-        // 计算位置环,只有启用位置环且外层闭环为位置时会计算速度环输出
-        if ((motor_setting->close_loop_type & ANGLE_LOOP) && motor_setting->outer_loop_type == ANGLE_LOOP) {
+        // 计算扭矩环,通过设置相对于当前角度偏移固定小角度的目标角度实现
+        if ((motor_setting->close_loop_type & TORQUE_LOOP) && motor_setting->outer_loop_type == TORQUE_LOOP) {
+            pid_measure = 0;
+            pid_ref = PIDCalculate(&motor_controller->torque_PID, pid_measure, pid_ref);
+            if (motor_setting->angle_feedback_source == OTHER_FEED)
+                pid_ref += *motor_controller->other_angle_feedback_ptr;
+            else
+                pid_ref += measure->total_angle;
+        }
+
+        // 计算位置环,只有启用位置环且外层闭环为位置或扭矩时会计算速度环输出
+        if ((motor_setting->close_loop_type & ANGLE_LOOP) && (motor_setting->outer_loop_type & (ANGLE_LOOP | TORQUE_LOOP))) {
             if (motor_setting->angle_feedback_source == OTHER_FEED)
                 pid_measure = *motor_controller->other_angle_feedback_ptr;
             else
                 pid_measure = measure->total_angle; // MOTOR_FEED,对total angle闭环,防止在边界处出现突跃
             // 更新pid_ref进入下一个环
-            pid_ref = PIDCalculate(&motor_controller->angle_PID, pid_measure, pid_ref);
+            if (motor_setting->feedback_reverse_flag == FEEDBACK_DIRECTION_REVERSE)
+                pid_ref = PIDCalculate(&motor_controller->angle_PID, -pid_measure, pid_ref);
+            else
+                pid_ref = PIDCalculate(&motor_controller->angle_PID, pid_measure, pid_ref);
         }
 
+        // 电机反转，即将目标速度取反
         if (motor_setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
             pid_ref *= -1;
 
-        // 计算速度环,(外层闭环为速度或位置)且(启用速度环)时会计算速度环
-        if ((motor_setting->close_loop_type & SPEED_LOOP) && (motor_setting->outer_loop_type & (ANGLE_LOOP | SPEED_LOOP))) {
+        // 计算速度环,(外层闭环为速度或位置或扭矩)且(启用速度环)时会计算速度环
+        if ((motor_setting->close_loop_type & SPEED_LOOP) && (motor_setting->outer_loop_type & (ANGLE_LOOP | SPEED_LOOP | TORQUE_LOOP))) {
             if (motor_setting->feedforward_flag & SPEED_FEEDFORWARD)
                 pid_ref += *motor_controller->speed_feedforward_ptr;
 
@@ -277,9 +292,6 @@ void DJIMotorControl()
         if (motor_setting->close_loop_type & CURRENT_LOOP) {
             pid_ref = PIDCalculate(&motor_controller->current_PID, measure->real_current, pid_ref);
         }
-
-        if (motor_setting->feedback_reverse_flag == FEEDBACK_DIRECTION_REVERSE)
-            pid_ref *= -1;
 
         // 获取最终输出
         set = (int16_t)pid_ref;

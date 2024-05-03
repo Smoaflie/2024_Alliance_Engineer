@@ -23,27 +23,24 @@
 #include "motor_task.h"
 #include "test.h"
 
-
+#ifdef ROBOT_TEST
 void TestTask(void *argument)
 {
     UNUSED(argument);
-    // DWT_GetDeltaT(&feed_dwt_cntt);
+    static uint32_t feed_dwt_cntt,feed_dtt;
+    DWT_GetDeltaT(&feed_dwt_cntt);
 
     while (1) {
-        // static GPIO_PinState key1_state;
-        // key1_state = HAL_GPIO_ReadPin(Z_limit_detect_GPIO_Port,Z_limit_detect_Pin);
+        selfTestTask();
+        MotorControlTask();
 
-        // DM_board_LEDSet(0x33ffff);
-        // osDelay(500);
-        // DM_board_LEDSet(0x000000);
-        // osDelay(500);
-        // RobotTask();
-        // feed_dtt = DWT_GetDeltaT(&feed_dwt_cntt);
+        feed_dtt = DWT_GetDeltaT(&feed_dwt_cntt);
 
         osDelay(1);
     }
 }
-
+#endif
+#ifndef ROBOT_TEST
 void _cmdTASK(void *argument)
 {
     UNUSED(argument);
@@ -115,3 +112,4 @@ void _BuzzerTask(void *argument)
         BuzzerTask(argument);
     }
 }
+#endif

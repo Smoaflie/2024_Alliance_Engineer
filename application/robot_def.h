@@ -17,11 +17,7 @@
 #include "stdint.h"
 
 /* 开发板类型定义,烧录时注意不要弄错对应功能;修改定义后需要重新编译,只能存在一个定义! */
-#define ONE_BOARD // 单板控制整车
-// #define CHASSIS_BOARD //底盘板
-// #define GIMBAL_BOARD  //云台板
-#define ARM_BOARD   // 臂臂
-#define ROBOT_TEST
+// #define ROBOT_TEST
 
 #define VISION_USE_VCP // 使用虚拟串口发送视觉数据
 // #define VISION_USE_UART // 使用串口发送视觉数据
@@ -210,11 +206,11 @@ typedef struct{
 }Arm_State_Data_s;
 #pragma pack() // 开启字节对齐,结束前面的#pragma pack(1)
 
-/* 一些自定义的宏定义，有点shiXD */
-#define Z_motor_init_clt 0x01
-#define Big_Yaw_motor_init_clt 0x02
-#define Z_motor_pub_reset 0x04
-#define Big_Yaw_motor_pub_reset 0x08
-#define Reset_arm_cmd_param_flag 0x10
+/* 一些自定义的宏定义 */
+// 臂臂快速移位
+#define Reset_arm_cmd_param_flag 0x10   // 重置臂臂状态（水平前伸）
+#define Recycle_arm_in 0x20 // 臂臂收回肚子
+#define Arm_get_goldcube_mid 0x40 // 臂臂取中间金矿
+#define Arm_get_goldcube_left 0x80 // 臂臂取左侧金矿
 
 #endif // !ROBOT_DEF_H

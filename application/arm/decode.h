@@ -357,7 +357,7 @@ uint8_t Update_angle(Transform target, arm_controller_data_s *pub_s)
     pub.assorted_yaw_angle  = pub.assorted_yaw_angle * 180.0 / M_PI;
     // pub.assorted_roll_angle = pub.assorted_roll_angle * 180.0 / M_PI;
     // pub.tail_motor_angle    = pub.tail_motor_angle * 180.0 / M_PI;
-    if (limit_bool(pub.big_yaw_angle, 90, -90) && limit_bool(pub.mid_yaw_angle, 90, -90) && limit_bool(pub.assorted_yaw_angle, 90, -90) 
+    if (limit_bool(pub.big_yaw_angle, 90, -90) && limit_bool(pub.mid_yaw_angle, 124, -115) && limit_bool(pub.assorted_yaw_angle, 90, -90) 
         && limit_bool(pub.assorted_roll_angle, 180, -180) && limit_bool(pub.tail_motor_angle, 90, -90)
         ) {
         memcpy(pub_s, &pub, sizeof(arm_controller_data_s));
