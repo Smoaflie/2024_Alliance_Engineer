@@ -38,16 +38,18 @@ __attribute__((noreturn)) void StartINSTASK(void *argument)
     }
 }
 
+uint8_t key[3];
 __attribute__((noreturn)) void TestTask(void *argument)
 {
     UNUSED(argument);
     osDelay(500);
     BuzzerPlay(StartUP_sound);
-
+    
     while (1) {
         RobotTask();
         MotorControlTask();
-
+        key[0] = HAL_GPIO_ReadPin(key_1_GPIO_Port,key_1_Pin);
+        key[1] = HAL_GPIO_ReadPin(key_2_GPIO_Port,key_2_Pin);
         osDelay(1);
     }
 }

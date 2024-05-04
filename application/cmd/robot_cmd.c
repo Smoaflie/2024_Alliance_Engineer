@@ -61,7 +61,7 @@ static Robot_Status_e robot_state; // 机器人整体工作状态
 void RobotCMDInit()
 {
     rc_data          = RemoteControlInit(&huart3); // 修改为对应串口,注意如果是自研板dbus协议串口需选用添加了反相器的那个
-    vision_recv_data = VisionInit(&huart1);        // 视觉通信串口
+    vision_recv_data = VisionInit(&huart6);        // 视觉通信串口
 
     gimbal_cmd_pub  = PubRegister("gimbal_cmd", sizeof(Gimbal_Ctrl_Cmd_s));
     gimbal_feed_sub = SubRegister("gimbal_feed", sizeof(Gimbal_Upload_Data_s));

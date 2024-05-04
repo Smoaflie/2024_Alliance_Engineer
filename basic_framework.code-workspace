@@ -21,7 +21,9 @@
       "*.cc": "cpp",
       "compare": "c",
       "type_traits": "c",
-      "*.lib": "c"
+      "*.lib": "c",
+      "cstring": "cpp",
+      "cstdio": "cpp"
     },
     "[yaml]": {
       "editor.insertSpaces": true,

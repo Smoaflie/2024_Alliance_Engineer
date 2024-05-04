@@ -43,6 +43,8 @@ void USARTServiceInit(USARTInstance *_instance)
     // 这是HAL库的一个设计失误,发生DMA传输完成/半完成以及串口IDLE中断都会触发HAL_UARTEx_RxEventCallback()
     // 我们只希望处理第一种和第三种情况,因此直接关闭DMA半传输中断
     __HAL_DMA_DISABLE_IT(_instance->usart_handle->hdmarx, DMA_IT_HT);
+    // __HAL_DMA_DISABLE_IT(_instance->usart_handle->hdmarx, DMA_IT_TC);
+
 }
 
 USARTInstance *USARTRegister(USART_Init_Config_s *init_config)
