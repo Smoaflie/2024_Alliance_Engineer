@@ -266,7 +266,7 @@ float get_triangle_angle(float side_1, float side_2, float side_3)
 }
 
 // 更新关节位姿及角度
-uint8_t Update_angle(Transform target, arm_controller_data_s *pub_s)
+uint8_t Update_angle(Transform *target, arm_controller_data_s *pub_s)
 {
     /* 变换矩阵命名约定：A_B__参考坐标__(类型p/q)_m */
     /* 向量命名约定：A_B__参考坐标__(类型p/q/vec) vec为单位向量 */
@@ -285,17 +285,17 @@ uint8_t Update_angle(Transform target, arm_controller_data_s *pub_s)
     Matrix target_arm3__arm3__p_m        = {3, 1, target_arm3__arm3__p_m_data};
 
     float target_arm3__origin__q_m_data[3][3] = {
-        {1 - 2 * powf(target.localRotation.y, 2) - 2 * powf(target.localRotation.z, 2), 2 * (target.localRotation.x * target.localRotation.y - target.localRotation.z * target.localRotation.w), 2 * (target.localRotation.x * target.localRotation.z + target.localRotation.y * target.localRotation.w)},
-        {2 * (target.localRotation.x * target.localRotation.y + target.localRotation.z * target.localRotation.w), 1 - 2 * powf(target.localRotation.x, 2) - 2 * powf(target.localRotation.z, 2), 2 * (target.localRotation.y * target.localRotation.z - target.localRotation.x * target.localRotation.w)},
-        {2 * (target.localRotation.x * target.localRotation.z - target.localRotation.y * target.localRotation.w), 2 * (target.localRotation.y * target.localRotation.z + target.localRotation.x * target.localRotation.w), 1 - 2 * powf(target.localRotation.x, 2) - 2 * powf(target.localRotation.y, 2)},
+        {1 - 2 * powf(target->localRotation.y, 2) - 2 * powf(target->localRotation.z, 2), 2 * (target->localRotation.x * target->localRotation.y - target->localRotation.z * target->localRotation.w), 2 * (target->localRotation.x * target->localRotation.z + target->localRotation.y * target->localRotation.w)},
+        {2 * (target->localRotation.x * target->localRotation.y + target->localRotation.z * target->localRotation.w), 1 - 2 * powf(target->localRotation.x, 2) - 2 * powf(target->localRotation.z, 2), 2 * (target->localRotation.y * target->localRotation.z - target->localRotation.x * target->localRotation.w)},
+        {2 * (target->localRotation.x * target->localRotation.z - target->localRotation.y * target->localRotation.w), 2 * (target->localRotation.y * target->localRotation.z + target->localRotation.x * target->localRotation.w), 1 - 2 * powf(target->localRotation.x, 2) - 2 * powf(target->localRotation.y, 2)},
     };
     Matrix target_arm3__origin__q_m = {3, 3, (float *)target_arm3__origin__q_m_data};
     Vector3 target_arm3__origin__p;
     M_mul(&Matrix_keep, &target_arm3__origin__q_m, &target_arm3__arm3__p_m);    // 旋转矩阵X向量
     memcpy(&target_arm3__origin__p, Matrix_keep.data, 3 * sizeof(float));
-    target.localPosition.z = 0;//将臂臂放在同一个平面内
+    target->localPosition.z = 0;//将臂臂放在同一个平面内
     Vector3 arm3_origin__origin__p;
-    Vector3_sub(target.localPosition, target_arm3__origin__p, &arm3_origin__origin__p);
+    Vector3_sub(target->localPosition, target_arm3__origin__p, &arm3_origin__origin__p);
 
     // 确定 Z轴高度
     // pub.height                 = arm4_origin__origin__p.z;
@@ -328,7 +328,7 @@ uint8_t Update_angle(Transform target, arm_controller_data_s *pub_s)
     // // 之后确定 assorted_roll关节角度
     // // 通过三条向量arm3x指向，target指向，加上up基准向量，通过法向量计算夹角
     // Vector3 arm3x_origin__origin__vec = {1,0,0};    //该向量只包含了arm3x轴方向
-    // Vector3 target_origin__origin__vec = quaternionToVector3(target.localRotation);
+    // Vector3 target_origin__origin__vec = quaternionToVector3(target->localRotation);
     // // 先计算tail_motor的旋转角度`大小`
     // a1 = angleBetweenVector3(target_origin__origin__vec, arm3x_origin__origin__vec);
     // // 如tail_motor未偏转，则assorted_roll保持不动（法向量计算法会出问题，故取0.0001的误差）

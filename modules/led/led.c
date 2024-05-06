@@ -116,12 +116,12 @@ void DM_board_LEDSet(uint32_t color)
     // 达妙板子的LED模组为WS2812B-3528
     // 它根据时序控制颜色，这里采用SPi模拟时序
     // 因此需根据数据手册及时钟树信息配置正确的SPI发送数据
-    static uint32_t last_color;
+    // static uint32_t last_color;
     static uint8_t txbuf[24];
     static uint8_t WS2812_HighLevel = 0xf0;
     static uint8_t WS2812_LowLevel  = 0xC0;
-    if(last_color == color) return;
-    last_color=color;
+    // if(last_color == color) return;
+    // last_color=color;
     for (int i = 0; i < 8; i++)
     {
         txbuf[7-i]  = (((color>>(i+8))&0x01) ? WS2812_HighLevel : WS2812_LowLevel)>>1;

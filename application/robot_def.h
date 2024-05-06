@@ -109,6 +109,7 @@ typedef enum {
     GIMBAL_ZERO_FORCE = 0, // 电流零输入
     GIMBAL_FREE_MODE,      // 云台自由运动模式,即与底盘分离(底盘此时应为NO_FOLLOW)反馈值为电机total_angle;似乎可以改为全部用IMU数据?
     GIMBAL_GYRO_MODE,      // 云台陀螺仪反馈模式,反馈值为陀螺仪pitch,total_yaw_angle,底盘可以为小陀螺和跟随模式
+    GIMBAL_RESET,          // 云台复位，指向正前方
 } gimbal_mode_e;
 
 // 臂臂模式设置
@@ -144,10 +145,17 @@ typedef struct
 { // 云台角度控制
     float yaw;
     float pitch;
-    float chassis_rotate_wz;
+    // float chassis_rotate_wz;
 
     gimbal_mode_e gimbal_mode;
 } Gimbal_Ctrl_Cmd_s;
+
+// gimbal发布的云台数据,由cmd订阅
+typedef struct
+{ // 云台角度控制
+    float yaw;
+    float pitch;
+} Gimbal_Data_s;
 
 /* ----------------gimbal/shoot/chassis发布的反馈数据----------------*/
 /**
@@ -171,18 +179,16 @@ typedef struct
 
 } Chassis_Upload_Data_s;
 
-typedef struct
-{
-    INS_Instance *gimbal_imu_data;
-    uint16_t yaw_motor_single_round_angle;
-} Gimbal_Upload_Data_s;
-
 
 /* ----------------臂臂的收发数据----------------*/
 /**
  * @brief 由cmd订阅和发送.
  *
  */
+typedef struct{
+    float big_yaw_angle;
+}Arm_Data_s;
+
 typedef struct{
     float Translation_x;
     float Translation_y;
@@ -191,9 +197,9 @@ typedef struct{
     // 上四个为控制末端位姿，下两个为控制臂指向
     float Position_z;
     float Rotation_yaw;
-    arm_mode_e mode; // 臂臂模式
+    arm_mode_e contro_mode; // 臂臂控制模式
+    uint8_t auto_mode; // 臂臂自动模式
     int8_t sucker_state; // 吸盘状态
-    uint8_t init_flag; // 初始化标志
 }Arm_Cmd_Data_s;
 
 /* 气阀/气泵控制 */
@@ -201,16 +207,16 @@ typedef struct{
     uint8_t mode;
 }Airpump_Cmd_Data_s;
 
-typedef struct{
-    uint8_t init_flag;
-}Arm_State_Data_s;
-#pragma pack() // 开启字节对齐,结束前面的#pragma pack(1)
+#pragma pack() // 关闭字节对齐,结束前面的#pragma pack(1)
 
 /* 一些自定义的宏定义 */
 // 臂臂快速移位
 #define Reset_arm_cmd_param_flag 0x10   // 重置臂臂状态（水平前伸）
 #define Recycle_arm_in 0x20 // 臂臂收回肚子
+#define Recycle_arm_out 0x04 // 臂臂回收到肚子外
 #define Arm_get_goldcube_mid 0x40 // 臂臂取中间金矿
 #define Arm_get_goldcube_left 0x80 // 臂臂取左侧金矿
+#define Arm_fetch_cube_from_warehouse1 0x01 // 臂臂从矿仓1取矿
+#define Arm_fetch_cube_from_warehouse2 0x02 // 臂臂从矿仓2取矿
 
 #endif // !ROBOT_DEF_H

@@ -50,6 +50,8 @@ typedef struct
  */
 typedef struct
 {
+    Motor_Type_e motor_type;        // 电机类型
+    
     DJI_Motor_Measure_s measure;            // 电机测量值
     Motor_Control_Setting_s motor_settings; // 电机设置
     Motor_Controller_s motor_controller;    // 电机控制器
@@ -59,7 +61,6 @@ typedef struct
     uint8_t sender_group;
     uint8_t message_num;
 
-    Motor_Type_e motor_type;        // 电机类型
     Motor_Working_Type_e stop_flag; // 启停标志
 
     DaemonInstance* daemon;

@@ -119,7 +119,9 @@
           "modules/motor/DRmotor",
           "application/test",
           "application/arm",
-          "application/airpump"
+          "application/airpump",
+          "application/UI",
+          "modules/tool"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",

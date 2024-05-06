@@ -32,6 +32,8 @@ typedef struct
 
 typedef struct
 {
+    Motor_Type_e motor_type;        // 电机类型
+
     DRMotor_Measure_t measure;
 
     Motor_Control_Setting_s motor_settings;
@@ -51,9 +53,8 @@ typedef struct
 
     DaemonInstance *daemon;
 
-    Motor_Type_e motor_type;        // 电机类型
 
-    float last_set;     //上次发送电流，用于判断是否进入保护状态
+    float last_angle;     //上次单圈角度，用于判断是否进入保护状态
     uint16_t lost_cnt;  //碰撞保护检测
 } DRMotorInstance;
 

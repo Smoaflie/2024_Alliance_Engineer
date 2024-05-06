@@ -158,7 +158,7 @@ void DRMotorControl()
             pid_ref *= -1;
 
         if ((setting->close_loop_type & SPEED_LOOP) && setting->outer_loop_type & (ANGLE_LOOP | SPEED_LOOP)) {
-            if (setting->angle_feedback_source == OTHER_FEED)
+            if (setting->speed_feedback_source == OTHER_FEED)
                 pid_measure = *motor->other_speed_feedback_ptr;
             else
                 pid_measure = measure->speed_rads;
@@ -186,13 +186,14 @@ void DRMotorControl()
         CANTransmit(motor->motor_can_ins, 0.1);
 
         // PDA04存在过热保护，需特别处理
-        if(motor->motor_type == DR_PDA04){
-            if(motor->last_set == set && motor->stop_flag != MOTOR_STOP){
+        if(motor->motor_type == DR_PDA04 && motor->motor_settings.outer_loop_type == ANGLE_LOOP){
+            float offset = motor->angle_PID.Measure - motor->last_angle;
+            if((offset>1 || offset<-1) && (set>0.5||set<-0.5) && motor->stop_flag != MOTOR_STOP){
                 motor->lost_cnt++;
             }else{
                 motor->lost_cnt=0;
             }
-            if(motor->lost_cnt >= 100){
+            if(motor->lost_cnt >= 1000){
                 LOGWARNING("[DRMotor] motor was crashed, id: %d", (motor->motor_can_ins->tx_id & (0x1f<<5)) >> 5);
                 motor->lost_cnt = 0;
                 static uint8_t tx_buf_motor_reboot[] = {0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
@@ -204,7 +205,7 @@ void DRMotorControl()
                          (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x1f,
                          tx_buf_enable_PDA04_recall, 2);    
             }
-            motor->last_set = set;
+            motor->last_angle = motor->angle_PID.Measure;
         }
     }
 }

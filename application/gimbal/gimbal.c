@@ -16,14 +16,16 @@
 #include "bsp_log.h"
 #include "servo_motor.h"
 
-static USARTInstance* imu_usart_instance;
 static LKMotorInstance* motor;
 static ServoInstance* gimbalmoto;
 
 static Subscriber_t *gimbal_sub;                   // 用于订阅云台的控制命令
+static Publisher_t *gimbal_pub;                   // 用于发送云台的数据信息
 static Gimbal_Ctrl_Cmd_s gimbal_cmd_recv; // 云台应用接收的信息
-static float gimbal_yaw_angle;
+static Gimbal_Data_s     gimbal_data_send;// 云台发布的信息
+static float gimbal_yaw_angle,gimbal_pitch_angle;
 static uint8_t gimbal_rec[30];
+static USARTInstance* imu_usart_instance;
 // static void imu_usart_callback(){
 //     uint16_t crc,payload_len;
 //     memcpy(gimbal_rec,imu_usart_instance->recv_buff,imu_usart_instance->recv_buff_size);
@@ -83,7 +85,10 @@ void GIMBALInit()
     };
     gimbalmoto = ServoInit(&servo_config);
     
+    gimbal_pitch_angle = 0;
+
     gimbal_sub = SubRegister("gimbal_cmd", sizeof(gimbal_cmd_recv));
+    gimbal_pub = PubRegister("gimbal_data", sizeof(gimbal_data_send));
     // USART_Init_Config_s uart_conf;
     // uart_conf.module_callback = imu_usart_callback;
     // uart_conf.usart_handle = &huart9;
@@ -95,6 +100,7 @@ void GIMBALInit()
 void GIMBALTask()
 {
     while(!SubGetMessage(gimbal_sub, &gimbal_cmd_recv));
+
     if(gimbal_cmd_recv.gimbal_mode == GIMBAL_ZERO_FORCE)    
     {
         LKMotorStop(motor);
@@ -102,8 +108,27 @@ void GIMBALTask()
     }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_GYRO_MODE)
     {
         Servo_Motor_Start(gimbalmoto);
-        Servo_Motor_FreeAngle_Set(gimbalmoto,gimbal_cmd_recv.pitch);
         LKMotorEnable(motor);
-        LKMotorSetRef(motor,gimbal_cmd_recv.yaw);
-    }    
+
+        gimbal_pitch_angle -= gimbal_cmd_recv.pitch;
+        VAL_LIMIT(gimbal_pitch_angle, 0, 65);    /* 限幅 */
+
+        gimbal_yaw_angle -= gimbal_cmd_recv.yaw;
+
+        Servo_Motor_FreeAngle_Set(gimbalmoto,(int16_t)gimbal_pitch_angle);
+        LKMotorSetRef(motor,gimbal_yaw_angle);
+    }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET){
+        Servo_Motor_Start(gimbalmoto);
+        LKMotorEnable(motor);
+
+        gimbal_pitch_angle = 0;
+        motor->measure.total_round = 0;
+        motor->measure.total_angle = motor->measure.angle_single_round;
+        gimbal_yaw_angle = 0;
+        Servo_Motor_FreeAngle_Set(gimbalmoto,(int16_t)gimbal_pitch_angle);
+        LKMotorSetRef(motor,gimbal_yaw_angle);
+    }
+    gimbal_data_send.yaw = gimbal_yaw_angle;
+    gimbal_data_send.pitch = gimbal_pitch_angle;
+    PubPushMessage(gimbal_pub,&gimbal_data_send);
 }

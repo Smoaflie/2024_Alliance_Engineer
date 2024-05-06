@@ -37,6 +37,7 @@ void RobotInit()
 
     BSPInit();
 #ifndef ROBOT_TEST
+    DM_board_LEDSet(0x000000);
     RobotCMDInit();
 
     ChassisInit();

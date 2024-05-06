@@ -24,6 +24,7 @@ static Airpump_Cmd_Data_s airpump_cmd_rec;
 static float sucker_zero_angle;
 static uint8_t sucker_motor_init_flag = 0;
 static uint16_t sucker_motor_init_cnt = 0;
+static uint8_t  sucker_motor_mode = 0;
 void AIRPUMPInit()
 {
     GPIO_Init_Config_s gpio_conf_airpump_linear = {
@@ -89,31 +90,15 @@ void AIRPUMPInit()
 
 //吸盘朝前
 static void airsucker_forward(){
-    DJIMotorEnable(air_sucker_motor);
-    DJIMotorOuterLoop(air_sucker_motor,ANGLE_LOOP);
-    DJIMotorSetRef(air_sucker_motor,sucker_zero_angle+3600);
+    sucker_motor_mode = 2;
 }
 //吸盘朝上
 static void airsucker_up(){
-    DJIMotorEnable(air_sucker_motor);
-    if(sucker_motor_init_cnt > 50){
-        if(sucker_motor_init_flag==0){
-            sucker_motor_init_flag=1;
-            air_sucker_motor->measure.total_round = 0;
-            sucker_zero_angle = air_sucker_motor->measure.angle_single_round>180?(air_sucker_motor->measure.angle_single_round-360):air_sucker_motor->measure.angle_single_round;
-        }
-        DJIMotorOuterLoop(air_sucker_motor,ANGLE_LOOP);
-        DJIMotorSetRef(air_sucker_motor,sucker_zero_angle);
-    }else{
-        DJIMotorOuterLoop(air_sucker_motor,SPEED_LOOP);
-        DJIMotorSetRef(air_sucker_motor,-10000);
-        if(air_sucker_motor->measure.speed_aps > -500)   sucker_motor_init_cnt++;
-        else sucker_motor_init_cnt = 0;
-    }
+    sucker_motor_mode = 1;
 }
 //吸盘电机初始化
 static void airsucker_motor_init(){
-    sucker_motor_init_flag=0;
+    sucker_motor_init_flag= 0;
     sucker_motor_init_cnt = 0;
 }
 
@@ -126,7 +111,7 @@ void AIRPUMPTask()
     static uint32_t airvalve_tx_coder = 0;
     static uint16_t airvalve_state = 0;
     static uint8_t airvalve_mode_cnt = 0;
-    static uint16_t airvalve_delay_time = 0;
+    static int16_t airvalve_delay_time = 0;
     
     //todo:我感觉用define字符串表示0xnn更难看……
 
@@ -159,7 +144,7 @@ void AIRPUMPTask()
         if(airvalve_mode_cnt <= 10){//共9个步骤
             airvalve_state |= AIRVALVE_LEFT_CUBE_DOING; //设置进行标志位，防止中途模式被切换
             airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DONE; // 状态切换，清相关标志位
-            if(airvalve_delay_time <= 9)
+            if(airvalve_delay_time <= 0)
             {
                 airvalve_mode_cnt++;
                 airvalve_state |= AIRVALVE_SEND_CODER;
@@ -189,7 +174,7 @@ void AIRPUMPTask()
     if(!(airvalve_state&(AIRVALVE_LEFT_CUBE_DOING|AIRVALVE_MIDDLE_CUBE_DONE))  &&  ((airpump_cmd_rec.mode&AIRVALVE_MIDDLE_CUBE) || (airvalve_state&AIRVALVE_MIDDLE_CUBE_DOING))){ //(过程未完成&&未进行其他推杆任务)&&(cmd切换为该模式||模式进行标志位置位)
         if(airvalve_mode_cnt <= 6){//共9个步骤
             airvalve_state |= AIRVALVE_MIDDLE_CUBE_DOING; //设置进行标志位，防止中途模式被切换
-            airvalve_state&=~AIRVALVE_LEFT_CUBE_DOING; // 状态切换，清相关标志位
+            airvalve_state&=~AIRVALVE_LEFT_CUBE_DONE; // 状态切换，清相关标志位
             if(airvalve_delay_time <= 0)
             {
                 airvalve_mode_cnt++;
@@ -223,6 +208,30 @@ void AIRPUMPTask()
         memcpy(airvalve_can_instance->tx_buff,airvalve_tx_buf,8);
         CANTransmit(airvalve_can_instance,1);
         airvalve_state&=~AIRVALVE_SEND_CODER;
+    }
+
+    if(sucker_motor_mode == 1){ // up
+
+        DJIMotorEnable(air_sucker_motor);
+        if(sucker_motor_init_cnt > 50){
+            if(sucker_motor_init_flag==0){
+                sucker_motor_init_flag=1;
+                air_sucker_motor->measure.total_round = 0;
+                sucker_zero_angle = air_sucker_motor->measure.angle_single_round>180?(air_sucker_motor->measure.angle_single_round-360):air_sucker_motor->measure.angle_single_round;
+            }
+            DJIMotorOuterLoop(air_sucker_motor,ANGLE_LOOP);
+            DJIMotorSetRef(air_sucker_motor,sucker_zero_angle);
+        }else{
+            DJIMotorOuterLoop(air_sucker_motor,SPEED_LOOP);
+            DJIMotorSetRef(air_sucker_motor,-8000);
+            if(air_sucker_motor->measure.speed_aps > -500)   sucker_motor_init_cnt++;
+            else sucker_motor_init_cnt = 0;
+        }
+
+    }else if(sucker_motor_mode == 2){ //forward
+        DJIMotorEnable(air_sucker_motor);
+        DJIMotorOuterLoop(air_sucker_motor,ANGLE_LOOP);
+        DJIMotorSetRef(air_sucker_motor,sucker_zero_angle+3600);
     }
 
     if(airpump_cmd_rec.mode & AIRPUMP_SUCKER_ALL_STOP){

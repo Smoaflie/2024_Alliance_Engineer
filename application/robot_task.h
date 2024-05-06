@@ -11,6 +11,7 @@
 #include "bsp_log.h"
 #include "led.h"
 #include "user_lib.h"
+#include "DRmotor.h"
 
 // TASK
 #include "robot_cmd.h"
@@ -22,6 +23,7 @@
 #include "gimbal.h"
 #include "motor_task.h"
 #include "test.h"
+#include "UI.h"
 
 #ifdef ROBOT_TEST
 void TestTask(void *argument)
@@ -84,6 +86,7 @@ void _armTASK(void *argument)
     UNUSED(argument);
     while (1) {
         ArmTask();
+        // DRMotorControl();  
         osDelay(1);
     }
 }
@@ -110,6 +113,15 @@ void _BuzzerTask(void *argument)
     UNUSED(argument);
     while (1) {
         BuzzerTask(argument);
+    }
+}
+
+void _UITask(void *argument)
+{
+    UNUSED(argument);
+    while (1) {
+        // UITask();
+        // osDelay(34);
     }
 }
 #endif
