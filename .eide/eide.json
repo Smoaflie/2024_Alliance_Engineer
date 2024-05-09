@@ -121,7 +121,8 @@
           "application/arm",
           "application/airpump",
           "application/UI",
-          "modules/tool"
+          "modules/tool",
+          "application/UI_reality"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",

@@ -112,22 +112,14 @@ void AIRPUMPTask()
     static uint16_t airvalve_state = 0;
     static uint8_t airvalve_mode_cnt = 0;
     static int16_t airvalve_delay_time = 0;
-    
-    //todo:我感觉用define字符串表示0xnn更难看……
 
-    /*
-    airpump_cmd_rec.mode
-        低位0 -> 8
-        0 0x01      1 0x02      2  0x04        3  0x08      ……
-        左气泵开关 | 右气泵开关 | 气动取矿状态1 | 气动取矿状态2 ……
-    */
-    if(airpump_cmd_rec.mode & AIRPUMP_ARM_OPEN){
+    if(airpump_cmd_rec.airpump_mode == AIRPUMP_ARM_OPEN){
         GPIOReset(airpump_arm); //气泵拉低为开
     }else{
         GPIOSet(airpump_arm);
     }
 
-    if(airpump_cmd_rec.mode & AIRPUMP_LINEAR_OPEN){
+    if(airpump_cmd_rec.airpump_mode == AIRPUMP_LINEAR_OPEN){
         GPIOReset(airpump_linear);
     }else{
         GPIOSet(airpump_linear);
@@ -140,7 +132,7 @@ void AIRPUMPTask()
     对于延时位，已知该任务以1000Hz频率运行，另设变量airvalve_delay_time标示推杆每个动作的间隔时间，通过if-else实现延时
     具体流程直接看代码*/
     //取左侧矿
-    if(!(airvalve_state&(AIRVALVE_LEFT_CUBE_DONE|AIRVALVE_MIDDLE_CUBE_DOING))  &&  ((airpump_cmd_rec.mode&AIRVALVE_LEFT_CUBE) || (airvalve_state&AIRVALVE_LEFT_CUBE_DOING))){ //(过程未完成&&未进行其他推杆任务)&&(cmd切换为该模式||模式进行标志位置位)
+    if(!(airvalve_state&(AIRVALVE_LEFT_CUBE_DONE|AIRVALVE_MIDDLE_CUBE_DOING))  &&  ((airpump_cmd_rec.airvalve_mode&AIRVALVE_LEFT_CUBE) || (airvalve_state&AIRVALVE_LEFT_CUBE_DOING))){ //(过程未完成&&未进行其他推杆任务)&&(cmd切换为该模式||模式进行标志位置位)
         if(airvalve_mode_cnt <= 10){//共9个步骤
             airvalve_state |= AIRVALVE_LEFT_CUBE_DOING; //设置进行标志位，防止中途模式被切换
             airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DONE; // 状态切换，清相关标志位
@@ -171,7 +163,7 @@ void AIRPUMPTask()
         }
     }
     //取中间矿
-    if(!(airvalve_state&(AIRVALVE_LEFT_CUBE_DOING|AIRVALVE_MIDDLE_CUBE_DONE))  &&  ((airpump_cmd_rec.mode&AIRVALVE_MIDDLE_CUBE) || (airvalve_state&AIRVALVE_MIDDLE_CUBE_DOING))){ //(过程未完成&&未进行其他推杆任务)&&(cmd切换为该模式||模式进行标志位置位)
+    if(!(airvalve_state&(AIRVALVE_LEFT_CUBE_DOING|AIRVALVE_MIDDLE_CUBE_DONE))  &&  ((airpump_cmd_rec.airvalve_mode&AIRVALVE_MIDDLE_CUBE) || (airvalve_state&AIRVALVE_MIDDLE_CUBE_DOING))){ //(过程未完成&&未进行其他推杆任务)&&(cmd切换为该模式||模式进行标志位置位)
         if(airvalve_mode_cnt <= 6){//共9个步骤
             airvalve_state |= AIRVALVE_MIDDLE_CUBE_DOING; //设置进行标志位，防止中途模式被切换
             airvalve_state&=~AIRVALVE_LEFT_CUBE_DONE; // 状态切换，清相关标志位
@@ -234,9 +226,11 @@ void AIRPUMPTask()
         DJIMotorSetRef(air_sucker_motor,sucker_zero_angle+3600);
     }
 
-    if(airpump_cmd_rec.mode & AIRPUMP_SUCKER_ALL_STOP){
-        DJIMotorStop(air_sucker_motor);
+    if(airpump_cmd_rec.airpump_mode & AIRPUMP_STOP){
         GPIOSet(airpump_arm);
         GPIOSet(airpump_linear);
+    }
+    if(airpump_cmd_rec.airvalve_mode & AIRVALVE_STOP){
+        DJIMotorStop(air_sucker_motor);
     }
 }

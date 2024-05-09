@@ -23,7 +23,7 @@
 #include "gimbal.h"
 #include "motor_task.h"
 #include "test.h"
-#include "UI.h"
+#include "UI_reality.h"
 
 #ifdef ROBOT_TEST
 void TestTask(void *argument)
@@ -48,6 +48,7 @@ void _cmdTASK(void *argument)
     UNUSED(argument);
     while (1) {
         RobotCMDTask();
+
         osDelay(1);
     }
 }
@@ -120,8 +121,8 @@ void _UITask(void *argument)
 {
     UNUSED(argument);
     while (1) {
-        // UITask();
-        // osDelay(34);
+        UI_reality_Task();
+        osDelay(1000);
     }
 }
 #endif

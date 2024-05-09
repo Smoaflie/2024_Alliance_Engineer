@@ -117,6 +117,13 @@ const osThreadAttr_t airpump_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for UI */
+osThreadId_t UIHandle;
+const osThreadAttr_t UI_attributes = {
+  .name = "UI",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -133,6 +140,7 @@ void _armTASK(void *argument);
 void _cmdTASK(void *argument);
 void _motorTASK(void *argument);
 void _airpumpTASK(void *argument);
+void _UITask(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -193,6 +201,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of airpump */
   airpumpHandle = osThreadNew(_airpumpTASK, NULL, &airpump_attributes);
+
+  /* creation of UI */
+  UIHandle = osThreadNew(_UITask, NULL, &UI_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -384,6 +395,24 @@ __weak void _airpumpTASK(void *argument)
     osDelay(1);
   }
   /* USER CODE END _airpumpTASK */
+}
+
+/* USER CODE BEGIN Header__UITask */
+/**
+* @brief Function implementing the UI thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header__UITask */
+__weak void _UITask(void *argument)
+{
+  /* USER CODE BEGIN _UITask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END _UITask */
 }
 
 /* Private application code --------------------------------------------------*/

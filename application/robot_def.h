@@ -118,6 +118,9 @@ typedef enum {
     ARM_POSE_CONTRO_MODE,      // 臂臂位置控制模式
     ARM_REFER_MODE,      // 臂臂控制器
     ARM_FIXED,          // 保持位置
+    ARM_CUSTOM_CONTRO,  // 自定义控制器(上位机控制，优先级最高)
+    ARM_VISION_CONTRO,  // 视觉兑矿(上位机控制，优先级最高)
+    ARM_CONTROL_BY_KEYBOARD,    // 键盘控制，优先级仅次于俩上位机模式
 } arm_mode_e;
 
 /* ----------------CMD应用发布的控制数据,应当由gimbal/chassis/shoot订阅---------------- */
@@ -200,23 +203,52 @@ typedef struct{
     arm_mode_e contro_mode; // 臂臂控制模式
     uint8_t auto_mode; // 臂臂自动模式
     int8_t sucker_state; // 吸盘状态
+    uint8_t vision_signal; // 触发视觉识别的信号
+    uint8_t optimize_signal; // 优化信号（修正臂的yaw偏向和混合roll角度）
 }Arm_Cmd_Data_s;
 
 /* 气阀/气泵控制 */
 typedef struct{
-    uint8_t mode;
+    uint8_t airpump_mode;
+    uint8_t airvalve_mode;
 }Airpump_Cmd_Data_s;
 
+typedef struct{
+    uint8_t arm_auto_mode_id;
+    uint8_t chassis_auto_mod_id;
+}UI_reality_Data_s;
 #pragma pack() // 关闭字节对齐,结束前面的#pragma pack(1)
 
 /* 一些自定义的宏定义 */
-// 臂臂快速移位
+// 臂臂自动模式
 #define Reset_arm_cmd_param_flag 0x10   // 重置臂臂状态（水平前伸）
-#define Recycle_arm_in 0x20 // 臂臂收回肚子
 #define Recycle_arm_out 0x04 // 臂臂回收到肚子外
 #define Arm_get_goldcube_mid 0x40 // 臂臂取中间金矿
-#define Arm_get_goldcube_left 0x80 // 臂臂取左侧金矿
+#define Arm_get_goldcube_right 0x80 // 臂臂取右侧金矿
 #define Arm_fetch_cube_from_warehouse1 0x01 // 臂臂从矿仓1取矿
 #define Arm_fetch_cube_from_warehouse2 0x02 // 臂臂从矿仓2取矿
+#define Arm_big_yaw_reset   0x08    // 大Yaw归中
+#define Arm_fetch_grounded_cube 0x20// 取地面矿
+// 臂臂控制模式
+#define Arm_Control_with_Chassis 1// 控制底盘臂臂
+#define Arm_Control_only_Arm     2// 仅控制臂臂
+#define Arm_Control_by_Custom_controller 4// 自定义控制器
+#define Arm_Control_by_vision   5  // 视觉控制
+#define Fetch_gronded_cube 3// 取地矿模式
+// 臂臂吸盘旋转
+#define Arm_sucker_clockwise_rotation 1 //吸盘顺时针旋转
+#define Arm_sucker_anticlockwise_rotation -1 //吸盘逆时针旋转
+#define Arm_sucker_none_rotation    0   //吸盘不旋转
+// 气泵开关命令
+#define AIRPUMP_ARM_OPEN 0x01   //开臂臂的气泵
+#define AIRPUMP_LINEAR_OPEN 0x02//开气推杆的气泵
+#define AIRPUMP_SWITCH(mode,object)         ((mode) & (object)) ? ((mode) &= ~(object)) : ((mode) |= (object))
+//气推杆取矿命令
+#define AIRVALVE_LEFT_CUBE 0x04//取左侧矿模式
+#define AIRVALVE_MIDDLE_CUBE 0x08//取中间矿模式
+//吸盘电机控制命令
+#define SUCKER_MOTOR_INIT 0x80//初始化吸盘电机
+#define AIRPUMP_STOP 0x40//失能气泵
+#define AIRVALVE_STOP 0x20//失能吸盘电机
 
 #endif // !ROBOT_DEF_H

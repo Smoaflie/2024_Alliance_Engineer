@@ -1,16 +1,6 @@
 #ifndef AIRPUMP_H // 气阀/气泵/气推杆三任务合一
 #define AIRPUMP_H
 
-//气泵开关命令
-#define AIRPUMP_ARM_OPEN 0x01   //开臂臂的气泵
-#define AIRPUMP_LINEAR_OPEN 0x02//开气推杆的气泵
-//气推杆取矿命令
-#define AIRVALVE_LEFT_CUBE 0x04//取左侧矿模式
-#define AIRVALVE_MIDDLE_CUBE 0x08//取中间矿模式
-//吸盘电机控制命令
-#define SUCKER_MOTOR_INIT 0x80//初始化吸盘电机
-#define AIRPUMP_SUCKER_ALL_STOP 0x40//失能吸盘电机和气泵
-
 //气推杆状态命令字
 #define AIRVALVE_LEFT_CUBE_DOING 0x01   //取左侧矿-进行中
 #define AIRVALVE_MIDDLE_CUBE_DOING 0x02 //取中间矿-进行中

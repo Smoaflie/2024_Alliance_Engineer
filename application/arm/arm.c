@@ -57,7 +57,7 @@ static arm_controller_data_s arm_recv_host_data; // 上位机的传来的关节�
 static arm_controller_data_s arm_auto_mode_data; // 臂臂自动模式目标值
 
 static Subscriber_t *arm_cmd_sub;  // 臂臂控制信息收
-static Subscriber_t *arm_data_sub;  // 臂臂数据信息发
+static Publisher_t *arm_data_sub;  // 臂臂数据信息发
 
 // 臂臂控制数据
 static Arm_Cmd_Data_s arm_cmd_recv;
@@ -65,6 +65,7 @@ static Arm_Data_s arm_data_send;
 
 static HostInstance *host_instance; // 上位机接口
 static uint8_t host_rec_flag;       // 上位机接收标志位
+static uint8_t host_send_buf[33];   // 上位机发送缓冲区
 
 static DRMotorInstance *big_yaw_motor; // 大YAW电机
 static DJIMotorInstance *z_motor;      // Z轴电机
@@ -73,8 +74,9 @@ static GPIO_PinState Z_limit_sensor_gpio, big_yaw_limit_sensor_gpio; // 限位�
 
 static uint8_t arm_init_flag;   // 臂臂初始化标志
 static uint8_t Control_ARM_flag = 0;    // 控制臂臂位姿标志
-static uint8_t ARM_auto_mode_flag = 0;  // 臂臂自动模式标志
-static uint8_t ARM_IN_flag = 0; // 臂臂是否处于回收状态标志
+static uint8_t Arm_ramp_to_target_position_flag = 0;  // 臂臂斜坡移动至目标点标志
+static uint8_t MUC_mode_flag = 0; // 给小电脑的模式标志
+
 static Vector3 arm_rc_contro_place;
 static float assorted_yaw_angle, assorted_roll_angle;   //关节角度值
 static float Z_current_height;  //Z轴高度
@@ -85,7 +87,7 @@ static float big_yaw_angle;     //大Yaw关节角度值
 static float qua_rec[4];
 static float encoder_Data[3];
 static USARTInstance *vision_usart;
-static uint8_t vision_data_refresh = 0; // 图传链路数据更新标志
+static uint8_t custom_controller_data_refresh_flag = 0; // 图传链路数据更新标志
 // 图传链路
 static void vision_recv_callback(){
     uint8_t rec_buf[30];
@@ -93,7 +95,7 @@ static void vision_recv_callback(){
     if(rec_buf[0]==0xff && rec_buf[1]==0xff){
         memcpy((uint8_t*)encoder_Data,(uint8_t*)rec_buf+2,12);
         memcpy((uint8_t*)qua_rec,(uint8_t*)rec_buf+14,16);
-        vision_data_refresh = 1;
+        custom_controller_data_refresh_flag = 1;
     }
 }
 // 上位机解析回调函数
@@ -101,12 +103,8 @@ static void HOST_RECV_CALLBACK()
 {
     uint8_t rec_buf[26];
     memcpy(rec_buf,(uint8_t*)host_instance->comm_instance,host_instance->rec_len);
-    uint16_t verify_code;
-    for(int i=0;i<24;i++){
-        verify_code+=rec_buf[i];
-    }
-    if(verify_code==(rec_buf[24]+(rec_buf[25]<<8))){
-        memcpy(&arm_recv_host_data, rec_buf, sizeof(arm_controller_data_s));
+    if(rec_buf[0]==0xFF&&rec_buf[1]==0x52){
+        memcpy((uint8_t*)&arm_recv_host_data, rec_buf+2, sizeof(arm_controller_data_s));
 
         arm_recv_host_data.big_yaw_angle *= -1;
         // arm_recv_host_data.height *=100;   // 现行方案考虑不使用自定义控制器
@@ -348,11 +346,11 @@ void ArmInit()
     HostInstanceConf host_conf = {
         .callback  = HOST_RECV_CALLBACK,
         .comm_mode = HOST_VCP,
-        .RECV_SIZE = 22,
+        .RECV_SIZE = 26,
     };
     USART_Init_Config_s vision_usart_conf = {
         .module_callback = vision_recv_callback,
-        .recv_buff_size  = 26,
+        .recv_buff_size  = 30,
         .usart_handle    = &huart1, // 达妙板子的原理图写USART3，但实际管脚对应的是UART1
     };
     // 电机初始化
@@ -372,9 +370,10 @@ void ArmInit()
     assorted_roll_pid = PIDRegister(&assorted_roll_pid_config);
     // 消息收发初始化
     arm_cmd_sub   = SubRegister("arm_cmd", sizeof(Arm_Cmd_Data_s));
-    arm_data_sub  = Publisher_t("arm_data", sizeof(Arm_Data_s));
+    arm_data_sub  = PubRegister("arm_data", sizeof(Arm_Data_s));
     host_instance      = HostInit(&host_conf); // 上位机通信串口
     vision_usart       = USARTRegister(&vision_usart_conf);// 图传串口
+    host_send_buf[0]=0xff;host_send_buf[1]=0x52;
 }
 
 /* 一些私有函数 */
@@ -386,8 +385,8 @@ static void cal_mid_rAy_angle() //计算混合关节的yaw&roll
 {
     assorted_yaw_angle = assorted_yaw_encoder->measure.total_angle;
     // todo:shi
-    assorted_roll_angle = assorted_up_encoder->measure.total_angle;
-    assorted_roll_angle = (assorted_roll_angle + assorted_yaw_encoder->measure.total_angle) / 2.0;
+    assorted_roll_angle = (assorted_up_encoder->measure.total_angle + assorted_yaw_encoder->measure.total_angle) / 2.0;
+    if(arm_cmd_recv.optimize_signal&0x02)   assorted_roll_angle+=180;   //可选混合roll优化
     assorted_roll_angle = assorted_roll_angle - 360 * (int16_t)(assorted_roll_angle / 360);
     assorted_roll_angle = assorted_roll_angle > 180 ? (assorted_roll_angle - 360) : (assorted_roll_angle < -180 ? (assorted_roll_angle + 360) : assorted_roll_angle);
 
@@ -448,9 +447,18 @@ static void set_tail_motor_angle(float angle)
 static void set_arm_angle(arm_controller_data_s *data)
 {
     set_z_height(data->height);
-    set_big_yaw_angle(-data->big_yaw_angle);
-    set_mid_yaw_angle(-data->mid_yaw_angle);
-    set_mid_rAy_angle(data->assorted_roll_angle, data->assorted_yaw_angle);
+
+    //Yaw偏向可选优化
+    if(arm_cmd_recv.optimize_signal & 0x01){
+        set_big_yaw_angle(data->big_yaw_angle);
+        set_mid_yaw_angle(data->mid_yaw_angle);
+        set_mid_rAy_angle(data->assorted_roll_angle, -data->assorted_yaw_angle);
+    }else{
+        set_big_yaw_angle(-data->big_yaw_angle);
+        set_mid_yaw_angle(-data->mid_yaw_angle);
+        set_mid_rAy_angle(data->assorted_roll_angle, data->assorted_yaw_angle);
+    }
+    
     set_tail_motor_angle(-data->tail_motor_angle);
 }
 
@@ -573,6 +581,26 @@ static uint8_t cal_ARM_joint_angle(Transform* new_TF)
     }
     return 0;
 }
+//臂臂使能
+static void ArmEnable(){
+    DRMotorEnable(big_yaw_motor);
+    DRMotorEnable(mid_yaw_motor);
+    DJIMotorEnable(assorted_motor_up);
+    DJIMotorEnable(assorted_motor_down);
+    DJIMotorEnable(tail_motor);
+    DJIMotorEnable(z_motor);
+    DJIMotorEnable(tail_roll_motor);
+}
+//臂臂失能
+static void ArmDisable(){
+    DRMotorStop(mid_yaw_motor);
+    DJIMotorStop(assorted_motor_up);
+    DJIMotorStop(assorted_motor_down);
+    DJIMotorStop(tail_motor);
+    DRMotorStop(big_yaw_motor);
+    DJIMotorStop(z_motor);
+    DJIMotorStop(tail_roll_motor);
+}
 /* 臂臂各关节碰撞检测，原理是当其以较大输出电流运动超过5s时，认为其卡住了，将整个臂臂强制离线 */
 // todo:后续看该如何加入复活的操作
 static void ArmCrashDetection(){
@@ -602,27 +630,12 @@ static void ArmCrashDetection(){
             joint_crash_flag = 1;
         }
     }
+
+    if(joint_crash_flag == 1){
+        ArmDisable();
+    }
 }
-//臂臂使能
-static void ArmEnable(){
-    DRMotorEnable(big_yaw_motor);
-    DRMotorEnable(mid_yaw_motor);
-    DJIMotorEnable(assorted_motor_up);
-    DJIMotorEnable(assorted_motor_down);
-    DJIMotorEnable(tail_motor);
-    DJIMotorEnable(z_motor);
-    DJIMotorEnable(tail_roll_motor);
-}
-//臂臂失能
-static void ArmDisable(){
-    DRMotorStop(mid_yaw_motor);
-    DJIMotorStop(assorted_motor_up);
-    DJIMotorStop(assorted_motor_down);
-    DJIMotorStop(tail_motor);
-    DRMotorStop(big_yaw_motor);
-    DJIMotorStop(z_motor);
-    DJIMotorStop(tail_roll_motor);
-}
+
 //快速修改臂臂关节目标角度
 static void ArmParamSet(arm_controller_data_s *arm_data,float big_yaw_angle,float mid_yaw_angle,float assorted_yaw_angle,float assorted_roll_angle,float tail_motor_angle){
     arm_data->big_yaw_angle = big_yaw_angle;
@@ -631,15 +644,19 @@ static void ArmParamSet(arm_controller_data_s *arm_data,float big_yaw_angle,floa
     arm_data->assorted_roll_angle = assorted_roll_angle;
     arm_data->tail_motor_angle = tail_motor_angle;
     if(arm_data == &arm_auto_mode_data){
-        ARM_auto_mode_flag = 1;
+        Arm_ramp_to_target_position_flag = 1;
     }
 }
 //臂臂自动模式
 static void ArmSetAutoMode(){
     static uint8_t current_step_clt_flag = 0;
     static uint8_t step_id[5] = {0};
+    if(!Arm_ramp_to_target_position_flag == 0) return;
+    if(arm_cmd_recv.auto_mode == Arm_big_yaw_reset){
+        arm_param_t.big_yaw_angle = 0;
+        return;
+    }
     if(arm_cmd_recv.auto_mode == Reset_arm_cmd_param_flag && current_step_clt_flag == 0){
-        ARM_IN_flag = 0;
         ArmParamSet(&arm_auto_mode_data,0,0,0,0,0);
         // todo : 要不要复位Z轴？
         // memset(&arm_param_t,0,sizeof(arm_param_t));
@@ -648,19 +665,9 @@ static void ArmSetAutoMode(){
     // 除复位外一切自动模式都要在Z轴和Yaw轴初始化完毕后才能用
     if(arm_init_flag & Z_motor_init_clt){
         switch(arm_cmd_recv.auto_mode){
-            case Recycle_arm_in:
-                if(current_step_clt_flag == 0){
-                        if(limit_bool(Z_current_height,-263.037811,-472)){
-                        ARM_IN_flag = 1;
-                        ArmParamSet(&arm_auto_mode_data,-13,117.485405,71.3223343,0,90);
-                        current_step_clt_flag = 1;
-                    }
-                }
-                break;
             case Recycle_arm_out:
                 if(current_step_clt_flag == 0){
                         if(limit_bool(Z_current_height,30,-472)){
-                        ARM_IN_flag = 2;
                         ArmParamSet(&arm_auto_mode_data,-8.71066189,88.2430878,68.3408966,0,90);
                         current_step_clt_flag = 1;
                     }
@@ -685,8 +692,8 @@ static void ArmSetAutoMode(){
                         current_step_clt_flag = 1;
                 }
                 break;
-            case Arm_get_goldcube_left:
-                if(current_step_clt_flag == 0 && ARM_IN_flag==0){
+            case Arm_get_goldcube_right:
+                if(current_step_clt_flag == 0){
                         if(++step_id[2] > 4) step_id[2] = 1;
                         uint8_t current_step_id = step_id[2];
                         memset(step_id,0,sizeof(step_id));
@@ -702,7 +709,7 @@ static void ArmSetAutoMode(){
                 }
                 break;
             case Arm_fetch_cube_from_warehouse1:
-                if(current_step_clt_flag == 0 && ARM_IN_flag==0){
+                if(current_step_clt_flag == 0){
                         if(++step_id[3] > 4) step_id[3] = 1;
                         uint8_t current_step_id = step_id[3];
                         memset(step_id,0,sizeof(step_id));
@@ -718,7 +725,7 @@ static void ArmSetAutoMode(){
                 }
                 break;
             case Arm_fetch_cube_from_warehouse2:
-                if(current_step_clt_flag == 0 && ARM_IN_flag==0){
+                if(current_step_clt_flag == 0){
                         if(++step_id[4] > 4) step_id[4] = 1;
                         uint8_t current_step_id = step_id[4];
                         memset(step_id,0,sizeof(step_id));
@@ -744,7 +751,7 @@ static void ArmApplyAutoMode(){
     static float joint_offset[5];
     static ramp_t joint_ramp[5];
     static uint8_t joint_set_over;
-    if(ARM_auto_mode_flag == 1){
+    if(Arm_ramp_to_target_position_flag == 1){
         memcpy(&arm_auto_origin_data,&arm_contro_data,sizeof(arm_controller_data_s));
             joint_offset[0] = arm_auto_mode_data.big_yaw_angle - arm_auto_origin_data.big_yaw_angle;
             joint_offset[1] = arm_auto_mode_data.mid_yaw_angle - arm_auto_origin_data.mid_yaw_angle;
@@ -752,12 +759,12 @@ static void ArmApplyAutoMode(){
             joint_offset[3] = arm_auto_mode_data.assorted_roll_angle - arm_auto_origin_data.assorted_roll_angle;
             joint_offset[4] = arm_auto_mode_data.tail_motor_angle - arm_auto_origin_data.tail_motor_angle;
 
-            ramp_init(&joint_ramp[0],500);
-            ramp_init(&joint_ramp[1],500);
-            ramp_init(&joint_ramp[2],500);
-            ramp_init(&joint_ramp[3],500);
-            ramp_init(&joint_ramp[4],500);
-        ARM_auto_mode_flag = 2;
+            ramp_init(&joint_ramp[0],100);
+            ramp_init(&joint_ramp[1],100);
+            ramp_init(&joint_ramp[2],100);
+            ramp_init(&joint_ramp[3],100);
+            ramp_init(&joint_ramp[4],100);
+        Arm_ramp_to_target_position_flag = 2;
     }else{
         arm_contro_data.big_yaw_angle       = arm_auto_origin_data.big_yaw_angle        + joint_offset[0]*ramp_calc(&joint_ramp[0]);
         arm_contro_data.mid_yaw_angle       = arm_auto_origin_data.mid_yaw_angle        + joint_offset[1]*ramp_calc(&joint_ramp[1]);
@@ -769,15 +776,15 @@ static void ArmApplyAutoMode(){
     }
 
     if(joint_set_over==0x3f){
-        ARM_auto_mode_flag = 0;
+        Arm_ramp_to_target_position_flag = 0;
         joint_set_over = 0;
     }
 }
 
 static void ArmApplyControMode(){
-    if (arm_cmd_recv.contro_mode == ARM_POSE_CONTRO_MODE) { // 控制臂臂 大YAW&Z
-        Control_ARM_flag = 0;
-
+    if (arm_cmd_recv.contro_mode == ARM_CONTROL_BY_KEYBOARD){
+    // 如果为键鼠控制臂，则不用分那么多模式（按键足够多）
+        // 控制臂臂 大YAW&Z
         arm_param_t.big_yaw_angle -= arm_cmd_recv.Rotation_yaw;
         arm_param_t.height += arm_cmd_recv.Position_z;
         if (arm_init_flag & Z_motor_init_clt)
@@ -785,52 +792,109 @@ static void ArmApplyControMode(){
         else
             VAL_LIMIT(arm_param_t.height, -575, 575);
 
-        memcpy(&arm_contro_data,&arm_param_t,sizeof(arm_controller_data_s));
-    } else if (arm_cmd_recv.contro_mode == ARM_REFER_MODE && ARM_IN_flag == 0) { // 控制臂臂 末端位姿
-        Transform TF_p;
-        if(cal_ARM_TF(&TF_p)){
-            if (Control_ARM_flag == 0) {
-                memcpy(&arm_origin_place,&arm_param_t,sizeof(arm_param_t));
-                memset(&arm_param_t,0,sizeof(arm_rc_contro_place));
-                cal_ARM_joint_angle(&TF_p);
-                Control_ARM_flag = 1;
-            }else{
-                arm_origin_place.assorted_roll_angle += arm_cmd_recv.Roatation_Horizontal;
-                arm_origin_place.tail_motor_angle += arm_cmd_recv.Roatation_Vertical;
-                LIMIT_MIN_MAX(arm_origin_place.tail_motor_angle,-90,90);
-                if(!cal_ARM_joint_angle(&TF_p))
-                {
-                    arm_origin_place.assorted_roll_angle -= arm_cmd_recv.Roatation_Horizontal;
-                    arm_origin_place.tail_motor_angle -= arm_cmd_recv.Roatation_Vertical;
-                }
-            }
+    }else{
+    // 否则按模式控制臂臂各处
+        if (arm_cmd_recv.contro_mode == ARM_POSE_CONTRO_MODE) { // 控制臂臂 大YAW&Z
+            Control_ARM_flag = 0;
+
+            arm_param_t.big_yaw_angle -= arm_cmd_recv.Rotation_yaw;
+            arm_param_t.height += arm_cmd_recv.Position_z;
+            if (arm_init_flag & Z_motor_init_clt)
+                VAL_LIMIT(arm_param_t.height, -575, 30);
+            else
+                VAL_LIMIT(arm_param_t.height, -575, 575);
+
             memcpy(&arm_contro_data,&arm_param_t,sizeof(arm_controller_data_s));
+        } else if (arm_cmd_recv.contro_mode == ARM_REFER_MODE) { // 控制臂臂 末端位姿
+            Transform TF_p;
+            if(cal_ARM_TF(&TF_p)){
+                if (Control_ARM_flag == 0) {
+                    memcpy(&arm_origin_place,&arm_param_t,sizeof(arm_param_t));
+                    memset(&arm_param_t,0,sizeof(arm_rc_contro_place));
+                    cal_ARM_joint_angle(&TF_p);
+                    Control_ARM_flag = 1;
+                }else{
+                    arm_origin_place.assorted_roll_angle += arm_cmd_recv.Roatation_Horizontal;
+                    arm_origin_place.tail_motor_angle += arm_cmd_recv.Roatation_Vertical;
+                    LIMIT_MIN_MAX(arm_origin_place.tail_motor_angle,-90,90);
+                    if(!cal_ARM_joint_angle(&TF_p))
+                    {
+                        arm_origin_place.assorted_roll_angle -= arm_cmd_recv.Roatation_Horizontal;
+                        arm_origin_place.tail_motor_angle -= arm_cmd_recv.Roatation_Vertical;
+                    }
+                }
+                memcpy(&arm_contro_data,&arm_param_t,sizeof(arm_controller_data_s));
+            }
+        }else if(arm_cmd_recv.contro_mode == ARM_FIXED){ // 不控制臂臂，保持当前位置
+            Control_ARM_flag = 0;
+
+            static uint8_t switch_flag = 0;
+            if(switch_flag==0){
+                //每次上电时先保存下当前的角度值，防止臂臂初始位姿为前伸把自己创死
+                arm_param_t.big_yaw_angle = -big_yaw_angle;
+                arm_param_t.height = Z_current_height;
+                arm_param_t.mid_yaw_angle = -mid_yaw_motor->measure.total_angle;
+                arm_param_t.assorted_yaw_angle = assorted_yaw_angle;
+                arm_param_t.assorted_roll_angle = assorted_roll_angle;
+                arm_param_t.tail_motor_angle =  -tail_motor_encoder->measure.total_angle;
+                switch_flag = 1;
+                memcpy(&arm_contro_data,&arm_param_t,sizeof(arm_controller_data_s));
+            }
         }
-        /* 下方为自定义控制器 */
-        // if(host_rec_flag == 1){
-        //     arm_param_t.big_yaw_angle = arm_recv_host_data.big_yaw_angle;
-        //     memcpy((uint8_t *)&arm_param_t + 8, (uint8_t *)&arm_recv_host_data + 8, sizeof(arm_recv_host_data) - 8);
-        //     host_rec_flag = 0;
-        // }
-    } else if (arm_cmd_recv.contro_mode == ARM_ZERO_FORCE) { // 失能臂臂
+    }
+
+    // 失能臂臂
+    if (arm_cmd_recv.contro_mode == ARM_ZERO_FORCE) { 
         Control_ARM_flag = 0;
 
         ArmDisable();
-    }else if(arm_cmd_recv.contro_mode == ARM_FIXED){ // 不控制臂臂，保持当前位置
-        Control_ARM_flag = 0;
+    }
+    
+}
+//上位机控制
+static void host_control(){
+    /* 处理上位机发送的控制包 */
+    if(host_rec_flag==1){
+        host_rec_flag=0;
+        Arm_ramp_to_target_position_flag = 1;
+        memcpy(&arm_auto_mode_data,&arm_recv_host_data,sizeof(arm_controller_data_s));
+    }
 
-        static uint8_t switch_flag = 0;
-        if(switch_flag==0){
-            //每次上电时先保存下当前的角度值，防止臂臂初始位姿为前伸把自己创死
-            arm_param_t.big_yaw_angle = -big_yaw_angle;
-            arm_param_t.height = Z_current_height;
-            arm_param_t.mid_yaw_angle = -mid_yaw_motor->measure.total_angle;
-            arm_param_t.assorted_yaw_angle = assorted_yaw_angle;
-            arm_param_t.assorted_roll_angle = assorted_roll_angle;
-            arm_param_t.tail_motor_angle =  -tail_motor_encoder->measure.total_angle;
-            switch_flag = 1;
-            memcpy(&arm_contro_data,&arm_param_t,sizeof(arm_controller_data_s));
+    /* 向上位机发送控制请求 */
+    //视觉控制优先级最高
+    if(arm_cmd_recv.contro_mode == Arm_Control_by_vision && arm_cmd_recv.vision_signal == 1){
+        MUC_mode_flag = 0x04;
+        memcpy(host_send_buf+30,&MUC_mode_flag,1);
+        uint16_t verify_code = 0;
+        for(int i=0;i<30;i++){
+            verify_code+=host_send_buf[i];
         }
+        memcpy(host_send_buf+31,&verify_code,sizeof(verify_code));
+        HostSend(host_instance,host_send_buf,33);
+    }
+    //自定义控制器
+    if(arm_cmd_recv.contro_mode==Arm_Control_by_Custom_controller && custom_controller_data_refresh_flag==1){
+        memcpy(host_send_buf+2,encoder_Data,12);
+        memcpy(host_send_buf+14,qua_rec,16);
+        MUC_mode_flag = 0;
+        memcpy(host_send_buf+30,&MUC_mode_flag,1);
+        uint16_t verify_code = 0;
+        for(int i=0;i<30;i++){
+            verify_code+=host_send_buf[i];
+        }
+        memcpy(host_send_buf+31,&verify_code,sizeof(verify_code));
+        HostSend(host_instance,host_send_buf,33);
+        custom_controller_data_refresh_flag=0;
+    }
+}
+// 控制末端吸盘roll
+static void Arm_tail_sucker_contro(){
+    if(arm_cmd_recv.sucker_state == 1){
+        DJIMotorSetRef(tail_roll_motor,10000);
+    }else if(arm_cmd_recv.sucker_state == -1){
+        DJIMotorSetRef(tail_roll_motor,-10000);
+    }else{
+        DJIMotorSetRef(tail_roll_motor,0);
     }
 }
 /* 机器人机械臂控制核心任务 */
@@ -854,33 +918,32 @@ void ArmTask()
     cal_Z_height();
     
     //控制末端吸盘roll
-    if(arm_cmd_recv.sucker_state == 1){
-        DJIMotorSetRef(tail_roll_motor,10000);
-    }else if(arm_cmd_recv.sucker_state == -1){
-        DJIMotorSetRef(tail_roll_motor,-10000);
-    }else{
-        DJIMotorSetRef(tail_roll_motor,0);
+    Arm_tail_sucker_contro();
+
+    /* 臂臂控制中，上位机优先级最高，自动模式靠后，手动模式最低 */
+    if(arm_cmd_recv.contro_mode == (Arm_Control_by_Custom_controller|Arm_Control_by_vision)){
+        //上位机控制监测
+        host_control();
+    }else {
+        //监测自动操作请求
+        ArmSetAutoMode();
     }
 
-    //设置自动操作
-    ArmSetAutoMode();
-
-    //如有自动操作，先进行操作，再允许操作手进行自定义操作
-    if(ARM_auto_mode_flag&(0x01|0x02)){
+    //如设定了目标点，先移到位，再允许操作手进行自定义操作
+    if(Arm_ramp_to_target_position_flag&(0x01|0x02)){
         ArmApplyAutoMode();
     }else{
         ArmApplyControMode();
     }
-    
+
     //臂臂碰撞检测
     ArmCrashDetection();
-    if(joint_crash_flag == 1){
-        ArmDisable();
-    }
-
+    
+    //设定控制命令
     set_arm_angle(&arm_contro_data);
+
 
     if(arm_init_flag & Big_Yaw_motor_init_clt)
         arm_data_send.big_yaw_angle = big_yaw_angle;
-    PubPushMessage(arm_data_sub,&arm_data_send)
+    PubPushMessage(arm_data_sub,&arm_data_send);
 }
