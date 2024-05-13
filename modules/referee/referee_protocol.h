@@ -339,7 +339,7 @@ typedef struct
 typedef struct
 {
 	Graph_Data_t Graph_Control;
-	uint8_t show_Data[30];
+	char show_Data[30];
 } String_Data_t; // 打印字符串数据
 
 /* 删除操作 */

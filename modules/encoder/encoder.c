@@ -40,7 +40,8 @@ static void DecodeEncoder(CANInstance *_instance)
             break;
     }
 
-    measure->ecd = measure->ecd >= offset ? (measure->ecd - offset) : (measure->ecd + ECD_MAX_VAL - offset);
+    measure->ecd = ((measure->ecd >= offset) ? (measure->ecd - offset) : (measure->ecd + ECD_MAX_VAL - offset));
+    measure->ecd = measure->ecd;
     // 多圈角度计算,前提是假设两次采样间电机转过的角度小于180°,自己画个图就清楚计算过程了
     if ((int32_t)(measure->ecd - measure->last_ecd) > ECD_HALF_VAL)
         measure->total_round--;

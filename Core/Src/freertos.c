@@ -117,12 +117,12 @@ const osThreadAttr_t airpump_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for UI */
-osThreadId_t UIHandle;
-const osThreadAttr_t UI_attributes = {
-  .name = "UI",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityAboveNormal,
+/* Definitions for referee */
+osThreadId_t refereeHandle;
+const osThreadAttr_t referee_attributes = {
+  .name = "referee",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityBelowNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -140,7 +140,7 @@ void _armTASK(void *argument);
 void _cmdTASK(void *argument);
 void _motorTASK(void *argument);
 void _airpumpTASK(void *argument);
-void _UITask(void *argument);
+void _refereeTask(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -202,8 +202,8 @@ void MX_FREERTOS_Init(void) {
   /* creation of airpump */
   airpumpHandle = osThreadNew(_airpumpTASK, NULL, &airpump_attributes);
 
-  /* creation of UI */
-  UIHandle = osThreadNew(_UITask, NULL, &UI_attributes);
+  /* creation of referee */
+  refereeHandle = osThreadNew(_refereeTask, NULL, &referee_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -397,22 +397,22 @@ __weak void _airpumpTASK(void *argument)
   /* USER CODE END _airpumpTASK */
 }
 
-/* USER CODE BEGIN Header__UITask */
+/* USER CODE BEGIN Header__refereeTask */
 /**
-* @brief Function implementing the UI thread.
+* @brief Function implementing the referee thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header__UITask */
-__weak void _UITask(void *argument)
+/* USER CODE END Header__refereeTask */
+__weak void _refereeTask(void *argument)
 {
-  /* USER CODE BEGIN _UITask */
+  /* USER CODE BEGIN _refereeTask */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END _UITask */
+  /* USER CODE END _refereeTask */
 }
 
 /* Private application code --------------------------------------------------*/

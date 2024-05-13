@@ -88,6 +88,18 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
 }
 
 /**
+ * @brief 对接收数据的简单校验，原理为摇杆值只能为1,2,3(不可能为0)
+ *
+ */
+static uint8_t RemoteCheckoutCallback(uint8_t *sbus_buf)
+{
+    // rc_ctrl[TEMP].rc.switch_right = ((sbus_buf[5] >> 4) & 0x0003);     //!< Switch right
+    // rc_ctrl[TEMP].rc.switch_left = ((sbus_buf[5] >> 4) & 0x000C) >> 2; //!< Switch left
+    if (((sbus_buf[5] >> 4) & 0x03) && ((sbus_buf[5] >> 4) & 0x0C))  return 1;
+    else    return 0;   
+}
+
+/**
  * @brief 对sbus_to_rc的简单封装,用于注册到bsp_usart的回调函数中
  *
  */
@@ -111,6 +123,7 @@ static void RCLostCallback(void *id)
 RC_ctrl_t *RemoteControlInit(UART_HandleTypeDef *rc_usart_handle)
 {
     USART_Init_Config_s conf;
+    conf.checkout_callback = RemoteCheckoutCallback;
     conf.module_callback = RemoteControlRxCallback;
     conf.usart_handle = rc_usart_handle;
     conf.recv_buff_size = REMOTE_CONTROL_FRAME_SIZE;

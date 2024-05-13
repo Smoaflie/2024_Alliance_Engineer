@@ -29,6 +29,7 @@
 #include "gimbal.h"
 #include "airpump.h"
 #include "UI_reality.h"
+#include "UI.h"
 void RobotInit()
 {
     // 关闭中断,防止在初始化过程中发生中断
@@ -45,7 +46,8 @@ void RobotInit()
     ArmInit();
     GIMBALInit();
     AIRPUMPInit();
-    UI_reality_Init();
+    // UI_reality_Init();
+    // MyUIInit();
 #endif
 
 #ifdef ROBOT_TEST

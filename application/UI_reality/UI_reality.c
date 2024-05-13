@@ -26,15 +26,15 @@ void UI_reality_Init()
 }
 static void UI_color_change(uint8_t num,uint32_t* color){
     switch(num){
-        case 1:*color =  0xff4546;// 红色
-        case 2:*color =  0xffa308;// 橙色 
-        case 3:*color =  0xffee46;// 黄色
-        case 4:*color =  0xa8ff2d;// 绿色
-        case 5:*color =  0x45fff2;// 青色
-        case 6:*color =  0x0000ff;// 蓝色
-        case 7:*color =  0xf029f6;// 紫色
-        case 8:*color =  0xff648e;// 粉色
-        case 9:*color =  0xffffff;// 白色
+        case 1:*color =  0xff4546;break;// 红色
+        case 2:*color =  0xffa308;break;// 橙色 
+        case 3:*color =  0xffee46;break;// 黄色
+        case 4:*color =  0xa8ff2d;break;// 绿色
+        case 5:*color =  0x45fff2;break;// 青色
+        case 6:*color =  0x0000ff;break;// 蓝色
+        case 7:*color =  0xf029f6;break;// 紫色
+        case 8:*color =  0xff648e;break;// 粉色
+        case 9:*color =  0xffffff;break;// 白色
         default: *color = 0x000000;
 
     }
@@ -53,21 +53,28 @@ static void UI_color_select(){
 }
 void UI_reality_Task()
 {
-    // while(!SubGetMessage(UI_reality_data_sub,&UI_reality_recv));
-    // UI_color_select();
+    while(!SubGetMessage(UI_reality_data_sub,&UI_reality_recv));
+    UI_reality_recv.arm_auto_mode_id = 5;
+    UI_reality_recv.chassis_auto_mod_id = 2;
+    UI_color_select();
     memset(color,0,sizeof(color));
     static uint8_t WS2812_HighLevel = 0xf0;
     static uint8_t WS2812_LowLevel  = 0xC0;
     static uint8_t txbuf[10][24];
-    for (int j = 0; j < 9; j++){
+    for (int j = 0; j < 10; j++){
         for (int i = 0; i < 8; i++){
             txbuf[j][7-i]  = (((color[j]>>(i+8))&0x01) ? WS2812_HighLevel : WS2812_LowLevel)>>1;
             txbuf[j][15-i] = (((color[j]>>(i+16))&0x01) ? WS2812_HighLevel : WS2812_LowLevel)>>1;
             txbuf[j][23-i] = (((color[j]>>i)&0x01) ? WS2812_HighLevel : WS2812_LowLevel)>>1;
         }
     }
-    HAL_SPI_Transmit_DMA(&hspi4, (uint8_t *)txbuf, 24 * 9);
-
+    HAL_SPI_Transmit(&hspi4, (uint8_t *)txbuf, 24*10, 10000);
+    
+    uint8_t res = 0;
+    for (int i = 0; i < 100; i++)
+    {
+        HAL_SPI_Transmit(&hspi4, &res, 1, 0xFFFF);
+    }
     // int8_t a;
     // GPIOReset(UI_reality_GPIO);
     // for (int i = 0; i < 10; i++)

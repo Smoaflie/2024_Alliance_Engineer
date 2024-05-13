@@ -137,7 +137,6 @@ typedef struct
     float wz;           // 旋转速度
     float offset_angle; // 底盘和归中位置的夹角
     chassis_mode_e chassis_mode;
-    int chassis_speed_buff;
     // UI部分
     //  ...
 
@@ -149,6 +148,7 @@ typedef struct
     float yaw;
     float pitch;
     // float chassis_rotate_wz;
+    float arm_big_yaw_offset;
 
     gimbal_mode_e gimbal_mode;
 } Gimbal_Ctrl_Cmd_s;
@@ -190,6 +190,9 @@ typedef struct
  */
 typedef struct{
     float big_yaw_angle;
+
+    uint8_t arm_to_airvalve;
+    uint8_t arm_to_airpump;
 }Arm_Data_s;
 
 typedef struct{
@@ -205,12 +208,18 @@ typedef struct{
     int8_t sucker_state; // 吸盘状态
     uint8_t vision_signal; // 触发视觉识别的信号
     uint8_t optimize_signal; // 优化信号（修正臂的yaw偏向和混合roll角度）
+
+    uint8_t init_call;  // 相关参数重初始化请求（当机器人死亡复活后由cmd置位）
 }Arm_Cmd_Data_s;
 
 /* 气阀/气泵控制 */
 typedef struct{
     uint8_t airpump_mode;
     uint8_t airvalve_mode;
+
+    uint8_t arm_to_airpump;
+    uint8_t arm_to_airvalve;
+    uint8_t init_call;  // 相关参数重初始化请求（当机器人死亡复活后由cmd置位）
 }Airpump_Cmd_Data_s;
 
 typedef struct{
@@ -222,19 +231,19 @@ typedef struct{
 /* 一些自定义的宏定义 */
 // 臂臂自动模式
 #define Reset_arm_cmd_param_flag 0x10   // 重置臂臂状态（水平前伸）
-#define Recycle_arm_out 0x04 // 臂臂回收到肚子外
-#define Arm_get_goldcube_mid 0x40 // 臂臂取中间金矿
+#define Recycle_arm_in 0x04 // 臂臂回收到肚子内
 #define Arm_get_goldcube_right 0x80 // 臂臂取右侧金矿
-#define Arm_fetch_cube_from_warehouse1 0x01 // 臂臂从矿仓1取矿
-#define Arm_fetch_cube_from_warehouse2 0x02 // 臂臂从矿仓2取矿
+#define Arm_fetch_cube_from_warehouse1 0x01 // 臂臂从矿仓取矿
 #define Arm_big_yaw_reset   0x08    // 大Yaw归中
-#define Arm_fetch_grounded_cube 0x20// 取地面矿
+#define Arm_get_silvercube_left 0x02// 取小资源岛左侧矿
+#define Arm_get_silvercube_mid  0x20// 取小资源岛中间矿
+#define Arm_get_silvercube_right 0x40// 取小资源岛右侧矿
 // 臂臂控制模式
 #define Arm_Control_with_Chassis 1// 控制底盘臂臂
 #define Arm_Control_only_Arm     2// 仅控制臂臂
 #define Arm_Control_by_Custom_controller 4// 自定义控制器
-#define Arm_Control_by_vision   5  // 视觉控制
-#define Fetch_gronded_cube 3// 取地矿模式
+#define Arm_Control_by_vision   8  // 视觉控制
+#define Fetch_gronded_cube 16// 取地矿模式
 // 臂臂吸盘旋转
 #define Arm_sucker_clockwise_rotation 1 //吸盘顺时针旋转
 #define Arm_sucker_anticlockwise_rotation -1 //吸盘逆时针旋转
@@ -242,10 +251,16 @@ typedef struct{
 // 气泵开关命令
 #define AIRPUMP_ARM_OPEN 0x01   //开臂臂的气泵
 #define AIRPUMP_LINEAR_OPEN 0x02//开气推杆的气泵
+#define AIRPUMP_ARM_CLOSE 0x04  //关臂臂的气泵
+#define AIRPUMP_LINEAR_CLOSE 0x08 //关推杆的气泵
 #define AIRPUMP_SWITCH(mode,object)         ((mode) & (object)) ? ((mode) &= ~(object)) : ((mode) |= (object))
-//气推杆取矿命令
+//气推杆控制命令
 #define AIRVALVE_LEFT_CUBE 0x04//取左侧矿模式
 #define AIRVALVE_MIDDLE_CUBE 0x08//取中间矿模式
+#define AIRVALVE_CLAW_FOREWARD 0x10 //夹爪前伸
+#define AIRVALVE_CLAW_UP       0x20 //夹爪上抬
+#define AIRVALVE_CLAW_LOOSE    0x40 //夹爪松开
+#define AIRVALVE_CLAW_TIGHTEN  0x80 //夹爪锁紧
 //吸盘电机控制命令
 #define SUCKER_MOTOR_INIT 0x80//初始化吸盘电机
 #define AIRPUMP_STOP 0x40//失能气泵

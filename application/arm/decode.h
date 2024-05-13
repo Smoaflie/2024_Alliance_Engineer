@@ -325,31 +325,31 @@ uint8_t Update_angle(Transform *target, arm_controller_data_s *pub_s)
     pub.assorted_yaw_angle = -a1; //范围为±90 向左侧偏转为正 （右手坐标系）
 
     /* 控制器控制臂不需要解析后两个角度 */
-    // // 之后确定 assorted_roll关节角度
-    // // 通过三条向量arm3x指向，target指向，加上up基准向量，通过法向量计算夹角
-    // Vector3 arm3x_origin__origin__vec = {1,0,0};    //该向量只包含了arm3x轴方向
-    // Vector3 target_origin__origin__vec = quaternionToVector3(target->localRotation);
-    // // 先计算tail_motor的旋转角度`大小`
-    // a1 = angleBetweenVector3(target_origin__origin__vec, arm3x_origin__origin__vec);
-    // // 如tail_motor未偏转，则assorted_roll保持不动（法向量计算法会出问题，故取0.0001的误差）
-    // if (a1 <= 0.0001 && a1 >= -0.0001)
-    //     pub.assorted_roll_angle = pub.assorted_roll_angle;
-    // else {
-    //     Vector3 up_vector = {0,0,1};
-    //     Vector3 n_1             = crossProduct(arm3x_origin__origin__vec, up_vector);
-    //     Vector3 n_2       = crossProduct(arm3x_origin__origin__vec, target_origin__origin__vec);
-    //     float a2                = angleBetweenVector3(n_1, n_2);
+    // 之后确定 assorted_roll关节角度
+    // 通过三条向量arm3x指向，target指向，加上up基准向量，通过法向量计算夹角
+    Vector3 arm3x_origin__origin__vec = {1,0,0};    //该向量只包含了arm3x轴方向
+    Vector3 target_origin__origin__vec = quaternionToVector3(target->localRotation);
+    // 先计算tail_motor的旋转角度`大小`
+    a1 = angleBetweenVector3(target_origin__origin__vec, arm3x_origin__origin__vec);
+    // 如tail_motor未偏转，则assorted_roll保持不动（法向量计算法会出问题，故取0.0001的误差）
+    if (a1 <= 0.0001 && a1 >= -0.0001)
+        pub.assorted_roll_angle = pub.assorted_roll_angle;
+    else {
+        Vector3 up_vector = {0,0,1};
+        Vector3 n_1             = crossProduct(arm3x_origin__origin__vec, up_vector);
+        Vector3 n_2       = crossProduct(arm3x_origin__origin__vec, target_origin__origin__vec);
+        float a2                = angleBetweenVector3(n_1, n_2);
 
-    //     if(n_2.z < 0)
-    //         pub.assorted_roll_angle = a2; //todo:顺时针为正 （右手坐标系）
-    //     else
-    //         pub.assorted_roll_angle = -a2;
-    // }
+        if(n_2.z < 0)
+            pub.assorted_roll_angle = a2; //todo:顺时针为正 （右手坐标系）
+        else
+            pub.assorted_roll_angle = -a2;
+    }
 
-    // // 再借助assorted_roll的偏转角度通过向量法计算tail_motor的偏转方向
-    // Vector3 up__arm3__vec = {0, sinf(pub.assorted_roll_angle), cosf(pub.assorted_roll_angle)};
-    // a1                             = angleBetweenVector3(up__arm3__vec, target_origin__origin__vec);
-    // pub.tail_motor_angle           = -((M_PI / 2) - a1); // 范围为±90 向下为正 （右手坐标系）
+    // 再借助assorted_roll的偏转角度通过向量法计算tail_motor的偏转方向
+    Vector3 up__arm3__vec = {0, sinf(pub.assorted_roll_angle), cosf(pub.assorted_roll_angle)};
+    a1                             = angleBetweenVector3(up__arm3__vec, target_origin__origin__vec);
+    pub.tail_motor_angle           = -((M_PI / 2) - a1); // 范围为±90 向下为正 （右手坐标系）
 
     // 将弧度转换为角度
     pub.big_yaw_angle       = pub.big_yaw_angle * 180.0 / M_PI;

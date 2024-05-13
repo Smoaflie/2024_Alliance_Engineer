@@ -123,6 +123,8 @@ static void RefereeLostCallback(void *arg)
 referee_info_t *RefereeInit(UART_HandleTypeDef *referee_usart_handle)
 {
 	USART_Init_Config_s conf;
+    memset(&conf, 0, sizeof(USART_Init_Config_s));
+
 	conf.module_callback = RefereeRxCallback;
 	conf.usart_handle = referee_usart_handle;
 	conf.recv_buff_size = RE_RX_BUFFER_SIZE; // mx 255(u8)

@@ -24,6 +24,7 @@
 #include "motor_task.h"
 #include "test.h"
 #include "UI_reality.h"
+#include "UI.h"
 
 #ifdef ROBOT_TEST
 void TestTask(void *argument)
@@ -117,12 +118,13 @@ void _BuzzerTask(void *argument)
     }
 }
 
-void _UITask(void *argument)
+void _refereeTask(void *argument)
 {
     UNUSED(argument);
+    MyUIInit();
     while (1) {
-        UI_reality_Task();
-        osDelay(1000);
+        MyUIRefresh();
+        osDelay(100);
     }
 }
 #endif

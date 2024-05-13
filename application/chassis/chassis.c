@@ -17,6 +17,7 @@
 #include "super_cap.h"
 #include "message_center.h"
 #include "referee_init.h"
+#include "tool.h"
 
 #include "general_def.h"
 #include "bsp_dwt.h"
@@ -48,7 +49,7 @@ void ChassisInit()
         .can_init_config.can_handle   = &hfdcan3,
         .controller_param_init_config = {
             .speed_PID = {
-                .Kp            = 0.6, // 4.5
+                .Kp            = 2, // 4.5
                 .Ki            = 0,  // 0
                 .Kd            = 0,  // 0
                 .IntegralLimit = 3000,
@@ -123,6 +124,40 @@ static void LimitChassisOutput()
 }
 
 /**
+ * @brief 根据目标值和当前值的比较值，选择性调用斜坡函数
+ *
+ */
+static void ChassisValueRamp()
+{
+    static ramp_t chassis_speed_ramp[4];
+    static float  chassis_last_target_speed[4];
+    static float  *chassis_target_speed[4];
+    static float  chassis_origin_speed[4];
+    static float  chassis_offset_speed[4];
+    static float  *chassis_current_speed[4];
+
+    chassis_current_speed[0]=&motor_lf->measure.speed_aps;
+    chassis_current_speed[1]=&motor_rf->measure.speed_aps;
+    chassis_current_speed[2]=&motor_rb->measure.speed_aps;
+    chassis_current_speed[3]=&motor_lb->measure.speed_aps;
+
+    chassis_target_speed[0]=&vt_lf;
+    chassis_target_speed[1]=&vt_rf;
+    chassis_target_speed[2]=&vt_rb;
+    chassis_target_speed[3]=&vt_lb;
+
+    for(int i = 0; i < 4; i++){
+        if(chassis_last_target_speed[i]!=*chassis_target_speed[i]){
+            ramp_init(&chassis_speed_ramp[i],71);
+            chassis_origin_speed[i] = *chassis_current_speed[i];
+            chassis_offset_speed[i] = *chassis_target_speed[i] - chassis_origin_speed[i];
+            chassis_last_target_speed[i] = *chassis_target_speed[i];
+        }
+        *chassis_target_speed[i] = chassis_origin_speed[i] + ramp_calc(&chassis_speed_ramp[i]) * chassis_offset_speed[i];
+    }
+}
+
+/**
  * @brief 根据每个轮子的速度反馈,计算底盘的实际运动速度,逆运动解算
  *        对于双板的情况,考虑增加来自底盘板IMU的数据
  *
@@ -180,8 +215,13 @@ void ChassisTask()
     // 根据控制模式进行正运动学解算,计算底盘输出
     MecanumCalculate();
 
+    // 调用斜坡函数重设目标值，避免打滑
+    ChassisValueRamp();
+
     // 根据裁判系统的反馈数据和电容数据对输出限幅并设定闭环参考值
     LimitChassisOutput();
+
+    
 
     // 根据电机的反馈速度和IMU(如果有)计算真实速度
     EstimateSpeed();

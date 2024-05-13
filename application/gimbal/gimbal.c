@@ -116,7 +116,7 @@ void GIMBALTask()
         gimbal_yaw_angle -= gimbal_cmd_recv.yaw;
 
         Servo_Motor_FreeAngle_Set(gimbalmoto,(int16_t)gimbal_pitch_angle);
-        LKMotorSetRef(motor,gimbal_yaw_angle);
+        LKMotorSetRef(motor,gimbal_yaw_angle-gimbal_cmd_recv.arm_big_yaw_offset);
     }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET){
         Servo_Motor_Start(gimbalmoto);
         LKMotorEnable(motor);
@@ -128,7 +128,7 @@ void GIMBALTask()
         Servo_Motor_FreeAngle_Set(gimbalmoto,(int16_t)gimbal_pitch_angle);
         LKMotorSetRef(motor,gimbal_yaw_angle);
     }
-    gimbal_data_send.yaw = gimbal_yaw_angle;
+    gimbal_data_send.yaw = gimbal_yaw_angle-gimbal_cmd_recv.arm_big_yaw_offset;
     gimbal_data_send.pitch = gimbal_pitch_angle;
     PubPushMessage(gimbal_pub,&gimbal_data_send);
 }
