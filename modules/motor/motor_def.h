@@ -114,6 +114,12 @@ typedef enum
     DR_B0X,
 } Motor_Type_e;
 
+/* 电机控制方式枚举 */
+typedef enum
+{
+    TORQUE_LOOP_CONTRO = 0, //电流/扭矩开环控制
+    ANGLE_LOOP_CONTRO = 1,  //位置闭环控制(由电机支持)
+} Motor_Contro_Type_e;
 /**
  * @brief 电机控制器初始化结构体,包括三环PID的配置以及两个反馈数据来源指针
  *        如果不需要某个控制环,可以不设置对应的pid config
@@ -140,6 +146,7 @@ typedef struct
     Motor_Control_Setting_s controller_setting_init_config;
     Motor_Type_e motor_type;
     CAN_Init_Config_s can_init_config;
+    Motor_Contro_Type_e motor_contro_type;  //控制类型
 } Motor_Init_Config_s;
 
 #endif // !MOTOR_DEF_H

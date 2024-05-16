@@ -8,7 +8,9 @@
 #include <string.h>
 
 referee_info_t *referee_data;
-UI_data_t *UI_data;
+UI_data_t UI_data_recv;
+Subscriber_t *UI_cmd_sub;
+
 uint8_t UI_Seq = 0;
 
 static char char_pump_one_mode[50];
@@ -94,22 +96,31 @@ void MyUIInit(void)
 
     get_referee_data(referee_data);
 
+    UI_cmd_sub = SubRegister("UI",sizeof(UI_data_t));
+
     ui_refresh();
 }
 
 
 void MyUIRefresh(void)
 {
-    
+    SubGetMessage(UI_cmd_sub, &UI_data_recv);
+
+    //如UI刷新请求置位，则刷新UI
+    if(UI_data_recv.UI_refresh_request == 1){
+        ui_refresh();
+        return;
+    }
+
     //气泵1
-    if(UI_data->pump_one_mode_t==1)
+    if(UI_data_recv.pump_one_mode_t==1)
     {
         UICircleDraw(&circle_one,  "113",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,150,800,20);
         sprintf(pump_one_mode.show_Data,"ON");
         UICharDraw(&pump_one_mode,"001",Graphic_Operate_CHANGE,5,Graphic_Color_Green,20,10,200,830,char_pump_one_mode);
         UICharRefresh(&referee_data->referee_id, pump_one_mode);
     }
-    else if(UI_data->pump_one_mode_t==0)
+    else if(UI_data_recv.pump_one_mode_t==0)
     {
         UICircleDraw(&circle_one,  "113",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,150,800,20);
         sprintf(pump_one_mode.show_Data,"OFF");
@@ -118,14 +129,14 @@ void MyUIRefresh(void)
     }
 
     //气泵2
-    if(UI_data->pump_two_mode_t==1)
+    if(UI_data_recv.pump_two_mode_t==1)
     {
         UICircleDraw(&circle_two,  "114",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,150,720,20);
         sprintf(pump_two_mode.show_Data,"ON");
         UICharDraw(&pump_two_mode,"002",Graphic_Operate_CHANGE,5,Graphic_Color_Green,20,10,200,750,char_pump_two_mode);
         UICharRefresh(&referee_data->referee_id, pump_two_mode);
     }
-    else if(UI_data->pump_two_mode_t==0)
+    else if(UI_data_recv.pump_two_mode_t==0)
     {
         UICircleDraw(&circle_two,  "114",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,150,720,20);
         sprintf(pump_two_mode.show_Data,"OFF");
@@ -134,42 +145,42 @@ void MyUIRefresh(void)
     }
 
     //自动模式
-    if(UI_data->auto_mode_t==1)//金矿中
+    if(UI_data_recv.auto_mode_t==1)//金矿中
     {
         UICircleDraw(&circle_three,"115",Graphic_Operate_CHANGE,5,Graphic_Color_Yellow,15,150,640,20);
         sprintf(auto_mode.show_Data,"GM");
         UICharDraw(&auto_mode,"003",Graphic_Operate_CHANGE,5,Graphic_Color_Green,20,10,200,670,char_auto_mode);
         UICharRefresh(&referee_data->referee_id, auto_mode);
     }
-    else if(UI_data->auto_mode_t==3)//金矿左
+    else if(UI_data_recv.auto_mode_t==3)//金矿左
     {
         UICircleDraw(&circle_three,"115",Graphic_Operate_CHANGE,5,Graphic_Color_Purplish_red,15,150,640,20);
         sprintf(auto_mode.show_Data,"GL");
         UICharDraw(&auto_mode,"003",Graphic_Operate_CHANGE,5,Graphic_Color_Green,20,10,200,670,char_auto_mode);
         UICharRefresh(&referee_data->referee_id, auto_mode);
     }
-    else if(UI_data->auto_mode_t==2)//银矿左
+    else if(UI_data_recv.auto_mode_t==2)//银矿左
     {
         UICircleDraw(&circle_three,"115",Graphic_Operate_CHANGE,5,Graphic_Color_Orange,15,150,640,20);
         sprintf(auto_mode.show_Data,"SL");
         UICharDraw(&auto_mode,"003",Graphic_Operate_CHANGE,5,Graphic_Color_Green,20,10,200,670,char_auto_mode);
         UICharRefresh(&referee_data->referee_id, auto_mode);
     }
-    else if(UI_data->auto_mode_t==2)//银矿中
+    else if(UI_data_recv.auto_mode_t==2)//银矿中
     {
         UICircleDraw(&circle_three,"115",Graphic_Operate_CHANGE,5,Graphic_Color_Pink,15,150,640,20);
         sprintf(auto_mode.show_Data,"SM");
         UICharDraw(&auto_mode,"003",Graphic_Operate_CHANGE,5,Graphic_Color_Green,20,10,200,670,char_auto_mode);
         UICharRefresh(&referee_data->referee_id, auto_mode);
     }
-    else if(UI_data->auto_mode_t==2)//银矿右
+    else if(UI_data_recv.auto_mode_t==2)//银矿右
     {
         UICircleDraw(&circle_three,"115",Graphic_Operate_CHANGE,5,Graphic_Color_Cyan,15,150,640,20);
         sprintf(auto_mode.show_Data,"SR");
         UICharDraw(&auto_mode,"003",Graphic_Operate_CHANGE,5,Graphic_Color_Green,20,10,200,670,char_auto_mode);
         UICharRefresh(&referee_data->referee_id, auto_mode);
     }
-    else if(UI_data->auto_mode_t==2)//矿仓1
+    else if(UI_data_recv.auto_mode_t==2)//矿仓1
     {
         UICircleDraw(&circle_three,"115",Graphic_Operate_CHANGE,5,Graphic_Color_Main,15,150,640,20);
         sprintf(auto_mode.show_Data,"W1");
@@ -177,7 +188,7 @@ void MyUIRefresh(void)
         UICharRefresh(&referee_data->referee_id, auto_mode);
     }
 
-    else if(UI_data->auto_mode_t==2)//矿仓2
+    else if(UI_data_recv.auto_mode_t==2)//矿仓2
     {
         UICircleDraw(&circle_three,"115",Graphic_Operate_CHANGE,5,Graphic_Color_Black,15,150,640,20);
         sprintf(auto_mode.show_Data,"W2");
@@ -193,14 +204,14 @@ void MyUIRefresh(void)
     }
 
     //臂姿态
-    if(UI_data->arm_mode_t==1)
+    if(UI_data_recv.arm_mode_t==1)
     {
         UICircleDraw(&circle_four, "116",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,150,560,20);
         sprintf(arm_mode.show_Data,"OUT");
         UICharDraw(&arm_mode,"004",Graphic_Operate_CHANGE,5,Graphic_Color_Green,20,10,200,590,char_arm_mode);
         UICharRefresh(&referee_data->referee_id, arm_mode);
     }
-    else if(UI_data->arm_mode_t==1)
+    else if(UI_data_recv.arm_mode_t==1)
     {
         UICircleDraw(&circle_four, "116",Graphic_Operate_CHANGE,5,Graphic_Color_White,15,150,560,20);
         sprintf(arm_mode.show_Data,"IN");
@@ -209,14 +220,14 @@ void MyUIRefresh(void)
     }
 
     //陀螺模式
-    if(UI_data->rotate_mode_t==1)
+    if(UI_data_recv.rotate_mode_t==1)
     {
         UICircleDraw(&circle_five, "117",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,150,480,20);
         sprintf(rotate_mode.show_Data,"ON");
         UICharDraw(&rotate_mode,"005",Graphic_Operate_CHANGE,5,Graphic_Color_Green,20,10,200,510,char_rotate_mode);   
         UICharRefresh(&referee_data->referee_id, rotate_mode);
     }
-    else if(UI_data->rotate_mode_t==0)
+    else if(UI_data_recv.rotate_mode_t==0)
     {
         UICircleDraw(&circle_five, "117",Graphic_Operate_CHANGE,5,Graphic_Color_White,15,150,480,20);
         sprintf(rotate_mode.show_Data,"OFF");

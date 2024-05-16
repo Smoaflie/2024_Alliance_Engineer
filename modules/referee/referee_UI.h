@@ -5,6 +5,7 @@
 #include "stdint.h"
 #include "referee_protocol.h"
 #include "rm_referee.h"
+#include "robot_def.h"
 
 #pragma pack(1) // 按1字节对齐
 

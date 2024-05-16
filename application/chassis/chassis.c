@@ -10,6 +10,7 @@
  * @copyright Copyright (c) 2022
  *
  */
+#include "bsp_gpio.h"
 
 #include "chassis.h"
 #include "robot_def.h"
@@ -41,6 +42,8 @@ static DJIMotorInstance *motor_lf, *motor_rf, *motor_lb, *motor_rb; // left righ
 /* 私有函数计算的中介变量,设为静态避免参数传递的开销 */
 static float chassis_vx, chassis_vy;     // 将云台系的速度投影到底盘
 static float vt_lf, vt_rf, vt_lb, vt_rb; // 底盘速度解算后的临时输出,待进行限幅
+
+static GPIOInstance *redLight_detect_gpio; // 红外测距传感器
 
 void ChassisInit()
 {
@@ -92,6 +95,12 @@ void ChassisInit()
     motor_rb                                                               = DJIMotorInit(&chassis_motor_config);
     
     chassis_sub = SubRegister("chassis_cmd", sizeof(Chassis_Ctrl_Cmd_s));
+
+    GPIO_Init_Config_s gpio_conf_redlight_detection = {
+        .GPIOx = redLight_detect_GPIO_Port,
+        .GPIO_Pin = redLight_detect_Pin,
+    };
+    redLight_detect_gpio = GPIORegister(&gpio_conf_redlight_detection);
 }
 
 #define LF_CENTER ((HALF_TRACK_WIDTH + CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE - CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
@@ -148,13 +157,59 @@ static void ChassisValueRamp()
 
     for(int i = 0; i < 4; i++){
         if(chassis_last_target_speed[i]!=*chassis_target_speed[i]){
-            ramp_init(&chassis_speed_ramp[i],71);
+            ramp_init(&chassis_speed_ramp[i],10);
             chassis_origin_speed[i] = *chassis_current_speed[i];
             chassis_offset_speed[i] = *chassis_target_speed[i] - chassis_origin_speed[i];
             chassis_last_target_speed[i] = *chassis_target_speed[i];
         }
         *chassis_target_speed[i] = chassis_origin_speed[i] + ramp_calc(&chassis_speed_ramp[i]) * chassis_offset_speed[i];
     }
+}
+//底盘特殊功能处理
+static void SpecialFuncApply(){
+    static GPIO_PinState redlight_last_state = 0; //红外测距状态 1为触发
+    static GPIO_PinState redlight_state = 0; //红外测距状态 1为触发
+    static uint16_t redlight_detection_cnt = 0;
+    // redlight_state = GPIORead(redLight_detect_gpio);
+    redlight_state = HAL_GPIO_ReadPin(redLight_detect_GPIO_Port,redLight_detect_Pin);
+
+    static uint8_t func_doing_state = 0;
+    //斜坡向左移动-切换
+    static uint8_t slope_move_l_switch = 0;
+    if(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_L && !(slope_move_l_switch==1)){
+        func_doing_state &= ~0x02;
+        (func_doing_state & 0x01) ? (func_doing_state&=~0x01) : (func_doing_state|=0x01); 
+        slope_move_l_switch = 1;
+        redlight_last_state = redlight_state;
+    }else if(!(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_L)){
+        slope_move_l_switch=0;
+    }
+    //斜坡向右移动-切换
+    static uint8_t slope_move_r_switch = 0;
+    if(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_R && !(slope_move_r_switch==1)){
+        func_doing_state &= ~0x01;
+        (func_doing_state & 0x02) ? (func_doing_state&=~0x02) : (func_doing_state|=0x02); 
+        slope_move_r_switch = 1;
+        redlight_last_state = redlight_state;
+    }else if(!(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_R)){
+        slope_move_r_switch=0;
+    }
+    //斜向移动
+    if(func_doing_state & 0x03){
+        if(redlight_state != redlight_last_state){
+            chassis_vx = 0;
+            chassis_vy = 0;
+            redlight_detection_cnt++;
+            if(redlight_detection_cnt > 200)
+                func_doing_state &= ~0x03;
+        }else{
+            // static float d_v = 2500;
+            redlight_detection_cnt = 0;
+            chassis_vx = (((func_doing_state&0x02)>>1) - (func_doing_state&0x01)) * 2500;
+            chassis_vy = 800;
+        }
+    }
+    
 }
 
 /**
@@ -212,11 +267,14 @@ void ChassisTask()
     chassis_vx = chassis_cmd_recv.vx * cos_theta - chassis_cmd_recv.vy * sin_theta;
     chassis_vy = chassis_cmd_recv.vx * sin_theta + chassis_cmd_recv.vy * cos_theta;
 
+    // 底盘特殊功能处理
+    SpecialFuncApply();
+
     // 根据控制模式进行正运动学解算,计算底盘输出
     MecanumCalculate();
 
-    // 调用斜坡函数重设目标值，避免打滑
-    ChassisValueRamp();
+    // todo:调用斜坡函数重设目标值，避免打滑
+    // ChassisValueRamp();
 
     // 根据裁判系统的反馈数据和电容数据对输出限幅并设定闭环参考值
     LimitChassisOutput();

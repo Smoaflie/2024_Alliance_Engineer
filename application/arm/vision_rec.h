@@ -5,6 +5,7 @@
 static USARTInstance *vision_usart;
 static float qua_rec[4];
 static float encoder_Data[3];
+static uint8_t custom_controller_comm_recv = 0; //自定义发送的自定义标志位	
 static uint8_t custom_controller_data_refresh_flag = 0; // 图传链路数据更新标志
 static uint8_t custom_controller_data[30];
 // 图传链路
@@ -38,6 +39,8 @@ static void JudgeVisionReadData(uint8_t* buff){
 				{
                     case 0x0302:
                         memcpy(&custom_controller_data, (buff + DATA_Offset), 30);
+                        memcpy((uint8_t*)&custom_controller_comm_recv,(uint8_t*)custom_controller_data+1,1);
+
                         memcpy((uint8_t*)encoder_Data,(uint8_t*)custom_controller_data+2,12);
 							// encoder_Data[0] = -encoder_Data[0];
 							// encoder_Data[1] = -encoder_Data[1];

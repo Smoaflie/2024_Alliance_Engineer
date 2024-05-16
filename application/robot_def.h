@@ -101,7 +101,7 @@ typedef enum {
     CHASSIS_ROTATE,            // 小陀螺模式
     CHASSIS_NO_FOLLOW,         // 不跟随，允许全向平移
     CHASSIS_FOLLOW_GIMBAL_YAW, // 跟随模式，底盘叠加角度环控制
-    CHASSIS_ROTATE_CONTRO      // 旋转受控模式，底盘旋转由操作手直接控制
+    CHASSIS_ROTATE_CONTRO,     // 旋转受控模式，底盘旋转由操作手直接控制
 } chassis_mode_e;
 
 // 云台模式设置
@@ -110,6 +110,7 @@ typedef enum {
     GIMBAL_FREE_MODE,      // 云台自由运动模式,即与底盘分离(底盘此时应为NO_FOLLOW)反馈值为电机total_angle;似乎可以改为全部用IMU数据?
     GIMBAL_GYRO_MODE,      // 云台陀螺仪反馈模式,反馈值为陀螺仪pitch,total_yaw_angle,底盘可以为小陀螺和跟随模式
     GIMBAL_RESET,          // 云台复位，指向正前方
+    GIMBAL_FOLLOW_YAW,     // 云台跟随大Yaw
 } gimbal_mode_e;
 
 // 臂臂模式设置
@@ -137,6 +138,8 @@ typedef struct
     float wz;           // 旋转速度
     float offset_angle; // 底盘和归中位置的夹角
     chassis_mode_e chassis_mode;
+
+    uint8_t special_func_flag;  // 特殊动作
     // UI部分
     //  ...
 
@@ -217,7 +220,6 @@ typedef struct{
     uint8_t airpump_mode;
     uint8_t airvalve_mode;
 
-    uint8_t arm_to_airpump;
     uint8_t arm_to_airvalve;
     uint8_t init_call;  // 相关参数重初始化请求（当机器人死亡复活后由cmd置位）
 }Airpump_Cmd_Data_s;
@@ -226,24 +228,37 @@ typedef struct{
     uint8_t arm_auto_mode_id;
     uint8_t chassis_auto_mod_id;
 }UI_reality_Data_s;
+
+typedef struct
+{ 
+    uint8_t pump_one_mode_t;    //气泵1
+    uint8_t pump_two_mode_t;    //气泵2
+    uint8_t auto_mode_t;        //自动模式
+    uint8_t arm_mode_t;         //臂姿态  
+    uint8_t rotate_mode_t;      //陀螺模式
+
+    uint8_t UI_refresh_request; //重置UI请求
+}UI_data_t;
+
 #pragma pack() // 关闭字节对齐,结束前面的#pragma pack(1)
 
 /* 一些自定义的宏定义 */
 // 臂臂自动模式
-#define Reset_arm_cmd_param_flag 0x10   // 重置臂臂状态（水平前伸）
+#define Reset_arm_cmd_param_flag 0x10   // 重置臂臂
 #define Recycle_arm_in 0x04 // 臂臂回收到肚子内
+#define Recycle_arm_out 0x05 // 臂臂从肚子内伸出
 #define Arm_get_goldcube_right 0x80 // 臂臂取右侧金矿
 #define Arm_fetch_cube_from_warehouse1 0x01 // 臂臂从矿仓取矿
 #define Arm_big_yaw_reset   0x08    // 大Yaw归中
 #define Arm_get_silvercube_left 0x02// 取小资源岛左侧矿
 #define Arm_get_silvercube_mid  0x20// 取小资源岛中间矿
 #define Arm_get_silvercube_right 0x40// 取小资源岛右侧矿
+#define Fetch_gronded_cube 0x90 // 取地矿
 // 臂臂控制模式
 #define Arm_Control_with_Chassis 1// 控制底盘臂臂
 #define Arm_Control_only_Arm     2// 仅控制臂臂
 #define Arm_Control_by_Custom_controller 4// 自定义控制器
 #define Arm_Control_by_vision   8  // 视觉控制
-#define Fetch_gronded_cube 16// 取地矿模式
 // 臂臂吸盘旋转
 #define Arm_sucker_clockwise_rotation 1 //吸盘顺时针旋转
 #define Arm_sucker_anticlockwise_rotation -1 //吸盘逆时针旋转
@@ -265,5 +280,8 @@ typedef struct{
 #define SUCKER_MOTOR_INIT 0x80//初始化吸盘电机
 #define AIRPUMP_STOP 0x40//失能气泵
 #define AIRVALVE_STOP 0x20//失能吸盘电机
+//底盘特殊动作
+#define CHASSIS_SLOPE_MOVE_L 0x01         // 向左斜向平移，直到手动停止或触发红外开关
+#define CHASSIS_SLOPE_MOVE_R 0x02         // 向右斜向平移，直到手动停止或触发红外开关
 
 #endif // !ROBOT_DEF_H

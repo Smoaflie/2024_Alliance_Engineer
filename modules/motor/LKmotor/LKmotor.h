@@ -57,6 +57,8 @@ typedef struct
     DaemonInstance *daemon;
 
     Motor_Type_e motor_type;        // 电机类型
+
+    Motor_Contro_Type_e motor_contro_type;  //控制类型
 } LKMotorInstance;
 
 /**

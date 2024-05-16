@@ -10,7 +10,7 @@
 void MotorControlTask()
 {
     static uint8_t cnt = 0; //设定不同电机的任务频率
-    // cnt++;
+    cnt++;
     if(cnt%2==0)
     {
         DRMotorControl();  
