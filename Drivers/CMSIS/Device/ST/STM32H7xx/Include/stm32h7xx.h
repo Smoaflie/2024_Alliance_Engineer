@@ -120,6 +120,7 @@
 /** @addtogroup Device_Included
   * @{
   */
+#define STM32H723xx
 
 #if defined(STM32H743xx)
   #include "stm32h743xx.h"
