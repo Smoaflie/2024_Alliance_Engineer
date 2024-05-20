@@ -20,7 +20,6 @@
 
 #include "arm.h"
 #include "decode.h"
-#include "vision_rec.h"
 
 #define assorted_up_encoder_offset  3294
 #define assorted_yaw_encoder_offset 167392
@@ -51,7 +50,7 @@ static EncoderInstance_s *assorted_up_encoder, *assorted_yaw_encoder, *tail_moto
 static PIDInstance *assorted_yaw_pid, *assorted_roll_pid; // 中段两个2006电机只有速度环，在机械臂任务中通过这两个PID计算出二者的应达到的速度
 
 // 臂关节角度控制
-static Transform arm_controller_TF; //臂臂末端位姿(仅调试监视用)
+static Transform arm_controller_TF; //臂臂末端位姿
 static arm_controller_data_s arm_param_t;   //臂臂关节临时参数
 static arm_controller_data_s arm_origin_place;  //用于遥控器控制臂臂时提供基准点
 static arm_controller_data_s arm_contro_data;   //臂臂控制数据(关节目标角度)
@@ -72,28 +71,52 @@ static uint8_t host_send_buf[33];   // 上位机发送缓冲区
 static DRMotorInstance *big_yaw_motor; // 大YAW电机
 static DJIMotorInstance *z_motor;      // Z轴电机
 
-static GPIO_PinState Z_limit_sensor_gpio; // 限位传感器io
+static GPIO_PinState Z_GPIO;
+static GPIOInstance *Z_limit_sensor_gpio; // 限位传感器io
 
 static uint8_t arm_init_flag;   // 臂臂初始化标志
 static uint8_t Control_ARM_flag = 0;    // 控制臂臂位姿标志
 static uint8_t Arm_ramp_to_target_position_flag = 0;  // 臂臂斜坡移动至目标点标志
 static uint8_t MUC_mode_flag = 0; // 给小电脑的模式标志
-static uint8_t Arm_inside_flag; // 臂臂收回肚子标志
+static uint8_t Arm_inside_flag = 0; // 臂臂收回肚子标志
 
 static Vector3 arm_rc_contro_place;
 static float assorted_yaw_angle, assorted_roll_angle, big_yaw_angle;   //关节角度值
 static float Z_current_height;  //Z轴高度
 static uint8_t joint_crash_flag;    // 关节碰撞标志
 
-static uint16_t arm_height_ramp_feriod,arm_joint_ramp_feriod; //自动模式斜坡周期
+/* 自动模式相关 */
+static int32_t arm_height_ramp_feriod,arm_joint_ramp_feriod; //自动模式斜坡周期
+static uint8_t auto_mode_step_id[8] = {0};//各自动模式所进行到的步骤id
+static uint8_t auto_mode_doing_state = 0; //各自动模式进行时标志位 
+static float arm_automode_target_offset_x,arm_automode_target_offset_y,arm_automode_target_mode; //自动模式斜坡平移的一些参数
 
+/* 图传链路接收数据 */
+float qua_rec[4];
+float encoder_Data[3];
+uint8_t custom_controller_comm_recv = 0; //自定义发送的自定义标志位	
+uint8_t custom_controller_data_refresh_flag = 0; // 图传链路数据更新标志
 
+/* 右手坐标系下关节角度 */
 static float big_yaw_angle_;
 static float mid_yaw_angle_; 
 static float assorted_yaw_angle_;
 static float assorted_roll_angle_;
 static float tail_motor_angle_;
 
+// Z轴标定（原理为等待触发Z限位开关）
+static void Z_limit_sensor_detect()
+{
+    // Z_GPIO = HAL_GPIO_ReadPin(Z_limit_detect_GPIO_Port, Z_limit_detect_Pin);
+    // if (Z_GPIO == GPIO_PIN_RESET) {
+        arm_init_flag |= Z_motor_init_clt;
+        if ((z_motor->measure.total_round > 2 || z_motor->measure.total_round < -2)) {
+            z_motor->measure.total_round = 0;
+            arm_param_t.height = 0;
+            DJIMotorStop(z_motor);
+        }
+    // }
+}
 // 上位机解析回调函数
 static void HOST_RECV_CALLBACK()
 {
@@ -134,7 +157,7 @@ void ArmInit()
     tail_motor_encoder                        = EncoderInit(&encoder_config);
     encoder_config.can_init_config.rx_id      = 0x4fb;
     encoder_config.offset                     = tail_roll_encoder_offset;
-    tail_roll_encoder                           = EncoderInit(&encoder_config);
+    // tail_roll_encoder                           = EncoderInit(&encoder_config);
     Motor_Init_Config_s mid_yaw_motor_config = {
         .can_init_config = {
             .can_handle = &hfdcan2,
@@ -267,7 +290,7 @@ void ArmInit()
                 .Ki            = 0, // 0
                 .Kd            = 0, // 0
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
-                .IntegralLimit = 25,
+                .IntegralLimit = 15,
                 .MaxOut        = big_yaw_speed_limit,
             },
             .speed_PID = {
@@ -344,12 +367,15 @@ void ArmInit()
         .comm_mode = HOST_VCP,
         .RECV_SIZE = 26,
     };
-    USART_Init_Config_s vision_usart_conf = {
-        .module_callback = vision_recv_callback,
-        .checkout_callback = NULL,
-        .recv_buff_size  = USART_RXBUFF_LIMIT-1,
-        .usart_handle    = &huart1, // 达妙板子的原理图写USART3，但实际管脚对应的是UART1
+
+    GPIO_Init_Config_s Z_limit_sensor_gpio_conf = {
+        .GPIOx = Z_limit_detect_GPIO_Port,
+        .GPIO_Pin = Z_limit_detect_Pin,
+        .exti_mode = GPIO_EXTI_MODE_FALLING,
+        .gpio_model_callback = Z_limit_sensor_detect,
     };
+    // IO口初始化
+    Z_limit_sensor_gpio = GPIORegister(&Z_limit_sensor_gpio_conf);
     // 电机初始化
     joint_motor[0] = big_yaw_motor                               = DRMotorInit(&big_yaw_init_config);
     joint_motor[1] = mid_yaw_motor                               = DRMotorInit(&mid_yaw_motor_config);
@@ -358,7 +384,7 @@ void ArmInit()
     assorted_motor_config.can_init_config.tx_id = 2;
     joint_motor[3] = assorted_motor_down                         = DJIMotorInit(&assorted_motor_config);
     joint_motor[4] = tail_motor                                  = DJIMotorInit(&tail_motor_config);
-    // joint_motor[5] = tail_roll_motor                             = DJIMotorInit(&tail_roll_motor_config);
+    joint_motor[5] = tail_roll_motor                             = DJIMotorInit(&tail_roll_motor_config);
     joint_motor[6] = z_motor                                     = DJIMotorInit(&z_motor_config);
     
 
@@ -369,10 +395,8 @@ void ArmInit()
     arm_cmd_sub   = SubRegister("arm_cmd", sizeof(Arm_Cmd_Data_s));
     arm_data_sub  = PubRegister("arm_data", sizeof(Arm_Data_s));
     host_instance      = HostInit(&host_conf); // 上位机通信串口
-    vision_usart       = USARTRegister(&vision_usart_conf);// 图传串口
     host_send_buf[0]=0xff;host_send_buf[1]=0x52;
 
-    Arm_inside_flag = 0;
 }
 
 /* 一些私有函数 */
@@ -453,10 +477,10 @@ static void set_arm_angle(arm_controller_data_s *data)
 {
     set_z_height(data->height);
 
-    //Yaw偏向可选优化
+    //Yaw偏向可选优化sucker_state
     if(arm_cmd_recv.optimize_signal & 0x01){
-        set_big_yaw_angle(data->big_yaw_angle);
-        set_mid_yaw_angle(data->mid_yaw_angle);
+        set_big_yaw_angle(-data->mid_yaw_angle);
+        set_mid_yaw_angle(-data->big_yaw_angle);
         set_mid_rAy_angle(data->assorted_roll_angle, -data->assorted_yaw_angle);
     }else{
         set_big_yaw_angle(-data->big_yaw_angle);
@@ -467,22 +491,8 @@ static void set_arm_angle(arm_controller_data_s *data)
     set_tail_motor_angle(-data->tail_motor_angle);
 }
 
-// Z轴寻找标定位（原理为等待触发Z限位开关）
-static void Z_limit_sensor_detect()
-{
-    Z_limit_sensor_gpio = HAL_GPIO_ReadPin(Z_limit_detect_GPIO_Port, Z_limit_detect_Pin);
-    if (Z_limit_sensor_gpio == GPIO_PIN_RESET) {
-        arm_init_flag |= Z_motor_init_clt;
-        if ((z_motor->measure.total_round > 2 || z_motor->measure.total_round < -2)) {
-            z_motor->measure.total_round = 0;
-            arm_param_t.height = 0;
-            DJIMotorStop(z_motor);
-        }
-    }
-}
-
-// 根据控制数据获取末端位姿
-static uint8_t cal_ARM_TF(Transform* TF){
+// 根据控制数据变换末端位姿（重构TF树）
+static uint8_t cal_ARM_TF(Transform* TF,uint8_t mode,float dx,float dy){
     /* 原逆解算式，直接计算末端位姿的变换矩阵 */
     // 原末端位姿变换矩阵
     // float last_TransformationMatrix_data[16] = {
@@ -500,52 +510,71 @@ static uint8_t cal_ARM_TF(Transform* TF){
     // Matrix TransformationMatrix = {4, 4, TransformationMatrix_data};
     // M_mul(&Matrix_keep, &last_TransformationMatrix, &TransformationMatrix);
 
-    /* 改版正解算式，从arm2处(arm2初始坐标+偏移坐标)重构TF树 */
-    // arm2处的旋转矩阵
-    float arm3_roll_angle_new                            = degree2rad_limited(arm_origin_place.assorted_roll_angle);
-    float TransformationMatrix_arm2_origin__origin__q_data[9] = {
-        1, 0, 0,
-        0, cosf(arm3_roll_angle_new),   -sinf(arm3_roll_angle_new),
-        0, sinf(arm3_roll_angle_new),   cosf(arm3_roll_angle_new),
-        };
-    Matrix TransformationMatrix_arm2_origin__origin__q_m = {3, 3, TransformationMatrix_arm2_origin__origin__q_data};
-    // arm3相对于arm2的旋转矩阵
-    float arm4_pitch_angle_new                           = degree2rad_limited(arm_origin_place.tail_motor_angle);
-    float TransformationMatrix_arm3_arm2__arm2__q_data[9] = {
-        cosf(arm4_pitch_angle_new),0, sinf(arm4_pitch_angle_new),
-        0, 1, 0,
-        -sinf(arm4_pitch_angle_new),0,  cosf(arm4_pitch_angle_new),
-    };
-    Matrix TransformationMatrix_arm3_arm2__arm2__q_m = {3, 3, TransformationMatrix_arm3_arm2__arm2__q_data};
-
-    // target旋转矩阵
-    float TransformationMatrix_target_origin__origin__q_data[9];
-    Matrix TransformationMatrix_target_origin__origin__q_m = {3,3,TransformationMatrix_target_origin__origin__q_data};
-    M_mul(&TransformationMatrix_target_origin__origin__q_m,&TransformationMatrix_arm2_origin__origin__q_m,&TransformationMatrix_arm3_arm2__arm2__q_m);
-    // sub平移矩阵
-    float TransformationMatrix_target_sub__origin__p_data[3] = {-arm_cmd_recv.Translation_x,arm_cmd_recv.Translation_y,0};
-    Matrix TransformationMatrix_target_sub__origin__p_m = {3,1,TransformationMatrix_target_sub__origin__p_data};
-    M_mul(&Matrix_keep, &TransformationMatrix_target_origin__origin__q_m,&TransformationMatrix_target_sub__origin__p_m);
+    /*
+            ↑x
+            |
+        y←——O———
+           z|    
+    */
     Vector3 sub_vec;
-    memcpy((float*)&sub_vec,(float*)&Matrix_data_keep,sizeof(Vector3));
-    arm_rc_contro_place.x += sub_vec.x;
-    arm_rc_contro_place.y += sub_vec.y;
-    arm_rc_contro_place.z += sub_vec.z;
-    // arm4平移矩阵
-    float TransformationMartix_target_arm3__origin__p_data[3] = {arm4,0,0};
-    Matrix TransformationMartix_target_arm3__origin__p_m = {3,1,TransformationMartix_target_arm3__origin__p_data};
-    M_mul(&Matrix_keep, &TransformationMatrix_target_origin__origin__q_m,&TransformationMartix_target_arm3__origin__p_m);
+    //mode:0 基于吸盘朝向进行平移
+    if(mode == 0){
+        /* 改版正解算式，从arm2处(arm2初始坐标+偏移坐标)重构TF树 */
+        // arm2处的旋转矩阵
+        float arm3_roll_angle_new                            = degree2rad_limited(assorted_roll_angle_);
+        float TransformationMatrix_arm2_origin__origin__q_data[9] = {
+            1, 0, 0,
+            0, cosf(arm3_roll_angle_new),   -sinf(arm3_roll_angle_new),
+            0, sinf(arm3_roll_angle_new),   cosf(arm3_roll_angle_new),
+            };
+        Matrix TransformationMatrix_arm2_origin__origin__q_m = {3, 3, TransformationMatrix_arm2_origin__origin__q_data};
+        // arm3相对于arm2的旋转矩阵
+        float arm4_pitch_angle_new                           = degree2rad_limited(tail_motor_angle_);
+        float TransformationMatrix_arm3_arm2__arm2__q_data[9] = {
+            cosf(arm4_pitch_angle_new),0, sinf(arm4_pitch_angle_new),
+            0, 1, 0,
+            -sinf(arm4_pitch_angle_new),0,  cosf(arm4_pitch_angle_new),
+        };
+        Matrix TransformationMatrix_arm3_arm2__arm2__q_m = {3, 3, TransformationMatrix_arm3_arm2__arm2__q_data};
 
-    // 获取最终位姿
-    TF->localPosition.x = arm1+arm2+arm3 + Matrix_data_keep[0] + arm_rc_contro_place.x;
-    TF->localPosition.y = Matrix_data_keep[1] + arm_rc_contro_place.y;
-    TF->localPosition.z = Matrix_data_keep[2] + arm_rc_contro_place.z;
-    rotationToQuaternion((float *)TransformationMatrix_target_origin__origin__q_data,&TF->localRotation);
+        // target旋转矩阵
+        float TransformationMatrix_target_origin__origin__q_data[9];
+        Matrix TransformationMatrix_target_origin__origin__q_m = {3,3,TransformationMatrix_target_origin__origin__q_data};
+        M_mul(&TransformationMatrix_target_origin__origin__q_m,&TransformationMatrix_arm2_origin__origin__q_m,&TransformationMatrix_arm3_arm2__arm2__q_m);
+        // sub平移矩阵
+        float TransformationMatrix_target_sub__origin__p_data[3] = {dx,dy,0};
+        Matrix TransformationMatrix_target_sub__origin__p_m = {3,1,TransformationMatrix_target_sub__origin__p_data};
+        M_mul(&Matrix_keep, &TransformationMatrix_target_origin__origin__q_m,&TransformationMatrix_target_sub__origin__p_m);
+
+        memcpy((float*)&sub_vec,(float*)&Matrix_data_keep,sizeof(Vector3));
+        arm_rc_contro_place.x += sub_vec.x;
+        arm_rc_contro_place.y += sub_vec.y;
+        arm_rc_contro_place.z += sub_vec.z;
+        // arm4平移矩阵
+        float TransformationMartix_target_arm3__origin__p_data[3] = {arm4,0,0};
+        Matrix TransformationMartix_target_arm3__origin__p_m = {3,1,TransformationMartix_target_arm3__origin__p_data};
+        M_mul(&Matrix_keep, &TransformationMatrix_target_origin__origin__q_m,&TransformationMartix_target_arm3__origin__p_m);
+
+        // 获取最终位姿
+        TF->localPosition.x = Matrix_data_keep[0] + arm_rc_contro_place.x;
+        TF->localPosition.y = Matrix_data_keep[1] + arm_rc_contro_place.y;
+        TF->localPosition.z = Matrix_data_keep[2] + arm_rc_contro_place.z;
+        rotationToQuaternion((float *)TransformationMatrix_target_origin__origin__q_data,&TF->localRotation);
+    }else if(mode==1){
+    // mode:1 基于世界坐标系进行平移
+        sub_vec.x = dx;sub_vec.y = dy;sub_vec.z = 0;
+        arm_rc_contro_place.x += sub_vec.x;
+        arm_rc_contro_place.y += sub_vec.y;
+        arm_rc_contro_place.z += sub_vec.z;
+        TF->localPosition.x += sub_vec.x;
+        TF->localPosition.y += sub_vec.y;
+    }
+    
 
     // 判断末端位置是否超出有效解范围
     float TF_X       = sqrtf(TF->localPosition.x * TF->localPosition.x + TF->localPosition.y * TF->localPosition.y);
     // 未超出则返回1
-    if (limit_bool(TF_X,0.745f,0.4608f) && limit_bool(TF->localPosition.z,0.03+arm4,-0.575-arm4))
+    if (limit_bool(TF_X,0.745f,0.400f) && limit_bool(TF->localPosition.z,0.03+arm4,-0.575-arm4))
         return 1;
     // 超出则撤销更改，返回0
     arm_rc_contro_place.x -= sub_vec.x;
@@ -553,10 +582,10 @@ static uint8_t cal_ARM_TF(Transform* TF){
     arm_rc_contro_place.z -= sub_vec.z;
     return 0;
 }
-//根据末端位姿计算关节角度
+//根据末端TF树计算关节角度
 static uint8_t cal_ARM_joint_angle(Transform* new_TF)
 {
-    memcpy(&arm_controller_TF, new_TF, sizeof(Transform)); //方便监视
+    // memcpy(&arm_controller_TF, new_TF, sizeof(Transform)); //方便监视
 
     arm_controller_data_s update_data;
     if(Update_angle(new_TF, &update_data)) {
@@ -584,7 +613,7 @@ static void ArmEnable(){
     DJIMotorEnable(assorted_motor_down);
     DJIMotorEnable(tail_motor);
     DJIMotorEnable(z_motor);
-    // DJIMotorEnable(tail_roll_motor);
+    DJIMotorEnable(tail_roll_motor);
 }
 //臂臂失能
 static void ArmDisable(){
@@ -594,35 +623,51 @@ static void ArmDisable(){
     DJIMotorStop(tail_motor);
     DRMotorStop(big_yaw_motor);
     DJIMotorStop(z_motor);
-    // DJIMotorStop(tail_roll_motor);
+    DJIMotorStop(tail_roll_motor);
 }
-/* 臂臂各关节碰撞检测，原理是当其以较大输出电流运动超过5s时，认为其卡住了，将整个臂臂强制离线 */
+/* 臂臂各关节堵转检测，原理是当其输出较大电流但未发生位移超过1s时，认为其卡住了，将整个臂臂强制离线 */
 // todo:后续看该如何加入复活的操作
-static void ArmCrashDetection(){
-    static uint16_t joint_crash_cnt[5];
+static void ArmStuckDetection(){
+    static uint16_t joint_move_cnt[5];
+    static float joint_origin_angle[5];
+    static uint8_t joint_error_flag = 0;
     DJIMotorInstance* djimotor_ptr;
     DRMotorInstance* DRmotor_ptr;
     if(joint_crash_flag !=1 ){
         for(int i = 0;i<5;i++){
-            if(((DJIMotorInstance*)joint_motor[i])->motor_type == M2006){
+            if(((DJIMotorInstance*)joint_motor[i])->motor_type == M2006 || ((DJIMotorInstance*)joint_motor[i])->motor_type == M3508){
                 djimotor_ptr = (DJIMotorInstance*)joint_motor[i];
-                if(djimotor_ptr->motor_controller.speed_PID.Output == djimotor_ptr->motor_controller.speed_PID.MaxOut && djimotor_ptr->stop_flag!=0){
-                    joint_crash_cnt[i]++;
+                if(abs(djimotor_ptr->motor_controller.speed_PID.Output) >= djimotor_ptr->motor_controller.speed_PID.MaxOut/4.0f && djimotor_ptr->stop_flag!=0){
+                    if(joint_move_cnt[i]==0){
+                        joint_origin_angle[i]=djimotor_ptr->measure.total_angle;
+                    }
+                    joint_move_cnt[i]++;
+                    if(joint_move_cnt[i] > 1000 && limit_bool(djimotor_ptr->measure.total_angle-joint_origin_angle[i],10,-10)){
+                        joint_error_flag |= (0x01<<i);
+                    }else{
+                        joint_move_cnt[i]=0;
+                    }
                 }else{
-                    joint_crash_cnt[i] = 0;
+                    joint_move_cnt[i] = 0;
                 }
-                
             }else{
                 DRmotor_ptr = (DRMotorInstance*)joint_motor[i];
-                if(abs(DRmotor_ptr->speed_PID.Output) == DRmotor_ptr->speed_PID.MaxOut && DRmotor_ptr->stop_flag!=0){
-                    joint_crash_cnt[i]++;
+                if(abs(DRmotor_ptr->speed_PID.Output) >= DRmotor_ptr->speed_PID.MaxOut/4.0f && DRmotor_ptr->stop_flag!=0){
+                    if(joint_move_cnt[i]==0){
+                        joint_origin_angle[i]=DRmotor_ptr->measure.total_angle;
+                    }
+                    joint_move_cnt[i]++;
+                    if(joint_move_cnt[i] > 1000 && limit_bool(DRmotor_ptr->measure.total_angle-joint_origin_angle[i],2,-2)){
+                        joint_error_flag |= (0x01<<i);
+                    }else{
+                        joint_move_cnt[i]=0;
+                    }
                 }else{
-                    joint_crash_cnt[i] = 0;
+                    joint_move_cnt[i] = 0;
                 }
             }
-            if(joint_crash_cnt[i] > 300){
-                if(i==0)    continue;//忽略大yaw，大然电机有自己的碰撞检测
-                LOGWARNING("[arm] joint was crashed, id: %d", (i));
+            if(joint_error_flag){
+                LOGWARNING("[arm] joint was crashed, id: %x", joint_error_flag);
                 joint_crash_flag = 1;
             }
         }
@@ -632,8 +677,19 @@ static void ArmCrashDetection(){
     }
 }
 
-//斜坡设定臂臂关节目标角度
-static void ArmParamSet_ramp(uint16_t ramp_feriod,float big_yaw_angle,float mid_yaw_angle,float assorted_yaw_angle,float assorted_roll_angle,float tail_motor_angle){
+//斜坡设定臂臂关节目标角度-偏差值
+static void ArmParamSet_ramp_offset(int32_t ramp_feriod,float big_yaw_angle,float mid_yaw_angle,float assorted_yaw_angle,float assorted_roll_angle,float tail_motor_angle){
+    arm_auto_mode_data.big_yaw_angle = big_yaw_angle_ + big_yaw_angle;
+    arm_auto_mode_data.mid_yaw_angle = mid_yaw_angle_ + mid_yaw_angle;
+    arm_auto_mode_data.assorted_yaw_angle = assorted_yaw_angle_ + assorted_yaw_angle;
+    arm_auto_mode_data.assorted_roll_angle = assorted_roll_angle_ + assorted_roll_angle;
+    arm_auto_mode_data.tail_motor_angle = tail_motor_angle_ + tail_motor_angle;
+
+    arm_joint_ramp_feriod = ramp_feriod;
+    Arm_ramp_to_target_position_flag |= Arm_joint_ramp_flag;
+}
+//斜坡设定臂臂关节目标角度-绝对值
+static void ArmParamSet_ramp(int32_t ramp_feriod,float big_yaw_angle,float mid_yaw_angle,float assorted_yaw_angle,float assorted_roll_angle,float tail_motor_angle){
     arm_auto_mode_data.big_yaw_angle = big_yaw_angle;
     arm_auto_mode_data.mid_yaw_angle = mid_yaw_angle;
     arm_auto_mode_data.assorted_yaw_angle = assorted_yaw_angle;
@@ -643,36 +699,85 @@ static void ArmParamSet_ramp(uint16_t ramp_feriod,float big_yaw_angle,float mid_
     arm_joint_ramp_feriod = ramp_feriod;
     Arm_ramp_to_target_position_flag |= Arm_joint_ramp_flag;
 }
-
-//斜坡设定Z轴高度
-static void Z_heightSet_ramp(uint16_t ramp_feriod, float height){
+//斜坡平移臂末端
+static void ArmTargetParamSet_ramp_offset(int32_t ramp_feriod,uint8_t mode,float x_offset,float y_offset){
+    arm_automode_target_offset_x = x_offset;
+    arm_automode_target_offset_y = y_offset;
+    arm_automode_target_mode = mode;
+    arm_joint_ramp_feriod = ramp_feriod;
+    Arm_ramp_to_target_position_flag |= Arm_target_ramp_flag;
+}
+//斜坡设定Z轴高度-绝对值
+static void Z_heightSet_ramp(int32_t ramp_feriod, float height){
     arm_auto_mode_data.height = height;
 
     arm_height_ramp_feriod = ramp_feriod;
     Arm_ramp_to_target_position_flag |= Arm_height_ramp_flag;
 }
+//斜坡平移Z轴-偏差值
+static void Z_heightSet_ramp_offset(int32_t ramp_feriod, float height){
+    arm_auto_mode_data.height = Z_current_height + height;
+
+    arm_height_ramp_feriod = ramp_feriod;
+    Arm_ramp_to_target_position_flag |= Arm_height_ramp_flag;
+}
+//基于TF树控制臂臂
+//mode:0基于吸盘平移，mode:1基于原点坐标系平移
+static void ArmControByTF(Transform *TF,uint8_t mode,float x_offset,float y_offset,float roll_offset,float pitch_offset){
+    if (Control_ARM_flag == 0) {
+        memcpy(&arm_origin_place,&arm_param_t,sizeof(arm_param_t));
+        // arm_origin_place.height = Z_current_height;
+        // arm_origin_place.mid_yaw_angle = -mid_yaw_motor->measure.total_angle;
+        // arm_origin_place.assorted_yaw_angle = assorted_yaw_angle;
+        // arm_origin_place.assorted_roll_angle = assorted_roll_angle;
+        // arm_origin_place.tail_motor_angle =  -tail_motor_encoder->measure.total_angle;
+        // float a1 = abs(assorted_yaw_angle_);
+        // float a2 = 180 - abs(mid_yaw_angle_);
+        // float a3 = 180 - a1 - a2;
+        // arm_origin_place.big_yaw_angle = (mid_yaw_angle_>=0) ? (big_yaw_angle_ + a3) : (big_yaw_angle_ - a3); 
+        // float n = sqrtf(arm1*arm1 + arm2*arm2 - 2*arm1*arm2*cosf(a2*DEGREE_2_RAD));
+        // float a4 = asinf(arm2*sinf(a2)/n) - a3;
+        memset(&arm_rc_contro_place,0,sizeof(arm_rc_contro_place));
+        // arm_rc_contro_place.x = arm3 + n*sqrtf(1-sinf(a4)*sinf(a4));
+        // arm_rc_contro_place.y = assorted_yaw_angle_>=0 ? -n*sinf(a4) : n*sinf(a4);
+        // arm_rc_contro_place.z = 0;
+
+        cal_ARM_TF(&arm_controller_TF,0,x_offset,y_offset);
+        Control_ARM_flag = 1;
+    }
+    if(cal_ARM_TF(&arm_controller_TF,mode,x_offset/100.0,y_offset/100.0)){
+        arm_origin_place.assorted_roll_angle += roll_offset;
+        arm_origin_place.tail_motor_angle += pitch_offset;
+        LIMIT_MIN_MAX(arm_origin_place.tail_motor_angle,-90,90);
+        if(!cal_ARM_joint_angle(TF))
+        {
+            arm_origin_place.assorted_roll_angle -= roll_offset;
+            arm_origin_place.tail_motor_angle -= pitch_offset;
+        }
+    }
+}
 //臂臂自动模式
 static void ArmSetAutoMode(){
-    static uint8_t step_id[8] = {0};
-    static uint8_t mode_doing_state = 0; //模式进行时标志位 
-    static uint16_t delay_time; //延时时间，让臂臂控制气推杆时有一定的等待时间
-    if(!Arm_ramp_to_target_position_flag == 0) return;
+    static uint16_t delay_time; //当前步骤延时时间，让臂臂控制气推杆时有一定的等待时间
+    if(!(Arm_ramp_to_target_position_flag == 0)) return;  //如正执行着其他操作，则退出
+    
+    //臂臂从肚子伸出
     //执行其他模式时，需先将臂臂从肚子里取出
-    if((Arm_inside_flag==1 && arm_cmd_recv.auto_mode!=0 && arm_cmd_recv.auto_mode!=Recycle_arm_in) || mode_doing_state&(0x01<<7)){
-        mode_doing_state = 0;
-        mode_doing_state |= (0x01<<7);
-        if(++step_id[7] > 3) mode_doing_state&=~(0x01<<7);
-        uint8_t current_step_id = step_id[7];
-        memset(step_id,0,sizeof(step_id));
-        step_id[7] = current_step_id;
-        switch(current_step_id){
+    // if((Arm_inside_flag==1 && arm_cmd_recv.auto_mode!=0 && arm_cmd_recv.auto_mode!=Recycle_arm_in) || auto_mode_doing_state&(0x01<<7)){
+    if((Arm_inside_flag==1 && arm_cmd_recv.auto_mode==Recycle_arm_out) || auto_mode_doing_state&(0x01<<7)){
+        auto_mode_doing_state = 0;
+        auto_mode_doing_state |= (0x01<<7);
+        if(++auto_mode_step_id[7] > 3) {auto_mode_step_id[7]=0;auto_mode_doing_state&=~(0x01<<7);return;}
+        uint8_t current_auto_mode_step_id = auto_mode_step_id[7];
+        memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
+        auto_mode_step_id[7] = current_auto_mode_step_id;
+        switch(current_auto_mode_step_id){
             case 1:ArmParamSet_ramp(1000,-33.493,116.523773,90.5924835,-96.5074844,-73.6624374);break;
             case 2:Z_heightSet_ramp(1000,-315.116913);break;
             case 3:ArmParamSet_ramp(1000,-40.1328545,5.32804918,89.7918472,-104.0686646,-88.7563782);Arm_inside_flag=0;break;
         }
         return;
     }
-
     //大Yaw复位
     if(arm_cmd_recv.auto_mode == Arm_big_yaw_reset){
         arm_param_t.big_yaw_angle = 0;
@@ -684,7 +789,7 @@ static void ArmSetAutoMode(){
         return;
     }
 
-    // 除复位外一切自动模式都要在 Z轴初始化完毕 且 臂臂不在肚子内 才能用
+    // 除复位和伸出臂臂外一切自动模式都要在 Z轴初始化完毕 且 臂臂不在肚子内 才能用
     if((arm_init_flag & Z_motor_init_clt) && Arm_inside_flag==0){
         //如果目前的自动模式有延时需求（比如移动夹爪），将进入此函数
         if(delay_time!=0){
@@ -693,74 +798,58 @@ static void ArmSetAutoMode(){
         }
         //以下为各自动模式
         //收臂臂回肚子
-        if ((arm_cmd_recv.auto_mode==Recycle_arm_in) || (mode_doing_state & (0x01<<0))){
-            mode_doing_state = 0;
-            mode_doing_state |= (0x01<<0);
-            if(++step_id[0] > 3) mode_doing_state&=~(0x01<<0);
-            int t=0;if(step_id[t] == 1 || step_id[t] == 2 || step_id[t] == 3 || step_id[t] == 9 || step_id[t] == 10) mode_doing_state&=~(0x01<<t);
-
-            uint8_t current_step_id = step_id[0];
-            memset(step_id,0,sizeof(step_id));
-            step_id[0] = current_step_id;
-            switch(current_step_id){
+        if ((arm_cmd_recv.auto_mode==Recycle_arm_in) || (auto_mode_doing_state & (0x01<<0))){
+            auto_mode_doing_state = 0;
+            auto_mode_doing_state |= (0x01<<0);
+            if(++auto_mode_step_id[0] > 3) {auto_mode_step_id[0]=0;auto_mode_doing_state&=~(0x01<<0);return;}
+            uint8_t current_auto_mode_step_id = auto_mode_step_id[0];
+            memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
+            auto_mode_step_id[0] = current_auto_mode_step_id;
+            switch(current_auto_mode_step_id){
                 case 1:ArmParamSet_ramp(1000,-40.1328545,5.32804918,89.7918472,-104.0686646,-88.7563782);Z_heightSet_ramp(1000,-510.375061);break;
                 case 2:ArmParamSet_ramp(1000,-33.493,116.523773,90.5924835,-96.5074844,-73.6624374);break;
                 case 3:ArmParamSet_ramp(500,1.5181303,116.523773,90.5924835,-96.5074844,-73.6624374);Arm_inside_flag=1;break;
             }
             return;
         }
-        //臂臂从肚子伸出
-        if((Arm_inside_flag==1 && arm_cmd_recv.auto_mode==Recycle_arm_out) || mode_doing_state&(0x01<<7)){
-            mode_doing_state = 0;
-            mode_doing_state |= (0x01<<7);
-            if(++step_id[7] > 3) mode_doing_state&=~(0x01<<7);
-            uint8_t current_step_id = step_id[7];
-            memset(step_id,0,sizeof(step_id));
-            step_id[7] = current_step_id;
-            switch(current_step_id){
-                case 1:ArmParamSet_ramp(1000,-33.493,116.523773,90.5924835,-96.5074844,-73.6624374);break;
-                case 2:Z_heightSet_ramp(1000,-315.116913);break;
-                case 3:ArmParamSet_ramp(1000,-40.1328545,5.32804918,89.7918472,-104.0686646,-88.7563782);Arm_inside_flag=0;break;
-            }
-            return;
-        }
         //取右侧金矿
-        if ((arm_cmd_recv.auto_mode==Arm_get_goldcube_right) || (mode_doing_state & (0x01<<1))){
-            mode_doing_state = 0;
-            mode_doing_state |= (0x01<<1);
-            if(++step_id[1] > 8) mode_doing_state&=~(0x01<<1);
-            int t=1;if(step_id[t] == 4 || step_id[t] == 5 || step_id[t] == 6 || step_id[t] == 7 || step_id[t] == 8 || step_id[t] == 9 || step_id[t] == 10) mode_doing_state&=~(0x01<<t);
-            uint8_t current_step_id = step_id[1];
-            memset(step_id,0,sizeof(step_id));
-            step_id[1] = current_step_id;
-            switch(current_step_id){
+        if ((arm_cmd_recv.auto_mode==Arm_get_goldcube_right) || (auto_mode_doing_state & (0x01<<1))){
+            auto_mode_doing_state = 0;
+            auto_mode_doing_state |= (0x01<<1);
+            if(++auto_mode_step_id[1] > 11) {auto_mode_step_id[1]=0;auto_mode_doing_state&=~(0x01<<1);return;}
+            int t=1;if(auto_mode_step_id[t] == 5 || auto_mode_step_id[t] == 9) auto_mode_doing_state&=~(0x01<<t);
+            uint8_t current_auto_mode_step_id = auto_mode_step_id[1];
+            memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
+            auto_mode_step_id[1] = current_auto_mode_step_id;
+            switch(current_auto_mode_step_id){
                 case 1:Z_heightSet_ramp(500,-163.547638);break;
                 case 2:ArmParamSet_ramp(1600,-87.6319504,27.0226898,90.7902374,90,60.3486938);break;
                 case 3:Z_heightSet_ramp(500,-497.650665);break;
                 case 4:ArmParamSet_ramp(2000,-83.6757507,66.9962463,30.7715321,89.5769196,1.0743103);break;
                 case 5:ArmParamSet_ramp(1400,-74.9983292,54.3336639,34.7623405,88.4357147,1.03173828);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;break;
                 case 6:ArmParamSet_ramp(2000,-83.6757507,66.9962463,30.7715321,89.5769196,1.0743103);break;
-                case 7:Z_heightSet_ramp(300,-428.460815);break;
+                case 7:Z_heightSet_ramp_offset(300,69.18985);break;
                 case 8:ArmParamSet_ramp(2000,-97.2660217,78.6398926,29.6838799,89.5769196,1.0743103);break;
                 case 9:ArmParamSet_ramp(2000,-138.88736,71.164772,81.2677765,89.5769196,1.0743103);break;
-                case 14:memset(&arm_data_send,0,sizeof(arm_data_send));
+                case 10:Z_heightSet_ramp(500,-163.547638);break;
+                case 11:memset(&arm_data_send,0,sizeof(arm_data_send));
             }
             return;
         }
         //从上矿仓取矿，并将下矿仓的矿石移到上矿仓
-        if ((arm_cmd_recv.auto_mode==Arm_fetch_cube_from_warehouse1) || (mode_doing_state & (0x01<<2))){
-            mode_doing_state = 0;
-            mode_doing_state |= (0x01<<2);
-            if(++step_id[2] > 14) mode_doing_state&=~(0x01<<2);
-            // int t=2;if(step_id[t] == 2 || step_id[t] == 3  || step_id[t] == 4 || step_id[t] == 9 || step_id[t] == 10) mode_doing_state&=~(0x01<<t);
-            uint8_t current_step_id = step_id[2];
-            memset(step_id,0,sizeof(step_id));
-            step_id[2] = current_step_id;
-            switch(current_step_id){
+        if ((arm_cmd_recv.auto_mode==Arm_fetch_cube_from_warehouse1) || (auto_mode_doing_state & (0x01<<2))){
+            auto_mode_doing_state = 0;
+            auto_mode_doing_state |= (0x01<<2);
+            if(++auto_mode_step_id[2] > 14) {auto_mode_step_id[2]=0;auto_mode_doing_state&=~(0x01<<2);return;}
+            // int t=2;if(auto_mode_step_id[t] == 2 || auto_mode_step_id[t] == 3  || auto_mode_step_id[t] == 4 || auto_mode_step_id[t] == 9 || auto_mode_step_id[t] == 10) auto_mode_doing_state&=~(0x01<<t);
+            uint8_t current_auto_mode_step_id = auto_mode_step_id[2];
+            memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
+            auto_mode_step_id[2] = current_auto_mode_step_id;
+            switch(current_auto_mode_step_id){
                 case 1:ArmParamSet_ramp(2000,-2.11363196,3.643929,4.22839069,6.77496338,88.7471619);Z_heightSet_ramp(2000,-51.8345871);break;
                 case 2:ArmParamSet_ramp(3000,51.22015,81.2721252,44.5704498,6.77496338,88.7471619);break;                    
                 case 3:Z_heightSet_ramp(800,-90.694397);break;
-                case 4:Z_heightSet_ramp(800,-95.694397);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;break;
+                case 4:Z_heightSet_ramp_offset(800,-6.5);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;break;
                 case 5:Z_heightSet_ramp(500,0);break;
                 case 6:arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_FOREWARD;delay_time = 200;break; //夹爪前伸
                 case 7:ArmParamSet_ramp(800,29.1283932,94.9285202,43.5830498,6.77496338,-11);break;
@@ -773,18 +862,22 @@ static void ArmSetAutoMode(){
             }
             return;
         }
-        if ((arm_cmd_recv.auto_mode==Arm_get_silvercube_left) || (mode_doing_state & (0x01<<3))){
-            if(++step_id[3] > 14) step_id[3] = 1;
-            int t=3;if(step_id[t] == 2 || step_id[t] == 3  || step_id[t] == 4 || step_id[t] == 9 || step_id[t] == 10) mode_doing_state&=~(0x01<<t);
-            uint8_t current_step_id = step_id[3];
-            memset(step_id,0,sizeof(step_id));
-            step_id[3] = current_step_id;
-            switch(current_step_id){
+        //取左侧银矿
+        if ((arm_cmd_recv.auto_mode==Arm_get_silvercube_left) || (auto_mode_doing_state & (0x01<<3))){
+            auto_mode_doing_state = 0;
+            auto_mode_doing_state |= (0x01<<3);
+            if(++auto_mode_step_id[3] > 14) {auto_mode_step_id[3]=0;auto_mode_doing_state&=~(0x01<<3);return;}
+            int t=3;if(auto_mode_step_id[t] == 2 || auto_mode_step_id[t] == 3  || auto_mode_step_id[t] == 4 || auto_mode_step_id[t] == 9 || auto_mode_step_id[t] == 10) auto_mode_doing_state&=~(0x01<<t);
+            uint8_t current_auto_mode_step_id = auto_mode_step_id[3];
+            memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
+            auto_mode_step_id[3] = current_auto_mode_step_id;
+            switch(current_auto_mode_step_id){
                 case 1:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,2.97437286,86.6171875);
                 case 2:Z_heightSet_ramp(400,-172.915146);break;
                 //wait
                 case 3:ArmParamSet_ramp(1000,17.6773243,62.7702942,-66.2566223,2.97437286,86.6171875);break;
-                case 5:Z_heightSet_ramp(2000,-195.754715);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;break;
+                case 4:Z_heightSet_ramp(800,-190);break;
+                case 5:Z_heightSet_ramp_offset(15000,-6);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;break;
                 case 6:Z_heightSet_ramp(800,1.66700649);arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_FOREWARD;break;
                 case 7:ArmParamSet_ramp(4000,41.1217499,64.4516754,78.5060654,-1.26706314,86.6940918);break;
                 case 8:Z_heightSet_ramp(800,-66.7787628);break;
@@ -796,18 +889,22 @@ static void ArmSetAutoMode(){
                 case 14:memset(&arm_data_send,0,sizeof(arm_data_send));
             }
         }
-        if ((arm_cmd_recv.auto_mode==Arm_get_silvercube_mid) || (mode_doing_state & (0x01<<4))){
-            if(++step_id[4] > 14) step_id[4] = 1;
-            int t=4;if(step_id[t] == 2 || step_id[t] == 3  || step_id[t] == 4 || step_id[t] == 9 || step_id[t] == 10) mode_doing_state&=~(0x01<<t);
-            uint8_t current_step_id = step_id[4];
-            memset(step_id,0,sizeof(step_id));
-            step_id[4] = current_step_id;
-            switch(current_step_id){
+        //取中间银矿
+        if ((arm_cmd_recv.auto_mode==Arm_get_silvercube_mid) || (auto_mode_doing_state & (0x01<<4))){
+            auto_mode_doing_state = 0;
+            auto_mode_doing_state |= (0x01<<4);
+            if(++auto_mode_step_id[4] > 14) {auto_mode_step_id[4]=0;auto_mode_doing_state&=~(0x01<<4);return;}
+            int t=4;if(auto_mode_step_id[t] == 2 || auto_mode_step_id[t] == 3  || auto_mode_step_id[t] == 4 || auto_mode_step_id[t] == 9 || auto_mode_step_id[t] == 10) auto_mode_doing_state&=~(0x01<<t);
+            uint8_t current_auto_mode_step_id = auto_mode_step_id[4];
+            memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
+            auto_mode_step_id[4] = current_auto_mode_step_id;
+            switch(current_auto_mode_step_id){
                 case 1:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,2.97437286,86.6171875);
                 case 2:Z_heightSet_ramp(400,-172.915146);break;
                 //wait
                 case 3:ArmParamSet_ramp(1000,-32.0658607,105.708542,-83.4723206,2.97437286,86.6171875);break;
-                case 5:Z_heightSet_ramp(2000,-195.754715);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;break;
+                case 4:Z_heightSet_ramp(800,-190);break;
+                case 5:Z_heightSet_ramp_offset(2000,-6.5);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;break;
                 case 6:Z_heightSet_ramp(800,1.66700649);arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_FOREWARD;break;
                 case 7:ArmParamSet_ramp(4000,41.1217499,64.4516754,78.5060654,-1.26706314,86.6940918);break;
                 case 8:Z_heightSet_ramp(800,-66.7787628);break;
@@ -819,18 +916,22 @@ static void ArmSetAutoMode(){
                 case 14:memset(&arm_data_send,0,sizeof(arm_data_send));
             }
         }
-        if ((arm_cmd_recv.auto_mode==Arm_get_silvercube_right) || (mode_doing_state & (0x01<<5))){
-            if(++step_id[5] > 14) step_id[5] = 1;
-            // int t=5;if(step_id[t] == 2 || step_id[t] == 3  || step_id[t] == 4 || step_id[t] == 9 || step_id[t] == 10) mode_doing_state&=~(0x01<<t);
-            uint8_t current_step_id = step_id[5];
-            memset(step_id,0,sizeof(step_id));
-            step_id[5] = current_step_id;
-            switch(current_step_id){
+        //取右侧银矿
+        if ((arm_cmd_recv.auto_mode==Arm_get_silvercube_right) || (auto_mode_doing_state & (0x01<<5))){
+            auto_mode_doing_state = 0;
+            auto_mode_doing_state |= (0x01<<5);
+            if(++auto_mode_step_id[5] > 14) {auto_mode_step_id[5] = 0;auto_mode_doing_state&=~(0x01<<5);return;}
+            // int t=5;if(auto_mode_step_id[t] == 2 || auto_mode_step_id[t] == 3  || auto_mode_step_id[t] == 4 || auto_mode_step_id[t] == 9 || auto_mode_step_id[t] == 10) auto_mode_doing_state&=~(0x01<<t);
+            uint8_t current_auto_mode_step_id = auto_mode_step_id[5];
+            memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
+            auto_mode_step_id[5] = current_auto_mode_step_id;
+            switch(current_auto_mode_step_id){
                 case 1:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,2.97437286,86.6171875);break;
                 case 2:Z_heightSet_ramp(400,-172.915146);break;
                 //wait
                 case 3:ArmParamSet_ramp(1000,-37.230381,60.6963539,-83.3404846,2.97437286,86.6171875);break;
-                case 5:Z_heightSet_ramp(2000,-191.754715);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;break;
+                case 4:Z_heightSet_ramp(800,-190);break;
+                case 5:Z_heightSet_ramp_offset(2000,-6.5);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;break;
                 case 6:Z_heightSet_ramp(800,1.66700649);break;
                 case 9:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,2.97437286,86.6171875);break;
 
@@ -845,6 +946,7 @@ static void ArmApplyAutoMode(){
     static float joint_offset[5],z_height_offset;
     static ramp_t joint_ramp[5],z_height_ramp;
     static uint8_t target_set_over; //电机达到设定值标志
+    static float offset_x_translation,offset_y_translation;
     if(Arm_ramp_to_target_position_flag & Arm_joint_ramp_flag){
         memcpy(&arm_auto_origin_data,&arm_contro_data,sizeof(arm_controller_data_s));
             joint_offset[0] = arm_auto_mode_data.big_yaw_angle - arm_auto_origin_data.big_yaw_angle;
@@ -882,6 +984,20 @@ static void ArmApplyAutoMode(){
         if(z_height_ramp.out==1)    target_set_over|=0x40;
     }
 
+    if(Arm_ramp_to_target_position_flag & Arm_target_ramp_flag){
+        Control_ARM_flag = 0;
+        offset_x_translation = arm_automode_target_offset_x / (float)arm_height_ramp_feriod;
+        offset_y_translation = arm_automode_target_offset_y / (float)arm_height_ramp_feriod;
+        ArmControByTF(&arm_controller_TF,arm_automode_target_mode,0,0,0,0);
+        Arm_ramp_to_target_position_flag &= ~Arm_target_ramp_flag;
+        Arm_ramp_to_target_position_flag |= Arm_target_ramp_doing;
+    }else if(Arm_ramp_to_target_position_flag & Arm_target_ramp_doing){
+        ArmControByTF(&arm_controller_TF,arm_automode_target_mode,offset_x_translation,offset_y_translation,0,0);
+        arm_height_ramp_feriod--;
+        
+        if(arm_height_ramp_feriod<=0)    target_set_over|=0x80;
+    }
+
     if((target_set_over&0x3f)==0x3f){
         Arm_ramp_to_target_position_flag &= ~Arm_joint_ramp_doing;
         target_set_over &= ~0x3f;
@@ -890,78 +1006,60 @@ static void ArmApplyAutoMode(){
         Arm_ramp_to_target_position_flag &= ~Arm_height_ramp_doing;
         target_set_over &= ~0x40;
     }
+    if(target_set_over & 0x80){
+        Arm_ramp_to_target_position_flag &= ~Arm_target_ramp_doing;
+        target_set_over &= ~0x80;
+    }
 }
 // Z轴匀速下降参数
 static void Z_down_limit_torque(){
     DJIMotorSetRef(z_motor,Z_current_height-5);
+}
+// 将臂臂当前位置设置为目标位置
+static void reset_arm_param(){
+    arm_param_t.big_yaw_angle = -big_yaw_angle;
+    arm_param_t.height = Z_current_height;
+    arm_param_t.mid_yaw_angle = -mid_yaw_motor->measure.total_angle;
+    arm_param_t.assorted_yaw_angle = assorted_yaw_angle;
+    arm_param_t.assorted_roll_angle = assorted_roll_angle;
+    arm_param_t.tail_motor_angle =  -tail_motor_encoder->measure.total_angle;
+    memcpy(&arm_contro_data,&arm_param_t,sizeof(arm_controller_data_s));
 }
 // 臂的操作手控制函数
 static void ArmApplyControMode(){
     static uint8_t arm_position_init_flag = 0;
     if(arm_position_init_flag==0 && arm_cmd_recv.contro_mode != ARM_ZERO_FORCE){
         //每次上电时先保存下当前的角度值，防止臂臂初始位姿为前伸把自己创死
-        arm_param_t.big_yaw_angle = -big_yaw_angle;
-        arm_param_t.height = Z_current_height;
-        arm_param_t.mid_yaw_angle = -mid_yaw_motor->measure.total_angle;
-        arm_param_t.assorted_yaw_angle = assorted_yaw_angle;
-        arm_param_t.assorted_roll_angle = assorted_roll_angle;
-        arm_param_t.tail_motor_angle =  -tail_motor_encoder->measure.total_angle;
-        arm_position_init_flag = 1;
-        memcpy(&arm_contro_data,&arm_param_t,sizeof(arm_controller_data_s));
-
+        reset_arm_param();
         ArmDisable();
+        arm_position_init_flag = 1;
         return;
     }
 
-    if (arm_cmd_recv.contro_mode == ARM_CONTROL_BY_KEYBOARD){
-    // 如果为键鼠控制臂，则不用分那么多模式（按键足够多）
-        // 控制臂臂 大YAW&Z
-        arm_param_t.big_yaw_angle -= arm_cmd_recv.Rotation_yaw;
-        arm_param_t.height += arm_cmd_recv.Position_z;
-        if (arm_init_flag & Z_motor_init_clt)
-            VAL_LIMIT(arm_param_t.height, -595, 45);
-        else
-            VAL_LIMIT(arm_param_t.height, -45, 595);
+    // 控制臂臂 大YAW&Z
+    arm_param_t.big_yaw_angle -= arm_cmd_recv.Rotation_yaw;
+    arm_param_t.height += arm_cmd_recv.Position_z;
+    if (arm_init_flag & Z_motor_init_clt)
+        VAL_LIMIT(arm_param_t.height, -595, 45);
+    else
+        VAL_LIMIT(arm_param_t.height, -45, 595);
 
-        memcpy(&arm_contro_data,&arm_param_t,sizeof(arm_controller_data_s));
-    }else{
-    // 否则按模式控制臂臂各处
-        if (arm_cmd_recv.contro_mode == ARM_POSE_CONTRO_MODE) { // 控制臂臂 大YAW&Z
-            Control_ARM_flag = 0;
+    // 控制臂臂 末端平移&旋转
+    // 根据接收数据判断是否需要重置TF树位置
+    // if(!(arm_cmd_recv.contro_mode == ARM_REFER_MODE)){
+    //     Control_ARM_flag = 0;
+    // }else if(arm_cmd_recv.contro_mode == ARM_REFER_MODE){
+    //     ArmControByTF(&arm_controller_TF,0,-arm_cmd_recv.Translation_x,arm_cmd_recv.Translation_y,arm_cmd_recv.Roatation_Horizontal,arm_cmd_recv.Roatation_Vertical);
+    // }
+        
+    // if(!(arm_cmd_recv.Roatation_Horizontal==0 && arm_cmd_recv.Roatation_Vertical==0 && arm_cmd_recv.Translation_x==0 && arm_cmd_recv.Translation_y==0)){
+    //     if(arm_cmd_recv.contro_mode == ARM_POSE_CONTRO_MODE_1)
+    //         ArmControByTF(&arm_controller_TF,1,-arm_cmd_recv.Translation_x,arm_cmd_recv.Translation_y,arm_cmd_recv.Roatation_Horizontal,arm_cmd_recv.Roatation_Vertical);
+    //     else if(arm_cmd_recv.contro_mode == ARM_POSE_CONTRO_MODE_0)
+    //         ArmControByTF(&arm_controller_TF,0,-arm_cmd_recv.Translation_x,arm_cmd_recv.Translation_y,arm_cmd_recv.Roatation_Horizontal,arm_cmd_recv.Roatation_Vertical);
+    // }
 
-            arm_param_t.big_yaw_angle -= arm_cmd_recv.Rotation_yaw;
-            arm_param_t.height += arm_cmd_recv.Position_z;
-            if (arm_init_flag & Z_motor_init_clt)
-                VAL_LIMIT(arm_param_t.height, -595, 45);
-            else
-                VAL_LIMIT(arm_param_t.height, -45, 595);
-
-            memcpy(&arm_contro_data,&arm_param_t,sizeof(arm_controller_data_s));
-        } else if (arm_cmd_recv.contro_mode == ARM_REFER_MODE) { // 控制臂臂 末端位姿
-            Transform TF_p;
-            if(cal_ARM_TF(&TF_p)){
-                if (Control_ARM_flag == 0) {
-                    memcpy(&arm_origin_place,&arm_param_t,sizeof(arm_param_t));
-                    memset(&arm_param_t,0,sizeof(arm_rc_contro_place));
-                    cal_ARM_joint_angle(&TF_p);
-                    Control_ARM_flag = 1;
-                }else{
-                    arm_origin_place.assorted_roll_angle += arm_cmd_recv.Roatation_Horizontal;
-                    arm_origin_place.tail_motor_angle += arm_cmd_recv.Roatation_Vertical;
-                    LIMIT_MIN_MAX(arm_origin_place.tail_motor_angle,-90,90);
-                    if(!cal_ARM_joint_angle(&TF_p))
-                    {
-                        arm_origin_place.assorted_roll_angle -= arm_cmd_recv.Roatation_Horizontal;
-                        arm_origin_place.tail_motor_angle -= arm_cmd_recv.Roatation_Vertical;
-                    }
-                }
-                memcpy(&arm_contro_data,&arm_param_t,sizeof(arm_controller_data_s));
-            }
-        }else if(arm_cmd_recv.contro_mode == ARM_FIXED){ // 不控制臂臂，保持当前位置
-            Control_ARM_flag = 0;
-        }
-    }
-    
+    memcpy(&arm_contro_data,&arm_param_t,sizeof(arm_controller_data_s));    
 }
 //上位机控制
 static void host_control(){
@@ -1023,7 +1121,7 @@ static void host_control(){
 static void Arm_tail_sucker_contro(){
     if(arm_cmd_recv.sucker_state == 1 || custom_controller_comm_recv&0x02){
         DJIMotorSetRef(tail_roll_motor,10000);
-    }else if(arm_cmd_recv.sucker_state == -1){
+    }else if(arm_cmd_recv.sucker_state == -1 || custom_controller_comm_recv&0x04){
         DJIMotorSetRef(tail_roll_motor,-10000);
     }else{
         DJIMotorSetRef(tail_roll_motor,0);
@@ -1040,14 +1138,25 @@ void ArmTask()
     ArmEnable();
 
     /* todo:编码器上电时单圈角度大于180°时，有时候会程序未进入（圈数-1，使初始角度维持在±180）的操作，原因不明 */
-    if(!limit_bool(tail_motor_encoder->measure.total_angle,175,-175)){
+    if(tail_motor_encoder->measure.total_angle >= 100){
         tail_motor_encoder->measure.total_round = -1;
-        tail_motor_encoder->measure.total_angle -= 360;
+        tail_motor_encoder->measure.total_angle = -360+tail_motor_encoder->measure.angle_single_round;
+        if(tail_motor_encoder->measure.total_angle <=-100)
+        {
+            tail_motor_encoder->measure.total_round = 0;
+            tail_motor_encoder->measure.total_angle = tail_motor_encoder->measure.angle_single_round;
+        }
+
         DJIMotorStop(tail_motor);
     }
-    if(!limit_bool(assorted_yaw_encoder->measure.total_angle,175,-175)){
+    if(assorted_yaw_encoder->measure.total_angle >= 100){
         assorted_yaw_encoder->measure.total_round = -1;
-        assorted_yaw_encoder->measure.total_angle -= 360;
+        assorted_yaw_encoder->measure.total_angle = -360+assorted_yaw_encoder->measure.angle_single_round;
+        if(assorted_yaw_encoder->measure.total_angle <=-100)
+        {
+            assorted_yaw_encoder->measure.total_round = 0;
+            assorted_yaw_encoder->measure.total_angle = assorted_yaw_encoder->measure.angle_single_round;
+        }
         DJIMotorStop(assorted_motor_down);
         DJIMotorStop(assorted_motor_up);
     }
@@ -1061,8 +1170,9 @@ void ArmTask()
     if((custom_controller_comm_recv & 1) && (arm_cmd_recv.contro_mode!=ARM_ZERO_FORCE)){
         arm_cmd_recv.contro_mode = ARM_CUSTOM_CONTRO;
     }
-    //进行Z轴标定
-    Z_limit_sensor_detect();
+    //进行Z轴标定-丢给中断了
+    Z_GPIO = HAL_GPIO_ReadPin(Z_limit_detect_GPIO_Port, Z_limit_detect_Pin);
+    // Z_limit_sensor_detect();
 
     //计算臂臂关节角度，方便调试
     cal_big_yaw_angle();
@@ -1079,7 +1189,7 @@ void ArmTask()
     }
 
     //如设定了目标点，先移到位，再允许操作手进行自定义操作
-    if(Arm_ramp_to_target_position_flag&(0x0f)){
+    if(Arm_ramp_to_target_position_flag!=0){
         ArmApplyAutoMode();
     }else{
         ArmApplyControMode();
@@ -1087,12 +1197,27 @@ void ArmTask()
 
     // 臂臂紧急制动
     if (arm_cmd_recv.contro_mode == ARM_ZERO_FORCE) { 
-        Control_ARM_flag = 0;
         ArmDisable();
     }
 
-    //臂臂碰撞检测
-    ArmCrashDetection();
+    // 临时暂停
+    if(arm_cmd_recv.halt_temp_call == 1){
+        reset_arm_param();
+        auto_mode_doing_state = 0;
+        Arm_ramp_to_target_position_flag = 0;
+    }
+
+    // 强制停止
+    if (arm_cmd_recv.halt_force_call == 1) {
+        ArmDisable();
+        reset_arm_param();
+        memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
+        auto_mode_doing_state = 0;
+        Arm_ramp_to_target_position_flag = 0;
+    }
+
+    //臂臂堵转检测
+    ArmStuckDetection();
     
     //设定控制命令
     set_arm_angle(&arm_contro_data);
@@ -1102,8 +1227,7 @@ void ArmTask()
     
     if(arm_cmd_recv.auto_mode == Fetch_gronded_cube)    Z_down_limit_torque();
 
-    
-
     arm_data_send.big_yaw_angle = big_yaw_angle;
+    arm_data_send.auto_mode_doing_state = auto_mode_doing_state;
     PubPushMessage(arm_data_sub,&arm_data_send);
 }

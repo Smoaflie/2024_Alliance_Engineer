@@ -132,39 +132,39 @@ static void LimitChassisOutput()
     DJIMotorSetRef(motor_rb, vt_rb);
 }
 
-/**
- * @brief 根据目标值和当前值的比较值，选择性调用斜坡函数
- *
- */
-static void ChassisValueRamp()
-{
-    static ramp_t chassis_speed_ramp[4];
-    static float  chassis_last_target_speed[4];
-    static float  *chassis_target_speed[4];
-    static float  chassis_origin_speed[4];
-    static float  chassis_offset_speed[4];
-    static float  *chassis_current_speed[4];
+// /**
+//  * @brief 根据目标值和当前值的比较值，选择性调用斜坡函数
+//  *
+//  */
+// static void ChassisValueRamp()
+// {
+//     static ramp_t chassis_speed_ramp[4];
+//     static float  chassis_last_target_speed[4];
+//     static float  *chassis_target_speed[4];
+//     static float  chassis_origin_speed[4];
+//     static float  chassis_offset_speed[4];
+//     static float  *chassis_current_speed[4];
 
-    chassis_current_speed[0]=&motor_lf->measure.speed_aps;
-    chassis_current_speed[1]=&motor_rf->measure.speed_aps;
-    chassis_current_speed[2]=&motor_rb->measure.speed_aps;
-    chassis_current_speed[3]=&motor_lb->measure.speed_aps;
+//     chassis_current_speed[0]=&motor_lf->measure.speed_aps;
+//     chassis_current_speed[1]=&motor_rf->measure.speed_aps;
+//     chassis_current_speed[2]=&motor_rb->measure.speed_aps;
+//     chassis_current_speed[3]=&motor_lb->measure.speed_aps;
 
-    chassis_target_speed[0]=&vt_lf;
-    chassis_target_speed[1]=&vt_rf;
-    chassis_target_speed[2]=&vt_rb;
-    chassis_target_speed[3]=&vt_lb;
+//     chassis_target_speed[0]=&vt_lf;
+//     chassis_target_speed[1]=&vt_rf;
+//     chassis_target_speed[2]=&vt_rb;
+//     chassis_target_speed[3]=&vt_lb;
 
-    for(int i = 0; i < 4; i++){
-        if(chassis_last_target_speed[i]!=*chassis_target_speed[i]){
-            ramp_init(&chassis_speed_ramp[i],10);
-            chassis_origin_speed[i] = *chassis_current_speed[i];
-            chassis_offset_speed[i] = *chassis_target_speed[i] - chassis_origin_speed[i];
-            chassis_last_target_speed[i] = *chassis_target_speed[i];
-        }
-        *chassis_target_speed[i] = chassis_origin_speed[i] + ramp_calc(&chassis_speed_ramp[i]) * chassis_offset_speed[i];
-    }
-}
+//     for(int i = 0; i < 4; i++){
+//         if(chassis_last_target_speed[i]!=*chassis_target_speed[i]){
+//             ramp_init(&chassis_speed_ramp[i],10);
+//             chassis_origin_speed[i] = *chassis_current_speed[i];
+//             chassis_offset_speed[i] = *chassis_target_speed[i] - chassis_origin_speed[i];
+//             chassis_last_target_speed[i] = *chassis_target_speed[i];
+//         }
+//         *chassis_target_speed[i] = chassis_origin_speed[i] + ramp_calc(&chassis_speed_ramp[i]) * chassis_offset_speed[i];
+//     }
+// }
 //底盘特殊功能处理
 static void SpecialFuncApply(){
     static GPIO_PinState redlight_last_state = 0; //红外测距状态 1为触发

@@ -38,6 +38,7 @@ static USARTInstance *usart_instance[DEVICE_USART_CNT] = {NULL};
  */
 void USARTServiceInit(USARTInstance *_instance)
 {
+    //HAL_UART_Receive_DMA(_instance->usart_handle, _instance->recv_buff, _instance->recv_buff_size);
     HAL_UARTEx_ReceiveToIdle_DMA(_instance->usart_handle, _instance->recv_buff, _instance->recv_buff_size);
     // 关闭dma half transfer中断防止两次进入HAL_UARTEx_RxEventCallback()
     // 这是HAL库的一个设计失误,发生DMA传输完成/半完成以及串口IDLE中断都会触发HAL_UARTEx_RxEventCallback()
@@ -121,6 +122,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
                 usart_instance[i]->module_callback();
                 memset(usart_instance[i]->recv_buff, 0, usart_instance[i]->recv_buff_size); // 接收结束后清空buffer,对于变长数据是必要的
             }
+            //HAL_UART_Receive_DMA(usart_instance[i]->usart_handle, usart_instance[i]->recv_buff, usart_instance[i]->recv_buff_size);
             HAL_UARTEx_ReceiveToIdle_DMA(usart_instance[i]->usart_handle, usart_instance[i]->recv_buff, usart_instance[i]->recv_buff_size);
             __HAL_DMA_DISABLE_IT(usart_instance[i]->usart_handle->hdmarx, DMA_IT_HT);
             return; // break the loop
@@ -141,6 +143,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
         if (huart == usart_instance[i]->usart_handle) {
             HAL_UART_DeInit(usart_instance[i]->usart_handle);  // 关闭串口
             HAL_UART_Init(usart_instance[i]->usart_handle);    // 重新初始化串口
+            //HAL_UART_Receive_DMA(usart_instance[i]->usart_handle, usart_instance[i]->recv_buff, usart_instance[i]->recv_buff_size);
             HAL_UARTEx_ReceiveToIdle_DMA(usart_instance[i]->usart_handle, usart_instance[i]->recv_buff, usart_instance[i]->recv_buff_size);
             __HAL_DMA_DISABLE_IT(usart_instance[i]->usart_handle->hdmarx, DMA_IT_HT);
             LOGWARNING("[bsp_usart] USART error callback triggered, instance idx [%d]", i);

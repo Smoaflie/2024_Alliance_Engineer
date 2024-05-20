@@ -121,6 +121,7 @@ int main(void)
   MX_FDCAN3_Init();
   MX_SPI4_Init();
   MX_UART9_Init();
+  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
   RobotInit();
   /* USER CODE END 2 */

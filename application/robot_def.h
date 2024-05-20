@@ -111,6 +111,7 @@ typedef enum {
     GIMBAL_GYRO_MODE,      // 云台陀螺仪反馈模式,反馈值为陀螺仪pitch,total_yaw_angle,底盘可以为小陀螺和跟随模式
     GIMBAL_RESET,          // 云台复位，指向正前方
     GIMBAL_FOLLOW_YAW,     // 云台跟随大Yaw
+    GIMBAL_RESET_WITH_ROTATE,   // 云台小陀螺复位
 } gimbal_mode_e;
 
 // 臂臂模式设置
@@ -122,6 +123,8 @@ typedef enum {
     ARM_CUSTOM_CONTRO,  // 自定义控制器(上位机控制，优先级最高)
     ARM_VISION_CONTRO,  // 视觉兑矿(上位机控制，优先级最高)
     ARM_CONTROL_BY_KEYBOARD,    // 键盘控制，优先级仅次于俩上位机模式
+    ARM_POSE_CONTRO_MODE_1,
+    ARM_POSE_CONTRO_MODE_0,
 } arm_mode_e;
 
 /* ----------------CMD应用发布的控制数据,应当由gimbal/chassis/shoot订阅---------------- */
@@ -196,6 +199,8 @@ typedef struct{
 
     uint8_t arm_to_airvalve;
     uint8_t arm_to_airpump;
+
+    uint8_t auto_mode_doing_state;
 }Arm_Data_s;
 
 typedef struct{
@@ -213,6 +218,8 @@ typedef struct{
     uint8_t optimize_signal; // 优化信号（修正臂的yaw偏向和混合roll角度）
 
     uint8_t init_call;  // 相关参数重初始化请求（当机器人死亡复活后由cmd置位）
+    uint8_t halt_force_call;  // 强制停止命令
+    uint8_t halt_temp_call;  // 临时暂停命令
 }Arm_Cmd_Data_s;
 
 /* 气阀/气泵控制 */
@@ -221,7 +228,10 @@ typedef struct{
     uint8_t airvalve_mode;
 
     uint8_t arm_to_airvalve;
+    uint8_t arm_to_airpump;
     uint8_t init_call;  // 相关参数重初始化请求（当机器人死亡复活后由cmd置位）
+    uint8_t halt_force_call;  // 强制停止命令
+    uint8_t halt_temp_call;  // 临时停止命令
 }Airpump_Cmd_Data_s;
 
 typedef struct{

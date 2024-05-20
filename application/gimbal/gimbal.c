@@ -24,21 +24,7 @@ static Publisher_t *gimbal_pub;                   // 用于发送云台的数据
 static Gimbal_Ctrl_Cmd_s gimbal_cmd_recv; // 云台应用接收的信息
 static Gimbal_Data_s     gimbal_data_send;// 云台发布的信息
 static float gimbal_yaw_angle,gimbal_pitch_angle;
-static uint8_t gimbal_rec[30];
-static USARTInstance* imu_usart_instance;
-// static void imu_usart_callback(){
-//     uint16_t crc,payload_len;
-//     memcpy(gimbal_rec,imu_usart_instance->recv_buff,imu_usart_instance->recv_buff_size);
-//     if(gimbal_rec[0]==0x5A && gimbal_rec[1]==0xA5)
-//     {
-//         payload_len = gimbal_rec[2] + (gimbal_rec[3]<<8);
-//         // crc = gimbal_rec[4] + (gimbal_rec[5]<<8);
-//         // uint16_t crc_d  =crc_16(gimbal_rec+6,payload_len);
-//         // if(crc == crc_d)
-//         if(payload_len == 7)
-//             gimbal_yaw_angle = (int16_t)(gimbal_rec[11]+(gimbal_rec[12]<<8))*0.01f;
-//     }
-// }
+
 void GIMBALInit()
 {
     Motor_Init_Config_s config ={
@@ -91,11 +77,6 @@ void GIMBALInit()
 
     gimbal_sub = SubRegister("gimbal_cmd", sizeof(gimbal_cmd_recv));
     gimbal_pub = PubRegister("gimbal_data", sizeof(gimbal_data_send));
-    // USART_Init_Config_s uart_conf;
-    // uart_conf.module_callback = imu_usart_callback;
-    // uart_conf.usart_handle = &huart9;
-    // uart_conf.recv_buff_size = 13;
-    // imu_usart_instance = USARTRegister(&uart_conf);
 }
 
 /* 机器人机械臂控制核心任务 */
@@ -126,19 +107,26 @@ void GIMBALTask()
         gimbal_pitch_angle -= gimbal_cmd_recv.pitch;
         VAL_LIMIT(gimbal_pitch_angle, 0, 65);    /* 限幅 */
 
-        gimbal_yaw_angle -= gimbal_cmd_recv.yaw;
-
         Servo_Motor_FreeAngle_Set(gimbalmoto,(int16_t)gimbal_pitch_angle);
         LKMotorSetRef(motor,gimbal_yaw_angle);
     }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET){
         Servo_Motor_Start(gimbalmoto);
         LKMotorEnable(motor);
 
-        gimbal_pitch_angle = 0;
+        // gimbal_pitch_angle = 0;
+        motor->measure.total_round = (motor->measure.total_round==-1) ? -1 : 0;
+        motor->measure.total_angle = motor->measure.angle_single_round;
+        gimbal_yaw_angle = 0;
+        // Servo_Motor_FreeAngle_Set(gimbalmoto,(int16_t)gimbal_pitch_angle);
+        LKMotorSetRef(motor,0);
+    }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET_WITH_ROTATE){
+        Servo_Motor_Start(gimbalmoto);
+        LKMotorEnable(motor);
+
         motor->measure.total_round = 0;
         motor->measure.total_angle = motor->measure.angle_single_round;
         gimbal_yaw_angle = 0;
-        Servo_Motor_FreeAngle_Set(gimbalmoto,(int16_t)gimbal_pitch_angle);
+
         LKMotorSetRef(motor,0);
     }
     gimbal_data_send.yaw = gimbal_yaw_angle-gimbal_cmd_recv.arm_big_yaw_offset;

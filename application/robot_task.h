@@ -47,6 +47,7 @@ void TestTask(void *argument)
 void _cmdTASK(void *argument)
 {
     UNUSED(argument);
+    osDelay(1000);
     while (1) {
         RobotCMDTask();
 
@@ -57,6 +58,7 @@ void _cmdTASK(void *argument)
 void _airpumpTASK(void *argument)
 {
     UNUSED(argument);
+    osDelay(1000);
     while (1) {
         AIRPUMPTask();
         osDelay(1);
@@ -66,6 +68,7 @@ void _airpumpTASK(void *argument)
 void _gimbalTASK(void *argument)
 {
     UNUSED(argument);
+    osDelay(1000);
     while (1) {
         GIMBALTask();
         LKMotorControl();
@@ -76,6 +79,7 @@ void _gimbalTASK(void *argument)
 void _chassisTASK(void *argument)
 {
     UNUSED(argument);
+    osDelay(1000);
     while (1) {
         ChassisTask();
 
@@ -86,6 +90,7 @@ void _chassisTASK(void *argument)
 void _armTASK(void *argument)
 {
     UNUSED(argument);
+    osDelay(1000);
     while (1) {
         ArmTask();
         // DRMotorControl();  
@@ -96,6 +101,7 @@ void _armTASK(void *argument)
 void _motorTASK(void *argument)
 {
     UNUSED(argument);
+    osDelay(1000);
     while (1) {
         MotorControlTask();
         osDelay(1);
@@ -105,6 +111,7 @@ void _motorTASK(void *argument)
 void _DaemonTask(void *argument)
 {
     UNUSED(argument);
+    osDelay(1000);
     while (1) {
         DaemonTask();
     }
@@ -113,6 +120,7 @@ void _DaemonTask(void *argument)
 void _BuzzerTask(void *argument)
 {
     UNUSED(argument);
+    osDelay(1000);
     while (1) {
         BuzzerTask(argument);
     }
@@ -121,9 +129,10 @@ void _BuzzerTask(void *argument)
 void _refereeTask(void *argument)
 {
     UNUSED(argument);
-    MyUIInit();
+    // MyUIInit();
+    osDelay(1000);
     while (1) {
-        MyUIRefresh();
+        // MyUIRefresh();
         osDelay(100);
     }
 }

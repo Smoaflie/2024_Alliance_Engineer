@@ -90,7 +90,7 @@ static void ui_refresh(){
 }
 void MyUIInit(void)
 {
-    referee_data = RefereeHardwareInit(&huart7);
+    // referee_data = RefereeHardwareInit(&huart10);
     
     osDelay(200);
 

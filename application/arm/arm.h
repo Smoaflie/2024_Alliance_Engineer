@@ -9,6 +9,8 @@
 #define Arm_joint_ramp_doing 0x02
 #define Arm_height_ramp_flag 0x04
 #define Arm_height_ramp_doing 0x08
+#define Arm_target_ramp_flag 0x10
+#define Arm_target_ramp_doing 0x20
 /**
  * @brief 初始化机械臂,会被RobotInit()调用
  * 
