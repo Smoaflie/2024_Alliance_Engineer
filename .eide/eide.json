@@ -1,15 +1,14 @@
 {
-  "name": "2024_ENGINEER_Frame",
+  "name": "2024_Engineer",
   "type": "ARM",
   "dependenceList": [],
   "srcDirs": [
-    ".eide/deps",
-    "Core",
     "Middlewares",
-    "Drivers",
+    "application",
     "bsp",
     "modules",
-    "application",
+    "Core",
+    "Drivers",
     "USB_DEVICE"
   ],
   "virtualFolder": {
@@ -19,13 +18,16 @@
   },
   "outDir": "build",
   "deviceName": null,
-  "packDir": null,
+  "packDir": ".pack/Keil/STM32F4xx_DFP.2.14.0",
   "miscInfo": {
-    "uid": "1f37de6558535282e11928c13b7d5bfe"
+    "uid": "e04d1d6c31b878935f89f59d8ebb84d9"
   },
   "targets": {
     "Debug": {
-      "excludeList": [],
+      "excludeList": [
+        "Src/syscalls.c",
+        "modules/motor/DRmotor/DrEmpower_can.c"
+      ],
       "toolchain": "GCC",
       "compileConfig": {
         "cpuType": "Cortex-M7",
@@ -44,7 +46,7 @@
         "baseAddr": "",
         "cpuInfo": {
           "vendor": "ST",
-          "cpuName": "STM32H723VG"
+          "cpuName": "STM32F407IG"
         },
         "proType": 1,
         "speed": 8000,
@@ -54,13 +56,16 @@
       "custom_dep": {
         "name": "default",
         "incList": [
-          "Drivers/STM32H7xx_HAL_Driver/Inc",
-          "Drivers/STM32H7xx_HAL_Driver/Inc/Legacy",
+          "Inc",
           "Middlewares/Third_Party/FreeRTOS/Source/include",
-          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS",
           "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
-          "Drivers/CMSIS/Device/ST/STM32H7xx/Include",
+          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
+          "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+          "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
+          "Middlewares/Third_Party/SEGGER/Config",
+          "Middlewares/Third_Party/SEGGER/RTT",
           "Drivers/CMSIS/Include",
+          "Middlewares/ST/ARM/DSP/Inc",
           ".eide/deps",
           "bsp",
           "bsp/dwt",
@@ -101,28 +106,21 @@
           "application/gimbal",
           "application/shoot",
           "application",
-          "Middlewares/ST/ARM/DSP/Inc",
-          "Core/Inc",
-          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
-          "application/first_stretch",
-          "modules/encoder",
-          "application/second_stretch",
-          "application/lift",
-          "application/horizontal",
-          "application/forward",
-          "Middlewares/Third_Party/SEGGER/RTT",
-          "Middlewares/Third_Party/SEGGER/Config",
-          "USB_DEVICE/App",
-          "USB_DEVICE/Target",
-          "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
-          "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
           "modules/motor/DRmotor",
           "application/test",
+          "modules/encoder",
           "application/arm",
+          "application/ui",
+          "Drivers/STM32H7xx_HAL_Driver/Inc",
+          "Drivers/STM32H7xx_HAL_Driver/Src",
+          "Core/Inc",
+          "Core/Src",
+          "Drivers/CMSIS/Device/ST/STM32H7xx/Include",
+          "USB_DEVICE/App",
+          "USB_DEVICE/Target",
           "application/airpump",
-          "application/UI",
-          "modules/tool",
-          "application/UI_reality"
+          "application/UI_reality",
+          "modules/tool"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",
@@ -132,8 +130,8 @@
         "defineList": [
           "DEBUG",
           "USE_HAL_DRIVER",
-          "STM32H723xx",
-          "ARM_MATH_CM7"
+          "STM32F407xx",
+          "ARM_MATH_CM4"
         ]
       }
     },
@@ -156,8 +154,8 @@
         "bin": "",
         "baseAddr": "",
         "cpuInfo": {
-          "vendor": "null",
-          "cpuName": "null"
+          "vendor": "ST",
+          "cpuName": "STM32F407IG"
         },
         "proType": 1,
         "speed": 8000,
@@ -167,18 +165,21 @@
       "custom_dep": {
         "name": "default",
         "incList": [
-          "Core/Inc",
-          "Drivers/STM32H7xx_HAL_Driver/Inc",
-          "Drivers/STM32H7xx_HAL_Driver/Inc/Legacy",
+          "Inc",
+          "Drivers/STM32F4xx_HAL_Driver/Inc",
+          "Drivers/STM32F4xx_HAL_Driver/Inc/Legacy",
           "Middlewares/Third_Party/FreeRTOS/Source/include",
-          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS",
           "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
-          "Drivers/CMSIS/Device/ST/STM32H7xx/Include",
-          "Drivers/CMSIS/Include"
+          "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+          "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
+          "Drivers/CMSIS/Device/ST/STM32F4xx/Include",
+          "Drivers/CMSIS/Include",
+          "Middlewares/ST/ARM/DSP/Inc",
+          "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2"
         ],
         "defineList": [
           "USE_HAL_DRIVER",
-          "STM32H723xx"
+          "STM32F407xx"
         ],
         "sourceDirList": [],
         "libList": []
