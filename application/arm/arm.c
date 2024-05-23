@@ -21,7 +21,7 @@
 #include "arm.h"
 #include "decode.h"
 
-#define assorted_up_encoder_offset  3294
+#define assorted_up_encoder_offset  64898
 #define assorted_yaw_encoder_offset 167392
 #define tail_motor_encoder_offset   142065
 #define tail_roll_encoder_offset    0 // 152746
@@ -106,6 +106,9 @@ static float assorted_yaw_angle_;
 static float assorted_roll_angle_;
 static float tail_motor_angle_;
 
+static void reset_z_detect(){
+    arm_init_flag = 0;
+}
 // Z轴标定（原理为等待触发Z限位开关）
 static void Z_limit_sensor_detect()
 {
@@ -483,7 +486,7 @@ static void set_z_height(float z_height)
     if (arm_init_flag & Z_motor_init_clt)
         VAL_LIMIT(z_height, -620, 30);
     else
-        VAL_LIMIT(z_height, 0, 620);
+        VAL_LIMIT(z_height, -620, 620);
     z_height *= z_motor_ReductionRatio;
     DJIMotorSetRef(z_motor, z_height);
 }
@@ -1121,7 +1124,7 @@ static void ArmApplyAutoMode(){
 }
 // Z轴匀速下降参数
 static void Z_down_limited_torque(){
-    DJIMotorSetRef(z_motor,Z_current_height-10);
+    DJIMotorSetRef(z_motor,Z_current_height-10*z_motor_ReductionRatio);
 }
 // 将臂臂当前位置设置为目标位置
 static void reset_arm_param(){
@@ -1153,7 +1156,7 @@ static void ArmApplyControMode(){
     if (arm_init_flag & Z_motor_init_clt)
         VAL_LIMIT(arm_param_t.height, -620, 30);
     else
-        VAL_LIMIT(arm_param_t.height, -45, 620);
+        VAL_LIMIT(arm_param_t.height, -620, 620);
 
     // 控制臂臂 末端平移&旋转
     // 根据接收数据判断是否需要重置TF树位置
@@ -1266,6 +1269,10 @@ void ArmTask()
     }
     ArmEnable();
     
+    if(arm_cmd_recv.reset_init_flag){
+        reset_z_detect();
+    }
+
     /* todo:编码器上电时单圈角度大于180°时，有时候会程序未进入（圈数-1，使初始角度维持在±180）的操作，原因不明 */
     if(tail_motor_encoder->measure.total_angle >= 100){
         tail_motor_encoder->measure.total_round = -1;
@@ -1354,10 +1361,11 @@ void ArmTask()
     //控制末端吸盘roll
     Arm_tail_sucker_contro();
     
-    if(arm_cmd_recv.auto_mode == Fetch_gronded_cube && arm_cmd_recv.auto_mode!=Recycle_arm_in)    Z_down_limited_torque();
+    if(arm_cmd_recv.auto_mode == Fetch_gronded_cube && Arm_inside_flag!=1)    Z_down_limited_torque();
 
     arm_data_send.big_yaw_angle = big_yaw_angle;
     arm_data_send.auto_mode_doing_state = auto_mode_doing_state;
+    arm_data_send.control_mode_t = custom_controller_comm_recv;
     PubPushMessage(arm_data_sub,&arm_data_send);
     // host_send_buf[30] = 0x01;
     // HostSend(host_instance,host_send_buf,31);

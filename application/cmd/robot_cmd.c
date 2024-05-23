@@ -425,7 +425,7 @@ static void MouseKeySet()
         if(rc_data->key[KEY_PRESS].v && !rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift){
             arm_cmd_send.auto_mode = Arm_get_silvercube_right;
         }
-    /* b应用所选自动模式 */
+    /* b */
         // b 蜂鸣器鸣叫
         if(rc_data->key[KEY_PRESS].b && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift){
             buzzer_one_note(0xff,0.1);
@@ -438,12 +438,13 @@ static void MouseKeySet()
         if(rc_data->key[KEY_PRESS_WITH_SHIFT].b && !rc_data->key[KEY_PRESS].ctrl){
             arm_cmd_send.auto_mode = Arm_fetch_cube_from_warehouse1;
         }
+        // ctrl+shift+b 重置z轴标定
+        if(rc_data->key[KEY_PRESS_WITH_SHIFT].b && rc_data->key[KEY_PRESS].ctrl){
+            arm_cmd_send.reset_init_flag = 1;
+        }else{
+            arm_cmd_send.reset_init_flag = 0;
+        }
 
-        if(rc_data->key[KEY_PRESS].b && rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift){
-          airpump_cmd_send.tmp_flag = 1;
-    }else{
-        airpump_cmd_send.tmp_flag = 0;
-    }
     // r键 强制刷新/切换UI
     if(rc_data->key[KEY_PRESS].r && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)
         UI_cmd_send.UI_refresh_request = 1;
@@ -602,7 +603,7 @@ static void MessageCenterDispose(){
 
     UI_cmd_send.pump_one_mode_t = air_data_recv.pump_state & 0x01 ? 1 : 0;
     UI_cmd_send.pump_two_mode_t = air_data_recv.pump_state & 0x02 ? 1 : 0;
-    
+    UI_cmd_send.control_mode_t  = arm_data_recv.control_mode_t;
 }
 // 额外操作，因遥控器键位不足，使用左拨杆为[上]时的拨轮状态进行额外的状态控制
 static void extra_Control(){
@@ -751,6 +752,11 @@ void RobotCMDTask()
     
     state_detection_for_UI();   // 状态检测，处理当前各外设状态的数据并置入UI发送结构体中
 
+    if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) && dial_flag==-1){
+        arm_cmd_send.auto_mode = Fetch_gronded_cube;
+        arm_cmd_send.contro_mode      = 1;
+
+    }
     PubPushMessage(arm_cmd_pub, (void *)&arm_cmd_send);
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(gimbal_cmd_pub, (void *)&gimbal_cmd_send);

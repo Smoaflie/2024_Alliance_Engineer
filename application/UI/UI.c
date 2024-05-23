@@ -1,3 +1,5 @@
+
+
 #include "referee_init.h"
 #include "referee_UI.h"
 #include "referee_protocol.h"
@@ -64,25 +66,28 @@ static void ui_refresh(){
     // UIFloatDraw(&float_one,"116",Graphic_Operate_ADD,5,Graphic_Color_Green,20,3,3,210,820,pump1);
     // UIFloatDraw(&float_two,"117",Graphic_Operate_ADD,5,Graphic_Color_Green,20,3,3,210,735,pump2);
 
-    UIGraphRefresh(&referee_data->referee_id, 5, auxiliary_line_one, auxiliary_line_two,circle_one,circle_two,circle_three);
-    UIGraphRefresh(&referee_data->referee_id, 2, float_one, float_two);
+    UIGraphRefresh(&referee_data->referee_id, 5, auxiliary_line_one, auxiliary_line_two,circle_one,circle_two,float_one);
+    UIGraphRefresh(&referee_data->referee_id, 1,  float_two);
     
     //字符串
-    sprintf(arm.show_Data,"ARM_MODE:");
-    UICharDraw(&arm,"001",Graphic_Operate_ADD,5,Graphic_Color_Green,25,5,1450,820,char_arm);
+    // sprintf(arm.show_Data," ARM_MODE:");
+    // UICharDraw(&arm,"001",Graphic_Operate_ADD,5,Graphic_Color_Green,25,5,1450,820," ARM_MODE:");
+    // UICharRefresh(&referee_data->referee_id, arm);
+
+    // sprintf(arm_mode.show_Data," NULL");
+    // UICharDraw(&arm_mode,"002",Graphic_Operate_ADD,5,Graphic_Color_Green,25,5,1680,820,char_arm_mode);
+    // UICharRefresh(&referee_data->referee_id, arm_mode);
+
+    // sprintf(valve.show_Data," VALVE:");
+    // UICharDraw(&valve,"003",Graphic_Operate_ADD,5,Graphic_Color_Green,25,5,1450,735,char_valve);
+    // UICharRefresh(&referee_data->referee_id, valve);
+
+    // sprintf(valve_mode.show_Data," NULL");
+    // UICharDraw(&valve_mode,"004",Graphic_Operate_ADD,5,Graphic_Color_Green,25,5,1680,735,char_valve_mode);
+    // UICharRefresh(&referee_data->referee_id, valve_mode);
+    UICharDraw(&arm,"001",Graphic_Operate_ADD,5,Graphic_Color_Green,15,5,1450,820," Control_MODE: %s","false");
     UICharRefresh(&referee_data->referee_id, arm);
 
-    sprintf(arm_mode.show_Data,"NULL");
-    UICharDraw(&arm_mode,"002",Graphic_Operate_ADD,5,Graphic_Color_Green,25,5,1680,820,char_arm_mode);
-    UICharRefresh(&referee_data->referee_id, arm_mode);
-
-    sprintf(valve.show_Data,"VALVE:");
-    UICharDraw(&valve,"003",Graphic_Operate_ADD,5,Graphic_Color_Green,25,5,1450,735,char_valve);
-    UICharRefresh(&referee_data->referee_id, valve);
-
-    sprintf(valve_mode.show_Data,"NULL");
-    UICharDraw(&valve_mode,"004",Graphic_Operate_ADD,5,Graphic_Color_Green,25,5,1680,735,char_valve_mode);
-    UICharRefresh(&referee_data->referee_id, valve_mode);
 }
 
 void MyUIInit(void)
@@ -109,6 +114,17 @@ void MyUIRefresh(void)
         return;
     }
 
+    if(UI_data_recv.control_mode_t==1)
+    {
+         UICharDraw(&arm,"001",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,5,1450,820," Control_MODE: %s","true");
+    }
+    else
+    {
+         UICharDraw(&arm,"001",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,5,1450,820," Control_MODE: %s","false");
+    }
+
+    UICharRefresh(&referee_data->referee_id, arm);
+
     //气泵状态
     if(UI_data_recv.pump_one_mode_t == 1)
         UICircleDraw(&circle_one,  "113",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,150,800,20);
@@ -120,4 +136,8 @@ void MyUIRefresh(void)
     else    
         UICircleDraw(&circle_two,  "114",Graphic_Operate_CHANGE,5,Graphic_Color_White,15,150,720,20);
     UIGraphRefresh(&referee_data->referee_id, 2, circle_one, circle_two);
+
+
+
 }
+        

@@ -59,6 +59,8 @@ typedef struct
     Motor_Type_e motor_type;        // 电机类型
 
     Motor_Contro_Type_e motor_contro_type;  //控制类型
+
+    uint8_t recv_data; // 接收数据标志位
 } LKMotorInstance;
 
 /**

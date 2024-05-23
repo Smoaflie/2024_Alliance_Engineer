@@ -238,42 +238,50 @@ void AIRPUMPTask()
     //     switch_flag &= ~0x02;
     // }  
 
-    if(airpump_state & AIRPUMP_ARM_OPEN || airvalve_state_in_auto_mode == 1 || airpump_cmd_rec.arm_to_airpump & AIRPUMP_ARM_OPEN){
+    if(airpump_state & AIRPUMP_ARM_OPEN || airpump_cmd_rec.arm_to_airpump & AIRPUMP_ARM_OPEN){
         air_data_send.pump_state |= 0x01;
-        GPIOReset(airpump_arm); //气泵拉低为开
+        // GPIOReset(airpump_arm); //气泵拉低为开
     }
-    else if(!(airpump_state & AIRPUMP_ARM_OPEN || airvalve_state_in_auto_mode == 1) || airpump_cmd_rec.arm_to_airpump & AIRPUMP_ARM_CLOSE){
+    else if(!(airpump_state & AIRPUMP_ARM_OPEN) || airpump_cmd_rec.arm_to_airpump & AIRPUMP_ARM_CLOSE){
         air_data_send.pump_state &= ~0x01;
-        GPIOSet(airpump_arm);
+        // GPIOSet(airpump_arm);
     }
     if(airpump_state & AIRPUMP_LINEAR_OPEN || airpump_cmd_rec.arm_to_airpump & AIRPUMP_LINEAR_OPEN){
         air_data_send.pump_state |= 0x02;
-        GPIOReset(airpump_linear); //气泵拉低为开
+        // GPIOReset(airpump_linear); //气泵拉低为开
     }else{
         air_data_send.pump_state &= ~0x02;
-        GPIOSet(airpump_linear);
+        // GPIOSet(airpump_linear);
     }
 
     if(airpump_cmd_rec.airpump_mode & 0x01){
         if(air_data_send.pump_state & 0x01){
             air_data_send.pump_state &=~0x01;
-            GPIOSet(airpump_arm);
+            // GPIOSet(airpump_arm);
         }else{
             air_data_send.pump_state |= 0x01;
-            GPIOReset(airpump_arm);
+            // GPIOReset(airpump_arm);
         }
     }
     
     if(airpump_cmd_rec.airpump_mode & 0x02){
         if(air_data_send.pump_state & 0x02){
             air_data_send.pump_state &=~0x02;
-            GPIOSet(airpump_linear);
+            // GPIOSet(airpump_linear);
         }else{
             air_data_send.pump_state |= 0x02;
-            GPIOReset(airpump_linear);
+            // GPIOReset(airpump_linear);
         }
     }
 
+    if(air_data_send.pump_state & 0x01)
+        GPIOReset(airpump_arm);
+    else
+        GPIOSet(airpump_arm);
+    if(air_data_send.pump_state & 0x02)
+        GPIOReset(airpump_linear);
+    else    
+        GPIOSet(airpump_linear);
     // static int debug_v;
     // if(debug_v){
     //     switch(debug_v){

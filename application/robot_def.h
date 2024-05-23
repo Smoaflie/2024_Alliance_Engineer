@@ -207,6 +207,7 @@ typedef struct{
     uint8_t arm_to_airpump;
 
     uint8_t auto_mode_doing_state;
+    uint8_t control_mode_t;
 }Arm_Data_s;
 
 typedef struct{
@@ -227,6 +228,7 @@ typedef struct{
     uint8_t halt_force_call;  // 强制停止命令
     uint8_t halt_temp_call;  // 临时暂停命令
     uint8_t convert_flag;   // 兑换模式标志位
+    uint8_t reset_init_flag; // z轴重置标定
 }Arm_Cmd_Data_s;
 
 /* 气阀/气泵控制 */
@@ -257,6 +259,7 @@ typedef struct
     uint8_t rotate_mode_t;      //陀螺模式
 
     uint8_t UI_refresh_request; //重置UI请求
+    uint8_t control_mode_t; //自定义控制器模式
 }UI_data_t;
 
 #pragma pack() // 关闭字节对齐,结束前面的#pragma pack(1)
