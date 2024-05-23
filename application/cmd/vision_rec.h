@@ -71,6 +71,10 @@ static void JudgeVisionReadData(uint8_t* buff){
 							// encoder_Data[1] = -encoder_Data[1];
 							// encoder_Data[2] = -encoder_Data[2];
                         memcpy((uint8_t*)qua_rec,(uint8_t*)vision_recv_data+14,16);
+							qua_rec[0]=qua_rec[0];
+							qua_rec[1]=-qua_rec[1];
+							qua_rec[2]=-qua_rec[2];
+							qua_rec[3]=-qua_rec[3];
                         custom_controller_data_refresh_flag = 1;
 					    break;
 					case 0x0304://键鼠遥控数据

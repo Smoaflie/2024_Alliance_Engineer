@@ -129,10 +129,10 @@ void _BuzzerTask(void *argument)
 void _refereeTask(void *argument)
 {
     UNUSED(argument);
-    // MyUIInit();
+    MyUIInit();
     osDelay(1000);
     while (1) {
-        // MyUIRefresh();
+        MyUIRefresh();
         osDelay(100);
     }
 }

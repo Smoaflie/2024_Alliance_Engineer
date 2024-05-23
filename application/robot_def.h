@@ -125,6 +125,7 @@ typedef enum {
     ARM_CONTROL_BY_KEYBOARD,    // 键盘控制，优先级仅次于俩上位机模式
     ARM_POSE_CONTRO_MODE_1,
     ARM_POSE_CONTRO_MODE_0,
+    ARM_POSE_CONTRO_TARGET_MODE,
 } arm_mode_e;
 
 /* ----------------CMD应用发布的控制数据,应当由gimbal/chassis/shoot订阅---------------- */
@@ -166,6 +167,11 @@ typedef struct
     float pitch;
 } Gimbal_Data_s;
 
+// airpump发布的云台数据,由cmd订阅
+typedef struct
+{ // 云台角度控制
+    uint8_t pump_state;
+} Airpump_Data_s;
 /* ----------------gimbal/shoot/chassis发布的反馈数据----------------*/
 /**
  * @brief 由cmd订阅,其他应用也可以根据需要获取.
@@ -220,6 +226,7 @@ typedef struct{
     uint8_t init_call;  // 相关参数重初始化请求（当机器人死亡复活后由cmd置位）
     uint8_t halt_force_call;  // 强制停止命令
     uint8_t halt_temp_call;  // 临时暂停命令
+    uint8_t convert_flag;   // 兑换模式标志位
 }Arm_Cmd_Data_s;
 
 /* 气阀/气泵控制 */
@@ -232,6 +239,8 @@ typedef struct{
     uint8_t init_call;  // 相关参数重初始化请求（当机器人死亡复活后由cmd置位）
     uint8_t halt_force_call;  // 强制停止命令
     uint8_t halt_temp_call;  // 临时停止命令
+    float sucker_offset_angle; //偏移角度
+    uint8_t tmp_flag;
 }Airpump_Cmd_Data_s;
 
 typedef struct{
@@ -258,12 +267,15 @@ typedef struct
 #define Recycle_arm_in 0x04 // 臂臂回收到肚子内
 #define Recycle_arm_out 0x05 // 臂臂从肚子内伸出
 #define Arm_get_goldcube_right 0x80 // 臂臂取右侧金矿
-#define Arm_fetch_cube_from_warehouse1 0x01 // 臂臂从矿仓取矿
+#define Arm_fetch_cube_from_warehouse1 0x01 // 臂臂从矿仓1取矿
+#define Arm_fetch_cube_from_warehouse2 0x03 // 臂臂从矿仓2取矿
 #define Arm_big_yaw_reset   0x08    // 大Yaw归中
 #define Arm_get_silvercube_left 0x02// 取小资源岛左侧矿
 #define Arm_get_silvercube_mid  0x20// 取小资源岛中间矿
 #define Arm_get_silvercube_right 0x40// 取小资源岛右侧矿
 #define Fetch_gronded_cube 0x90 // 取地矿
+#define Fetch_gronded_cube_P 0xA0 // 取地矿姿势
+#define Arm_forward_P 0xB0 // 前伸姿态
 // 臂臂控制模式
 #define Arm_Control_with_Chassis 1// 控制底盘臂臂
 #define Arm_Control_only_Arm     2// 仅控制臂臂

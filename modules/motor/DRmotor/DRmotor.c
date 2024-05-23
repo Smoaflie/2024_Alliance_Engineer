@@ -100,6 +100,10 @@ DRMotorInstance *DRMotorInit(Motor_Init_Config_s *config)
 
     // DR_PDA04电机每次上电都需要手动发送数据包开启实时状态反馈
     if (motor->motor_type == DR_PDA04) {
+        static uint8_t tx_buf_enable_PDA04_reboot[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        CANTransmit_once(motor->motor_can_ins->can_handle,
+                         (config->can_init_config.tx_id & (0x1f << 5)) + 0x08,
+                         tx_buf_enable_PDA04_reboot, 2);
         static uint8_t tx_buf_enable_PDA04_recall[] = {0xF1, 0x55, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00};
         CANTransmit_once(motor->motor_can_ins->can_handle,
                          (config->can_init_config.tx_id & (0x1f << 5)) + 0x1f,
@@ -185,28 +189,28 @@ void DRMotorControl()
         // 发送
         CANTransmit(motor->motor_can_ins, 0.1);
 
-        // PDA04存在过热保护，需特别处理
-        if(motor->motor_type == DR_PDA04 && motor->motor_settings.outer_loop_type == ANGLE_LOOP){
-            float offset = motor->angle_PID.Measure - motor->last_angle;
-            if((offset>1 || offset<-1) && (set>0.5||set<-0.5) && motor->stop_flag != MOTOR_STOP){
-                motor->lost_cnt++;
-            }else{
-                motor->lost_cnt=0;
-            }
-            if(motor->lost_cnt >= 1000){
-                LOGWARNING("[DRMotor] motor was crashed, id: %d", (motor->motor_can_ins->tx_id & (0x1f<<5)) >> 5);
-                motor->lost_cnt = 0;
-                static uint8_t tx_buf_motor_reboot[] = {0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-                CANTransmit_once(motor->motor_can_ins->can_handle,
-                         (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x08,
-                         tx_buf_motor_reboot, 2);
-                static uint8_t tx_buf_enable_PDA04_recall[] = {0xF1, 0x55, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00};
-                CANTransmit_once(motor->motor_can_ins->can_handle,
-                         (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x1f,
-                         tx_buf_enable_PDA04_recall, 2);    
-            }
-            motor->last_angle = motor->angle_PID.Measure;
-        }
+        // // PDA04存在过热保护，需特别处理
+        // if(motor->motor_type == DR_PDA04 && motor->motor_settings.outer_loop_type == ANGLE_LOOP){
+        //     float offset = motor->angle_PID.Measure - motor->last_angle;
+        //     if((offset>1 || offset<-1) && (set>0.5||set<-0.5) && motor->stop_flag != MOTOR_STOP){
+        //         motor->lost_cnt++;
+        //     }else{
+        //         motor->lost_cnt=0;
+        //     }
+        //     if(motor->lost_cnt >= 1000){
+        //         LOGWARNING("[DRMotor] motor was crashed, id: %d", (motor->motor_can_ins->tx_id & (0x1f<<5)) >> 5);
+        //         motor->lost_cnt = 0;
+        //         static uint8_t tx_buf_motor_reboot[] = {0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+        //         CANTransmit_once(motor->motor_can_ins->can_handle,
+        //                  (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x08,
+        //                  tx_buf_motor_reboot, 2);
+        //         static uint8_t tx_buf_enable_PDA04_recall[] = {0xF1, 0x55, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00};
+        //         CANTransmit_once(motor->motor_can_ins->can_handle,
+        //                  (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x1f,
+        //                  tx_buf_enable_PDA04_recall, 2);    
+        //     }
+        //     motor->last_angle = motor->angle_PID.Measure;
+        // }
     }
 }
 

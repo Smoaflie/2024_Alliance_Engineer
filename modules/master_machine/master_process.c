@@ -131,7 +131,7 @@ void HostSend(HostInstance *instance, uint8_t *send_buf, uint16_t tx_len)
     switch (instance->comm_mode) {
         case HOST_USART:
             // todo：是否需要对发送方式进行定制（即轮询/中断/DMA三种模式）
-            USARTSend((USARTInstance *)instance->comm_instance, send_buf, tx_len, USART_TRANSFER_DMA);
+            USARTSend((USARTInstance *)instance->comm_instance, send_buf, tx_len, USART_TRANSFER_BLOCKING);
             break;
         case HOST_VCP:
             USBTransmit(send_buf, tx_len);
