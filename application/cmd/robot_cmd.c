@@ -56,6 +56,8 @@ static uint8_t chassis_auto_mod_id = 1; //底盘自动模式
 // 地盘速度斜坡函数
 static ramp_t chassis_speed_ramp[3][2]; // l/m/h x/y 低中高速
 static int32_t ramp_feriod = 2000; //斜坡周期
+
+static GPIOInstance *relay_contro_gpio; //继电器io口
 void RobotCMDInit()
 {
     rc_data     = RemoteControlInit(&huart5); // 修改为对应串口,注意如果是自研板dbus协议串口需选用添加了反相器的那个
@@ -82,6 +84,12 @@ void RobotCMDInit()
     vision_rc_data = malloc(sizeof(RC_ctrl_t));
     memset(vision_rc_data,0,sizeof(RC_ctrl_t));
     vision_usart       = USARTRegister(&vision_usart_conf);// 图传串口
+
+    GPIO_Init_Config_s gpio_conf_relay_contro = {
+        .GPIOx = relay_contro_GPIO_Port,
+        .GPIO_Pin = relay_contro_Pin,
+    };
+    relay_contro_gpio = GPIORegister(&gpio_conf_relay_contro);
 
     memset(&arm_cmd_send, 0, sizeof(arm_cmd_send));
 
@@ -334,28 +342,30 @@ static void MouseKeySet()
         if(!rc_data->key[KEY_PRESS].ctrl){
             chassis_cmd_send.wz = -(rc_data->key[KEY_PRESS].q - rc_data->key[KEY_PRESS].e)  * 2500.0f; // 底盘旋转
         }
-        // ctrl+q'e控制底盘贴墙移动
-        if(rc_data->key[KEY_PRESS].q && rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)
-                chassis_cmd_send.special_func_flag = CHASSIS_SLOPE_MOVE_L;
-        else if(rc_data->key[KEY_PRESS].e && rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)
-                chassis_cmd_send.special_func_flag = CHASSIS_SLOPE_MOVE_R;
+        // ctrl+q'e低速旋转
+        if(rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)
+            chassis_cmd_send.wz = -(rc_data->key[KEY_PRESS].q - rc_data->key[KEY_PRESS].e)  * 1000.0f; // 底盘旋转
+                
         else chassis_cmd_send.special_func_flag = 0;
         // ctrl+shift+q'e控制臂臂旋转    
         if(rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift)   
             arm_cmd_send.Rotation_yaw = (rc_data->key[KEY_PRESS_WITH_SHIFT].e - rc_data->key[KEY_PRESS_WITH_SHIFT].q) * 0.06;
     /* r&f */
-    // ctrl+r'f控制 臂复位 | 收回肚子
-        if(rc_data->key[KEY_PRESS_WITH_CTRL].r)
-            arm_cmd_send.auto_mode = Reset_arm_cmd_param_flag;//ctrl+r 臂复位
-        else if(rc_data->key[KEY_PRESS_WITH_CTRL].f)   
-            arm_cmd_send.auto_mode = Recycle_arm_in;//ctrl+f 臂收回肚子
-        // shift+r'f控制臂竖直移动
-        arm_cmd_send.Position_z = (rc_data->key[KEY_PRESS_WITH_SHIFT].r - rc_data->key[KEY_PRESS_WITH_SHIFT].f) * 0.5;
+    // shift+r'f控制臂 行走姿态 | 收回肚子
+    if(!rc_data->key[KEY_PRESS].ctrl){
+        if(rc_data->key[KEY_PRESS_WITH_SHIFT].r)
+            arm_cmd_send.auto_mode = Reset_arm_cmd_param_flag;//shift+r 臂行走姿态
+        else if(rc_data->key[KEY_PRESS_WITH_SHIFT].f)   
+            arm_cmd_send.auto_mode = Recycle_arm_in;//shift+f 臂收回肚子
+    }
+    if(!rc_data->key[KEY_PRESS].shift)
+        // ctrl+r'f控制臂竖直移动
+        arm_cmd_send.Position_z = (rc_data->key[KEY_PRESS_WITH_CTRL].r - rc_data->key[KEY_PRESS_WITH_CTRL].f) * 0.5;
 
     /* 鼠标平移 */
         // 鼠标平移控制底盘旋转和云台pitch(按住右键时)
         if(rc_data->mouse.press_r){
-            chassis_cmd_send.wz = rc_data->mouse.x  * 50.0f;
+            chassis_cmd_send.wz = rc_data->mouse.x  * 70.0f;
             gimbal_cmd_send.pitch = -rc_data->mouse.y / 50.0;
         }else{
         //鼠标平移控制云台(未按住右键时)
@@ -385,6 +395,7 @@ static void MouseKeySet()
         static uint8_t pump_switch_state = 0;
         if(rc_data->key[KEY_PRESS_WITH_CTRL].g && !rc_data->key[KEY_PRESS].shift && !(pump_switch_state & 0x01)){
             (airpump_cmd_send.airpump_mode&0x01) ? (airpump_cmd_send.airpump_mode&=~0x01) : (airpump_cmd_send.airpump_mode|=0x01);
+            (airpump_arm_state&0x01) ? (airpump_arm_state&=~0x01) : (airpump_arm_state|=0x01);
             pump_switch_state |= 0x01;
         }else if(!(rc_data->key[KEY_PRESS_WITH_CTRL].g)){
             pump_switch_state &= ~0x01;
@@ -392,6 +403,7 @@ static void MouseKeySet()
     // ctrl+shift+g开关推杆气泵
         if((rc_data->key[KEY_PRESS_WITH_SHIFT].g && rc_data->key[KEY_PRESS].ctrl) && !(pump_switch_state & 0x02)){
             (airpump_cmd_send.airpump_mode&0x02) ? (airpump_cmd_send.airpump_mode&=~0x02) : (airpump_cmd_send.airpump_mode|=0x02);
+            (airpump_linear_state&0x01) ? (airpump_linear_state&=~0x01) : (airpump_linear_state|=0x01);
             pump_switch_state |= 0x02;
         }else if(!(rc_data->key[KEY_PRESS_WITH_SHIFT].g && rc_data->key[KEY_PRESS].ctrl)){
             pump_switch_state &= ~0x02;
@@ -465,6 +477,23 @@ static void MouseKeySet()
         }
     }else if(!(rc_data->key[KEY_PRESS].r && rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift)){
         reset_press_cnt=0;
+    }
+    // ctrl+shift+f 重启臂臂电源
+    static int16_t repower_arm_cnt = 0;
+    if(rc_data->key[KEY_PRESS].f && rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift){
+        repower_arm_cnt++;
+        gimbal_cmd_send.gimbal_mode   = GIMBAL_ZERO_FORCE;
+        arm_cmd_send.contro_mode      = ARM_ZERO_FORCE;
+        repower_arm_cnt = 1000;
+        GPIOReset(relay_contro_gpio);
+        UI_cmd_send.relay_contr_state = 0;
+    }else if(!(rc_data->key[KEY_PRESS].f && rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift)){
+        repower_arm_cnt--;
+        if(repower_arm_cnt <= 0){
+            GPIOSet(relay_contro_gpio);
+            UI_cmd_send.relay_contr_state = 1;
+            repower_arm_cnt = 0;
+        }
     }
     // ctrl+shift+z 强制终止推杆自动模式
     if(rc_data->key[KEY_PRESS].z && rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift){
@@ -601,8 +630,10 @@ static void MessageCenterDispose(){
     airpump_cmd_send.arm_to_airvalve = arm_data_recv.arm_to_airvalve; //臂任务对夹爪状态的控制
     airpump_cmd_send.arm_to_airpump = arm_data_recv.arm_to_airpump; //臂臂任务控制气泵，优先级比键鼠控制高 
 
-    UI_cmd_send.pump_one_mode_t = air_data_recv.pump_state & 0x01 ? 1 : 0;
-    UI_cmd_send.pump_two_mode_t = air_data_recv.pump_state & 0x02 ? 1 : 0;
+    // UI_cmd_send.pump_one_mode_t = air_data_recv.pump_state & 0x01 ? 1 : 0;
+    // UI_cmd_send.pump_two_mode_t = air_data_recv.pump_state & 0x02 ? 1 : 0;
+    UI_cmd_send.pump_one_mode_t = airpump_arm_state;
+    UI_cmd_send.pump_two_mode_t = airpump_linear_state;
     UI_cmd_send.control_mode_t  = arm_data_recv.control_mode_t;
 }
 // 额外操作，因遥控器键位不足，使用左拨杆为[上]时的拨轮状态进行额外的状态控制
@@ -651,6 +682,7 @@ static void extra_Control(){
         //拨轮向上时，开关臂气泵
         if(dial_flag==1 && !(dial_switch1_state & 0x01)){
             (airpump_cmd_send.airpump_mode&0x01) ? (airpump_cmd_send.airpump_mode&=~0x01) : (airpump_cmd_send.airpump_mode|=0x01);
+            (airpump_arm_state&0x01) ? (airpump_arm_state&=~0x01) : (airpump_arm_state|=0x01);
             dial_switch1_state |= 0x01;
         }else if(!(dial_flag==1)){
             dial_switch1_state &= ~0x01;
@@ -658,6 +690,7 @@ static void extra_Control(){
         //拨轮向下时，开关推杆气泵
         if(dial_flag==-1 && !(dial_switch1_state & 0x02)){
             (airpump_cmd_send.airpump_mode&0x02) ? (airpump_cmd_send.airpump_mode&=~0x02) : (airpump_cmd_send.airpump_mode|=0x02);
+            (airpump_linear_state&0x01) ? (airpump_linear_state&=~0x01) : (airpump_linear_state|=0x01);
             dial_switch1_state |= 0x02;
         }else if(!(dial_flag==-1)){
             dial_switch1_state &= ~0x02;
@@ -752,11 +785,23 @@ void RobotCMDTask()
     
     state_detection_for_UI();   // 状态检测，处理当前各外设状态的数据并置入UI发送结构体中
 
+    static int16_t repower_arm_cnt = 0;
     if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) && dial_flag==-1){
-        arm_cmd_send.auto_mode = Fetch_gronded_cube;
-        arm_cmd_send.contro_mode      = 1;
-
+        repower_arm_cnt++;
+        gimbal_cmd_send.gimbal_mode   = GIMBAL_ZERO_FORCE;
+        arm_cmd_send.contro_mode      = ARM_ZERO_FORCE;
+        repower_arm_cnt = 1000;
+        GPIOReset(relay_contro_gpio);
+        UI_cmd_send.relay_contr_state = 0;
+    }else{
+        repower_arm_cnt--;
+        if(repower_arm_cnt <= 0){
+            GPIOSet(relay_contro_gpio);
+            UI_cmd_send.relay_contr_state = 1;
+            repower_arm_cnt = 0;
+        }
     }
+
     PubPushMessage(arm_cmd_pub, (void *)&arm_cmd_send);
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(gimbal_cmd_pub, (void *)&gimbal_cmd_send);

@@ -62,8 +62,8 @@ void Error_Handler(void);
 #define Z_limit_detect_Pin GPIO_PIN_2
 #define Z_limit_detect_GPIO_Port GPIOA
 #define Z_limit_detect_EXTI_IRQn EXTI2_IRQn
-#define YAW_limit_detect_Pin GPIO_PIN_9
-#define YAW_limit_detect_GPIO_Port GPIOE
+#define relay_contro_Pin GPIO_PIN_9
+#define relay_contro_GPIO_Port GPIOE
 #define redLight_detect_Pin GPIO_PIN_13
 #define redLight_detect_GPIO_Port GPIOE
 #define KEY_Pin GPIO_PIN_15

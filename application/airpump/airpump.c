@@ -40,6 +40,10 @@ static uint8_t airvalve_mode_cnt = 0;
 static int16_t airvalve_delay_time = 0;
 static uint8_t airvalve_state_in_auto_mode = 0;
 
+//气泵状态 - 全局变量
+uint8_t airpump_arm_state=0;
+uint8_t airpump_linear_state=0;
+
 static Publisher_t *air_data_pub;        // 气阀气泵消息发布者
 static Airpump_Data_s air_data_send;    // 气阀气泵消息
 void AIRPUMPInit()
@@ -161,7 +165,7 @@ void AIRPUMPTask()
                     case 1: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_forward();airvalve_state_in_auto_mode=0;break;//初始状态
                     case 2: airvalve_tx_coder = 0b0000001101100101010110;airvalve_delay_time = 300;break;//下降+第一段前伸
                     case 3: airvalve_tx_coder = 0b0000001101100110010110;airvalve_delay_time = 300;break;//旋转
-                    case 4: airvalve_tx_coder = 0b1000001100011010010110;airvalve_delay_time = 1200;airpump_state|=0x02;airvalve_state_in_auto_mode=1;break;//伸出
+                    case 4: airvalve_tx_coder = 0b1000001100011010010110;airvalve_delay_time = 1200;airpump_state|=0x02;airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出
                     case 5: airvalve_tx_coder = 0b0000001101011010010110;airvalve_delay_time = 300;break;//小回
                     case 6: airvalve_tx_coder = 0b0000001101011010010101;airvalve_delay_time = 300;airvalve_state&=~AIRVALVE_LEFT_CUBE_DOING;break;//抬升
                     case 7: airvalve_tx_coder = 0b0000001100100110010101;airvalve_delay_time = 300;break;//缩回
@@ -191,14 +195,14 @@ void AIRPUMPTask()
                 switch(airvalve_mode_cnt){
                     //                          0b2X098765X3210987654321
                     case 1: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_forward();airvalve_state_in_auto_mode=0;break;//初始状态
-                    case 2: airvalve_tx_coder = 0b1000001100011001100110;airvalve_delay_time = 1500;airpump_state|=0x02;airvalve_state_in_auto_mode=1;break;//伸出+下降
+                    case 2: airvalve_tx_coder = 0b1000001100011001100110;airvalve_delay_time = 1500;airpump_state|=0x02;airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出+下降
                     case 3: airvalve_tx_coder = 0b0000001101011001100110;airvalve_delay_time = 300;break;//小回
                     case 4: airvalve_tx_coder = 0b0000001101011001100101;airvalve_delay_time = 1200;airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DOING;break;//抬升
                     case 5: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;break;//缩回
                     case 6: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 1200;break;//初始状态
                     case 7: airvalve_tx_coder = 0b0011000001100101101001;airvalve_delay_time = 600;airsucker_up();break;//夹爪前伸
                     case 8: airvalve_delay_time = 4000;break;//上抬
-                    case 9: airvalve_tx_coder = 0b0001001001100101101001;airvalve_delay_time = 1000;airpump_state&=~0x02;airvalve_state_in_auto_mode=0;break;//夹爪夹
+                    case 9: airvalve_tx_coder = 0b0001001001100101101001;airvalve_delay_time = 1000;airpump_state&=~0x02;airvalve_state_in_auto_mode=0;airpump_linear_state=0;break;//夹爪夹
                     case 10: airvalve_tx_coder =0b0000001101100101101001;airvalve_delay_time = 300;break;//夹爪后移
                     case 11: airvalve_tx_coder =0b0000001101100101101001;airvalve_delay_time = 300;airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DOING;break;//初始状态
                 }
@@ -238,47 +242,56 @@ void AIRPUMPTask()
     //     switch_flag &= ~0x02;
     // }  
 
-    if(airpump_state & AIRPUMP_ARM_OPEN || airpump_cmd_rec.arm_to_airpump & AIRPUMP_ARM_OPEN){
-        air_data_send.pump_state |= 0x01;
-        // GPIOReset(airpump_arm); //气泵拉低为开
-    }
-    else if(!(airpump_state & AIRPUMP_ARM_OPEN) || airpump_cmd_rec.arm_to_airpump & AIRPUMP_ARM_CLOSE){
-        air_data_send.pump_state &= ~0x01;
-        // GPIOSet(airpump_arm);
-    }
-    if(airpump_state & AIRPUMP_LINEAR_OPEN || airpump_cmd_rec.arm_to_airpump & AIRPUMP_LINEAR_OPEN){
-        air_data_send.pump_state |= 0x02;
-        // GPIOReset(airpump_linear); //气泵拉低为开
-    }else{
-        air_data_send.pump_state &= ~0x02;
-        // GPIOSet(airpump_linear);
-    }
+    // if(airpump_state & AIRPUMP_ARM_OPEN || airpump_cmd_rec.arm_to_airpump & AIRPUMP_ARM_OPEN){
+    //     air_data_send.pump_state |= 0x01;
+    //     // GPIOReset(airpump_arm); //气泵拉低为开
+    // }
+    // else if(!(airpump_state & AIRPUMP_ARM_OPEN) || airpump_cmd_rec.arm_to_airpump & AIRPUMP_ARM_CLOSE){
+    //     air_data_send.pump_state &= ~0x01;
+    //     // GPIOSet(airpump_arm);
+    // }
+    // if(airpump_state & AIRPUMP_LINEAR_OPEN || airpump_cmd_rec.arm_to_airpump & AIRPUMP_LINEAR_OPEN){
+    //     air_data_send.pump_state |= 0x02;
+    //     // GPIOReset(airpump_linear); //气泵拉低为开
+    // }else{
+    //     air_data_send.pump_state &= ~0x02;
+    //     // GPIOSet(airpump_linear);
+    // }
 
-    if(airpump_cmd_rec.airpump_mode & 0x01){
-        if(air_data_send.pump_state & 0x01){
-            air_data_send.pump_state &=~0x01;
-            // GPIOSet(airpump_arm);
-        }else{
-            air_data_send.pump_state |= 0x01;
-            // GPIOReset(airpump_arm);
-        }
-    }
+    // if(airpump_cmd_rec.airpump_mode & 0x01){
+    //     if(air_data_send.pump_state & 0x01){
+    //         air_data_send.pump_state &=~0x01;
+    //         // GPIOSet(airpump_arm);
+    //     }else{
+    //         air_data_send.pump_state |= 0x01;
+    //         // GPIOReset(airpump_arm);
+    //     }
+    // }
     
-    if(airpump_cmd_rec.airpump_mode & 0x02){
-        if(air_data_send.pump_state & 0x02){
-            air_data_send.pump_state &=~0x02;
-            // GPIOSet(airpump_linear);
-        }else{
-            air_data_send.pump_state |= 0x02;
-            // GPIOReset(airpump_linear);
-        }
-    }
+    // if(airpump_cmd_rec.airpump_mode & 0x02){
+    //     if(air_data_send.pump_state & 0x02){
+    //         air_data_send.pump_state &=~0x02;
+    //         // GPIOSet(airpump_linear);
+    //     }else{
+    //         air_data_send.pump_state |= 0x02;
+    //         // GPIOReset(airpump_linear);
+    //     }
+    // }
 
-    if(air_data_send.pump_state & 0x01)
+    // if(air_data_send.pump_state & 0x01)
+    //     GPIOReset(airpump_arm);
+    // else
+    //     GPIOSet(airpump_arm);
+    // if(air_data_send.pump_state & 0x02)
+    //     GPIOReset(airpump_linear);
+    // else    
+    //     GPIOSet(airpump_linear);
+
+    if(airpump_arm_state == 1)
         GPIOReset(airpump_arm);
     else
         GPIOSet(airpump_arm);
-    if(air_data_send.pump_state & 0x02)
+    if(airpump_linear_state == 1)
         GPIOReset(airpump_linear);
     else    
         GPIOSet(airpump_linear);

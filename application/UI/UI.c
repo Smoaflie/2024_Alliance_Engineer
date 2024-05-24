@@ -31,6 +31,7 @@ static Graph_Data_t float_two;
 
 static String_Data_t arm;         //臂状态
 static String_Data_t arm_mode;
+static String_Data_t arm_power;
 static String_Data_t valve;       //气推杆状态
 static String_Data_t valve_mode;         
 
@@ -87,7 +88,8 @@ static void ui_refresh(){
     // UICharRefresh(&referee_data->referee_id, valve_mode);
     UICharDraw(&arm,"001",Graphic_Operate_ADD,5,Graphic_Color_Green,15,5,1450,820," Control_MODE: %s","false");
     UICharRefresh(&referee_data->referee_id, arm);
-
+    UICharDraw(&arm_power,"002",Graphic_Operate_ADD,5,Graphic_Color_Green,15,5,1680,820," ARM_POWER: %s","false");
+    UICharRefresh(&referee_data->referee_id, arm_power);
 }
 
 void MyUIInit(void)
@@ -114,16 +116,27 @@ void MyUIRefresh(void)
         return;
     }
 
+    //是否处于自定义控制器模式
     if(UI_data_recv.control_mode_t==1)
     {
          UICharDraw(&arm,"001",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,5,1450,820," Control_MODE: %s","true");
     }
     else
     {
-         UICharDraw(&arm,"001",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,5,1450,820," Control_MODE: %s","false");
+         UICharDraw(&arm,"001",Graphic_Operate_CHANGE,5,Graphic_Color_Black,15,5,1450,820," Control_MODE: %s","false");
     }
-
     UICharRefresh(&referee_data->referee_id, arm);
+
+    //臂臂是否上电
+    if(UI_data_recv.relay_contr_state==1)
+    {
+        UICharDraw(&arm_power,"002",Graphic_Operate_CHANGE,5,Graphic_Color_Green,15,5,1680,820," ARM_POWER: %s","true");
+    }
+    else
+    {
+        UICharDraw(&arm_power,"002",Graphic_Operate_CHANGE,5,Graphic_Color_Purplish_red,15,5,1680,820," ARM_POWER: %s","false");
+    }
+    UICharRefresh(&referee_data->referee_id, arm_power);
 
     //气泵状态
     if(UI_data_recv.pump_one_mode_t == 1)

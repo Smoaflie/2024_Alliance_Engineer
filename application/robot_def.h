@@ -260,6 +260,7 @@ typedef struct
 
     uint8_t UI_refresh_request; //重置UI请求
     uint8_t control_mode_t; //自定义控制器模式
+    uint8_t relay_contr_state; //臂继电器状态
 }UI_data_t;
 
 #pragma pack() // 关闭字节对齐,结束前面的#pragma pack(1)
@@ -308,5 +309,10 @@ typedef struct
 //底盘特殊动作
 #define CHASSIS_SLOPE_MOVE_L 0x01         // 向左斜向平移，直到手动停止或触发红外开关
 #define CHASSIS_SLOPE_MOVE_R 0x02         // 向右斜向平移，直到手动停止或触发红外开关
+
+/* 全局变量 */
+
+//气泵状态 - 全局变量
+extern uint8_t airpump_arm_state,airpump_linear_state;
 
 #endif // !ROBOT_DEF_H
