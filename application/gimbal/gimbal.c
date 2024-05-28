@@ -107,6 +107,8 @@ void GIMBALTask()
         gimbal_pitch_angle -= gimbal_cmd_recv.pitch;
         VAL_LIMIT(gimbal_pitch_angle, 0, 65);    /* 限幅 */
 
+        gimbal_yaw_angle = 0;
+
         Servo_Motor_FreeAngle_Set(gimbalmoto,(int16_t)gimbal_pitch_angle);
         LKMotorSetRef(motor,gimbal_yaw_angle);
     }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET){
@@ -118,7 +120,7 @@ void GIMBALTask()
         motor->measure.total_angle = motor->measure.angle_single_round;
         gimbal_yaw_angle = 0;
         // Servo_Motor_FreeAngle_Set(gimbalmoto,(int16_t)gimbal_pitch_angle);
-        LKMotorSetRef(motor,0);
+        LKMotorSetRef(motor,gimbal_yaw_angle);
     }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET_WITH_ROTATE){
         Servo_Motor_Start(gimbalmoto);
         LKMotorEnable(motor);
@@ -129,7 +131,10 @@ void GIMBALTask()
 
         LKMotorSetRef(motor,0);
     }
-    gimbal_data_send.yaw = gimbal_yaw_angle-gimbal_cmd_recv.arm_big_yaw_offset;
+    if(gimbal_cmd_recv.gimbal_mode == GIMBAL_FOLLOW_YAW)
+        gimbal_data_send.yaw = 0;
+    else
+        gimbal_data_send.yaw = gimbal_yaw_angle-gimbal_cmd_recv.arm_big_yaw_offset;
     gimbal_data_send.pitch = gimbal_pitch_angle;
     PubPushMessage(gimbal_pub,&gimbal_data_send);
 }

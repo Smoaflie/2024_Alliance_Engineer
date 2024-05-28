@@ -229,6 +229,7 @@ typedef struct{
     uint8_t halt_temp_call;  // 临时暂停命令
     uint8_t convert_flag;   // 兑换模式标志位
     uint8_t reset_init_flag; // z轴重置标定
+    float aroll_angle_offset; //混合roll的偏移值(单次累计值)
 }Arm_Cmd_Data_s;
 
 /* 气阀/气泵控制 */

@@ -21,8 +21,8 @@
 #include "arm.h"
 #include "decode.h"
 
-#define assorted_up_encoder_offset  44817
-#define assorted_yaw_encoder_offset 171719
+#define assorted_up_encoder_offset  98424//92608
+#define assorted_yaw_encoder_offset 169800//171719
 #define tail_motor_encoder_offset   142065
 #define tail_roll_encoder_offset    0 // 152746
 
@@ -105,6 +105,8 @@ static float mid_yaw_angle_;
 static float assorted_yaw_angle_;
 static float assorted_roll_angle_;
 static float tail_motor_angle_;
+
+static float aroll_offset_angle_;
 
 static void reset_z_detect(){
     arm_init_flag = 0;
@@ -436,6 +438,9 @@ void ArmInit()
 }
 
 /* 一些私有函数 */
+static void add_aroll_offset_angle(){ // 修改roll偏移量
+    aroll_offset_angle_ += arm_cmd_recv.aroll_angle_offset;
+}
 static void cal_Z_height()  //计算Z轴高度
 {
     Z_current_height = z_motor->measure.total_angle / z_motor_ReductionRatio;
@@ -452,7 +457,8 @@ static void cal_mid_rAy_angle() //计算混合关节的yaw&roll
     if(arm_cmd_recv.optimize_signal&0x02)   assorted_roll_angle+=180;   //可选混合roll优化
     assorted_roll_angle = assorted_roll_angle - 360 * (int16_t)(assorted_roll_angle / 360);
     assorted_roll_angle = assorted_roll_angle > 180 ? (assorted_roll_angle - 360) : (assorted_roll_angle < -180 ? (assorted_roll_angle + 360) : assorted_roll_angle);
-
+    
+    assorted_roll_angle += aroll_offset_angle_; //roll偏移量
 }
 
 static void cal_joing_angle(){ //计算各关节角度
@@ -464,12 +470,13 @@ static void cal_joing_angle(){ //计算各关节角度
     assorted_roll_angle_= assorted_roll_angle;
     tail_motor_angle_ = -tail_motor_encoder->measure.total_angle;
 
-    float a1 = abs(assorted_yaw_angle_);
-        float a2 = 180 - abs(mid_yaw_angle_);
-        float a3 = 180 - a1 - a2;
-        big_yaw_origin_angle = (mid_yaw_angle_>=0) ? (big_yaw_angle_ + a3) : (big_yaw_angle_ - a3); 
-        float n = sqrtf(arm1*arm1 + arm2*arm2 - 2*arm1*arm2*cosf(a2*DEGREE_2_RAD));
-        float a4 = asinf(arm2*sinf(a2)/n) - a3;
+    // float a1 = abs(assorted_yaw_angle_);
+//     float a2 = 180 - abs(mid_yaw_angle_);
+//     float a3 = 180 - a1 - a2;
+//     big_yaw_origin_angle = (mid_yaw_angle_>=0) ? (big_yaw_angle_ + a3) : (big_yaw_angle_ - a3); 
+//     float n = sqrtf(arm1*arm1 + arm2*arm2 - 2*arm1*arm2*cosf(a2*DEGREE_2_RAD));
+//     float a4 = asinf(arm2*sinf(a2)/n) - a3;
+
         // memset(&arm_rc_contro_place,0,sizeof(arm_rc_contro_place));
         // arm_rc_contro_place.x = arm3 + n*sqrtf(1-sinf(a4)*sinf(a4));
         // arm_rc_contro_place.y = assorted_yaw_angle_>=0 ? -n*sinf(a4) : n*sinf(a4);
@@ -478,7 +485,7 @@ static void cal_joing_angle(){ //计算各关节角度
 
 static void set_big_yaw_angle(float angle)
 {
-    VAL_LIMIT(angle, -200, 200);
+    VAL_LIMIT(angle, -140, 140);
     DRMotorSetRef(big_yaw_motor, angle);
 }
 static void set_z_height(float z_height)
@@ -821,21 +828,21 @@ static void ArmSetAutoMode(){
     
     //臂臂从肚子伸出
     //执行其他模式时，需先将臂臂从肚子里取出
-    if((Arm_inside_flag==1 && arm_cmd_recv.auto_mode!=0 && arm_cmd_recv.auto_mode!=Recycle_arm_in) || auto_mode_doing_state&(0x0001<<7) || arm_cmd_recv.auto_mode==Recycle_arm_out){
-    // if((Arm_inside_flag==1 && arm_cmd_recv.auto_mode==Recycle_arm_out) || auto_mode_doing_state&(0x0001<<7)){
-        auto_mode_doing_state = 0;
-        auto_mode_doing_state |= (0x0001<<7);
-        if(++auto_mode_step_id[7] > 3) {auto_mode_step_id[7]=0;auto_mode_doing_state&=~(0x0001<<7);return;}
-        uint8_t current_auto_mode_step_id = auto_mode_step_id[7];
-        memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
-        auto_mode_step_id[7] = current_auto_mode_step_id;
-        switch(current_auto_mode_step_id){
-            case 1:ArmParamSet_ramp(1000,-33.493,116.523773,90.5924835,-96.5074844,-73.6624374);break;
-            case 2:Z_heightSet_ramp(1000,-315.116913);break;
-            case 3:ArmParamSet_ramp(1000,-40.1328545,5.32804918,89.7918472,-104.0686646,-88.7563782);Arm_inside_flag=0;break;
-        }
-        return;
-    }
+    // if((Arm_inside_flag==1 && arm_cmd_recv.auto_mode!=0 && arm_cmd_recv.auto_mode!=Recycle_arm_in) || auto_mode_doing_state&(0x0001<<7) || arm_cmd_recv.auto_mode==Recycle_arm_out){
+    // // if((Arm_inside_flag==1 && arm_cmd_recv.auto_mode==Recycle_arm_out) || auto_mode_doing_state&(0x0001<<7)){
+    //     auto_mode_doing_state = 0;
+    //     auto_mode_doing_state |= (0x0001<<7);
+    //     if(++auto_mode_step_id[7] > 3) {auto_mode_step_id[7]=0;auto_mode_doing_state&=~(0x0001<<7);return;}
+    //     uint8_t current_auto_mode_step_id = auto_mode_step_id[7];
+    //     memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
+    //     auto_mode_step_id[7] = current_auto_mode_step_id;
+    //     switch(current_auto_mode_step_id){
+    //         case 1:ArmParamSet_ramp(1000,-33.493,116.523773,90.5924835,-96.5074844,-73.6624374);break;
+    //         case 2:Z_heightSet_ramp(1000,-315.116913);break;
+    //         case 3:ArmParamSet_ramp(1000,-40.1328545,5.32804918,89.7918472,-104.0686646,-88.7563782);Arm_inside_flag=0;break;
+    //     }
+    //     return;
+    // }
     //大Yaw复位
     if(arm_cmd_recv.auto_mode == Arm_big_yaw_reset){
         arm_param_t.big_yaw_angle = 0;
@@ -843,7 +850,7 @@ static void ArmSetAutoMode(){
     }
     //臂臂复位
     if(arm_cmd_recv.auto_mode == Reset_arm_cmd_param_flag){
-        ArmParamSet_ramp(2000,-16.2440605,121.290161,-82.473938,5.30348206,-88.7453918);
+        ArmParamSet_ramp(2000,-16.2440605,121.290161,-82.473938,-3.3457546734,-88.7577515);
         if(arm_init_flag & Z_motor_init_clt)
             Z_heightSet_ramp(2000,-148);
         return;
@@ -866,7 +873,7 @@ static void ArmSetAutoMode(){
             memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
             auto_mode_step_id[8] = current_auto_mode_step_id;
             switch(current_auto_mode_step_id){
-                case 1:ArmParamSet_ramp(1500,-2.65963554,9.99989223,91.1747589,7.19727325,92.7915344);break;
+                case 1:ArmParamSet_ramp(1500,-2.65963554,9.99989223,91.1747589,-0.0729789734,92.7915344);break;
             }
             return;
         }
@@ -879,25 +886,36 @@ static void ArmSetAutoMode(){
             memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
             auto_mode_step_id[9] = current_auto_mode_step_id;
             switch(current_auto_mode_step_id){
-                case 1:ArmParamSet_ramp(4000,0,0,0,0,0);Z_heightSet_ramp(4000,0);break;
+                case 1:{
+                    arm_auto_mode_data.big_yaw_angle = big_yaw_angle_;
+                    arm_auto_mode_data.mid_yaw_angle = 0;
+                    arm_auto_mode_data.assorted_yaw_angle = 0;
+                    arm_auto_mode_data.assorted_roll_angle = 0;
+                    arm_auto_mode_data.tail_motor_angle = 0;
+                    big_yaw_origin_angle = big_yaw_angle_;
+
+                    arm_joint_ramp_feriod = 2000;
+                    Arm_ramp_to_target_position_flag |= Arm_joint_ramp_flag;
+                    break;
+                }
             }
             return;
         }
         //收臂臂回肚子
-        if ((arm_cmd_recv.auto_mode==Recycle_arm_in) || (auto_mode_doing_state & (0x0001<<0))){
-            auto_mode_doing_state = 0;
-            auto_mode_doing_state |= (0x0001<<0);
-            if(++auto_mode_step_id[0] > 3) {auto_mode_step_id[0]=0;auto_mode_doing_state&=~(0x0001<<0);return;}
-            uint8_t current_auto_mode_step_id = auto_mode_step_id[0];
-            memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
-            auto_mode_step_id[0] = current_auto_mode_step_id;
-            switch(current_auto_mode_step_id){
-                case 1:ArmParamSet_ramp(1000,-40.1328545,5.32804918,89.7918472,-104.0686646,-88.7563782);Z_heightSet_ramp(1000,-510.375061);break;
-                case 2:ArmParamSet_ramp(1000,-33.493,119.269684,84.7710648,-96.5074844,-73.6624374);break;
-                case 3:ArmParamSet_ramp(500,1.5181303,119.269684,84.7710648,-96.5074844,-73.6624374);Arm_inside_flag=1;break;
-            }
-            return;
-        }
+        // if ((arm_cmd_recv.auto_mode==Recycle_arm_in) || (auto_mode_doing_state & (0x0001<<0))){
+        //     auto_mode_doing_state = 0;
+        //     auto_mode_doing_state |= (0x0001<<0);
+        //     if(++auto_mode_step_id[0] > 3) {auto_mode_step_id[0]=0;auto_mode_doing_state&=~(0x0001<<0);return;}
+        //     uint8_t current_auto_mode_step_id = auto_mode_step_id[0];
+        //     memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
+        //     auto_mode_step_id[0] = current_auto_mode_step_id;
+        //     switch(current_auto_mode_step_id){
+        //         case 1:ArmParamSet_ramp(1000,-40.1328545,5.32804918,89.7918472,-104.0686646,-88.7563782);Z_heightSet_ramp(1000,-510.375061);break;
+        //         case 2:ArmParamSet_ramp(1000,-33.493,119.269684,84.7710648,-96.5074844,-73.6624374);break;
+        //         case 3:ArmParamSet_ramp(500,1.5181303,119.269684,84.7710648,-96.5074844,-73.6624374);Arm_inside_flag=1;break;
+        //     }
+        //     return;
+        // }
         //取右侧金矿
         if ((arm_cmd_recv.auto_mode==Arm_get_goldcube_right) || (auto_mode_doing_state & (0x0001<<1))){
             auto_mode_doing_state = 0;
@@ -911,12 +929,12 @@ static void ArmSetAutoMode(){
                 case 1:Z_heightSet_ramp(500,-163.547638);break;
                 case 2:ArmParamSet_ramp(1600,-87.6319504,27.0226898,90.7902374,90,60.3486938);break;
                 case 3:Z_heightSet_ramp(500,-497.650665);break;
-                case 4:ArmParamSet_ramp(2000,-83.6757507,66.9962463,30.7715321,89.8405991,-0.403750181);break;
-                case 5:ArmParamSet_ramp(1400,-73.0339966,52.9022293,32.6625671,89.8405991,-0.403750181);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;airpump_arm_state=1;break;
-                case 6:ArmParamSet_ramp(2000,-83.6757507,66.9962463,30.7715321,89.8405991,-0.403750181);break;
+                case 4:ArmParamSet_ramp(2000,-83.6757507,66.9962463,30.7715321,82.5703468766,-0.403750181);break;
+                case 5:ArmParamSet_ramp(1400,-73.0339966,52.9022293,32.6625671,82.5703468766,-0.403750181);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;airpump_arm_state=1;break;
+                case 6:ArmParamSet_ramp(2000,-83.6757507,66.9962463,30.7715321,82.5703468766,-0.403750181);break;
                 case 7:Z_heightSet_ramp_offset(300,69.18985);break;
-                case 8:ArmParamSet_ramp(2000,-97.2660217,78.6398926,29.6838799,89.8405991,-0.403750181);break;
-                case 9:ArmParamSet_ramp(2000,-138.88736,71.164772,81.2677765,89.8405991,-0.403750181);break;
+                case 8:ArmParamSet_ramp(2000,-97.2660217,78.6398926,29.6838799,82.5703468766,-0.403750181);break;
+                case 9:ArmParamSet_ramp(2000,-138.88736,71.164772,81.2677765,82.5703468766,-0.403750181);break;
                 case 10:Z_heightSet_ramp(500,-163.547638);break;
                 case 11:memset(&arm_data_send,0,sizeof(arm_data_send));
             }
@@ -927,20 +945,21 @@ static void ArmSetAutoMode(){
             auto_mode_doing_state = 0;
             auto_mode_doing_state |= (0x0001<<2);
             if(++auto_mode_step_id[2] > 14) {auto_mode_step_id[2]=0;auto_mode_doing_state&=~(0x0001<<2);return;}
-            // int t=2;if(auto_mode_step_id[t] == 2 || auto_mode_step_id[t] == 3  || auto_mode_step_id[t] == 4 || auto_mode_step_id[t] == 9 || auto_mode_step_id[t] == 10) auto_mode_doing_state&=~(0x0001<<t);
+            int t=2;if(auto_mode_step_id[t] == 4) auto_mode_doing_state&=~(0x0001<<t);
             uint8_t current_auto_mode_step_id = auto_mode_step_id[2];
             memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
             auto_mode_step_id[2] = current_auto_mode_step_id;
             switch(current_auto_mode_step_id){
-                case 1:ArmParamSet_ramp(2000,-2.11363196,3.643929,4.22839069,7.19727325,92.7915344);Z_heightSet_ramp(2000,-51.8345871);break;
-                case 2:ArmParamSet_ramp(3000,50.0072174,61.6729698,74.0812912,7.19727325,92.7915344);break;                    
-                case 3:Z_heightSet_ramp(800,-90.694397);break;
-                case 4:Z_heightSet_ramp_offset(800,-6.5);arm_data_send.arm_to_airpump&=~AIRPUMP_ARM_CLOSE;arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airpump&=~AIRPUMP_LINEAR_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;airpump_arm_state=0;airpump_linear_state=1;break;
+                case 1:ArmParamSet_ramp(2000,-2.11363196,3.643929,4.22839069,-0.0729789734,92.7915344);Z_heightSet_ramp(2000,-51.8345871);break;
+                case 2:ArmParamSet_ramp(3000,50.0072174,61.6729698,74.0812912,-0.0729789734,92.7915344);airpump_arm_state=0;airpump_linear_state=1;break;                    
+                // case 3:Z_heightSet_ramp(800,-90.694397);break;
+                // case 4:Z_heightSet_ramp_offset(800,-6.5);arm_data_send.arm_to_airpump&=~AIRPUMP_ARM_CLOSE;arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airpump&=~AIRPUMP_LINEAR_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;airpump_arm_state=0;airpump_linear_state=1;break;
+                
                 case 5:Z_heightSet_ramp(500,0);break;
                 // case 6:arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_FOREWARD;delay_time = 200;break; //夹爪前伸
-                case 7:ArmParamSet_ramp(800,29.1283932,94.9285202,43.5830498,6.77496338,-11);break;
-                case 8:ArmParamSet_ramp(1600,0,82.0207977,16.9410286,6.77496338,-11);break; 
-                case 10:ArmParamSet_ramp(800,2.14790106,94.1105499,-83.3500977,6.77496338,-11);
+                case 7:ArmParamSet_ramp(800,29.1283932,94.9285202,43.5830498,-0.4952888734,-11);break;
+                case 8:ArmParamSet_ramp(1600,0,82.0207977,16.9410286,-0.4952888734,-11);break; 
+                case 10:ArmParamSet_ramp(800,2.14790106,94.1105499,-83.3500977,-0.4952888734,-11);
                 // case 11:arm_data_send.arm_to_airpump &= ~AIRPUMP_LINEAR_OPEN;arm_data_send.arm_to_airpump |= AIRPUMP_LINEAR_CLOSE;break;  //推杆关泵
                 // case 12:arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_TIGHTEN;delay_time = 400;break; //夹爪抓取
                 // case 13:arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_UP;arm_data_send.arm_to_airpump |= AIRPUMP_LINEAR_CLOSE;delay_time = 2000;break; //夹爪后拉
@@ -953,17 +972,17 @@ static void ArmSetAutoMode(){
             auto_mode_doing_state = 0;
             auto_mode_doing_state |= (0x0001<<11);
             if(++auto_mode_step_id[11] > 7) {auto_mode_step_id[11]=0;auto_mode_doing_state&=~(0x0001<<11);return;}
-            // int t=11;if(auto_mode_step_id[t] == 2) auto_mode_doing_state&=~(0x0001<<t);
+            int t=11;if(auto_mode_step_id[t] == 3) auto_mode_doing_state&=~(0x0001<<t);
             uint8_t current_auto_mode_step_id = auto_mode_step_id[11];
             memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
             auto_mode_step_id[11] = current_auto_mode_step_id;
             switch(current_auto_mode_step_id){
                 case 1:Z_heightSet_ramp(600,0);break;
-                case 2:ArmParamSet_ramp(1000,-10.0819511,92.8755875,44.306778,7.19727325,92.7915344);break;
-                case 3:Z_heightSet_ramp(800,-225.332123);break;                  
-                case 4:Z_heightSet_ramp_offset(2000,-20);arm_data_send.arm_to_airpump&=~AIRPUMP_ARM_CLOSE;arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airpump&=~AIRPUMP_LINEAR_OPEN;arm_data_send.arm_to_airpump |= AIRPUMP_LINEAR_CLOSE;airpump_arm_state=1;airpump_linear_state=0;break;
+                case 2:ArmParamSet_ramp(1000,-10.0819511,92.8755875,44.306778,-0.0729789734,92.7915344);break;
+                case 3:Z_heightSet_ramp(800,-205.332123);airpump_arm_state=1;airpump_linear_state=0;break;                  
+                // case 4:Z_heightSet_ramp_offset(2000,-20);arm_data_send.arm_to_airpump&=~AIRPUMP_ARM_CLOSE;arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airpump&=~AIRPUMP_LINEAR_OPEN;arm_data_send.arm_to_airpump |= AIRPUMP_LINEAR_CLOSE;airpump_arm_state=1;airpump_linear_state=0;break;
                 case 5:Z_heightSet_ramp(600,0);break;
-                case 6:ArmParamSet_ramp(1000,2.14790106,94.1105499,-83.3500977,7.19727325,92.7915344);
+                case 6:ArmParamSet_ramp(1000,2.14790106,94.1105499,-83.3500977,-0.0729789734,92.7915344);
                 case 7:memset(&arm_data_send,0,sizeof(arm_data_send));arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;
             }
             return;
@@ -972,28 +991,29 @@ static void ArmSetAutoMode(){
         if ((arm_cmd_recv.auto_mode==Arm_get_silvercube_left) || (auto_mode_doing_state & (0x0001<<3))){
             auto_mode_doing_state = 0;
             auto_mode_doing_state |= (0x0001<<3);
-            if(++auto_mode_step_id[3] > 14) {auto_mode_step_id[3]=0;auto_mode_doing_state&=~(0x0001<<3);return;}
-            int t=3;if(auto_mode_step_id[t] == 3 || auto_mode_step_id[t] == 7) auto_mode_doing_state&=~(0x0001<<t);
+            if(++auto_mode_step_id[3] > 16) {auto_mode_step_id[3]=0;auto_mode_doing_state&=~(0x0001<<3);return;}
+            int t=3;if(auto_mode_step_id[t] == 4 || auto_mode_step_id[t] == 10) auto_mode_doing_state&=~(0x0001<<t);
             uint8_t current_auto_mode_step_id = auto_mode_step_id[3];
             memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
             auto_mode_step_id[3] = current_auto_mode_step_id;
             switch(current_auto_mode_step_id){
                 case 1:Z_heightSet_ramp(500,-120);break;
-                case 2:ArmParamSet_ramp(600,18.2633591,60,-53.3500977,7.19727325,92.7915344);break;
-                case 3:ArmParamSet_ramp(800,36.2633591,-6.26889324,36.693203,7.19727325,92.7915344);break;
-                case 4:Z_heightSet_ramp(400,-172.915146);break;
+                case 2:ArmParamSet_ramp(600,18.2633591,60,-53.3500977,-0.0729789734,92.7915344);break;
+                case 3:ArmParamSet_ramp(800,36.2633591,-6.26889324,36.693203,-0.0729789734,92.7915344);break;
+                case 4:Z_heightSet_ramp(400,-172.915146);airpump_arm_state=1;break;
+                // case 5:Z_heightSet_ramp(800,-1900);break;
+                // case 6:Z_heightSet_ramp_offset(2000,-20);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;airpump_arm_state=1;break;
                 //wait
-                case 5:Z_heightSet_ramp(800,-210);break;
-                case 6:Z_heightSet_ramp_offset(2000,-20);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_LOOSE;airpump_arm_state=1;break;
                 case 7:Z_heightSet_ramp(400,0);break;
                 //矿仓上
-                case 8:arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_FOREWARD;ArmParamSet_ramp(2000,45.262928,80.7936249,54.1945381,7.19727325,92.7915344);break;
+                case 8:arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_FOREWARD;ArmParamSet_ramp(2000,45.262928,80.7936249,54.1945381,-0.0729789734,92.7915344);break;
                 // case 9:ArmTailRollOffset(8379.7548899781);delay_time = 4000;break;
                 case 10:Z_heightSet_ramp(800,-55);break;
+                //
                 case 11:arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_UP;delay_time = 1000;break;
                 case 12:arm_data_send.arm_to_airvalve = AIRVALVE_CLAW_TIGHTEN;delay_time = 1000;break;
                 case 13:arm_data_send.arm_to_airpump &= ~AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airpump |= AIRPUMP_ARM_CLOSE;delay_time=1000;airpump_arm_state=0;break;
-                case 14:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,7.19727325,92.7915344);break;
+                case 14:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,-0.0729789734,92.7915344);break;
                 case 15:Z_heightSet_ramp(400,-120);break;
                 case 16:memset(&arm_data_send,0,sizeof(arm_data_send));
             }
@@ -1003,27 +1023,28 @@ static void ArmSetAutoMode(){
             auto_mode_doing_state = 0;
             auto_mode_doing_state |= (0x0001<<4);
             if(++auto_mode_step_id[4] > 14) {auto_mode_step_id[4]=0;auto_mode_doing_state&=~(0x0001<<4);return;}
-            int t=4;if(auto_mode_step_id[t] == 5 || auto_mode_step_id[t] == 8) auto_mode_doing_state&=~(0x0001<<t);
+            int t=4;if(auto_mode_step_id[t] == 5 ) auto_mode_doing_state&=~(0x0001<<t);
             uint8_t current_auto_mode_step_id = auto_mode_step_id[4];
             memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
             auto_mode_step_id[4] = current_auto_mode_step_id;
             switch(current_auto_mode_step_id){
                 case 1:Z_heightSet_ramp(500,-120);break;
-                case 2:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,7.19727325,92.7915344);
-                case 3:ArmParamSet_ramp(600,-60.6141701,81.6064606,60.8962402,7.19727325,92.7915344);break;
-                case 4:ArmParamSet_ramp(800,-30.4179478,52.9236412,56.3712158,7.19727325,92.7915344);break;
-                case 5:Z_heightSet_ramp(400,-172.915146);break;
+                case 2:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,-0.0729789734,92.7915344);
+                case 3:ArmParamSet_ramp(600,-60.6141701,81.6064606,60.8962402,-0.0729789734,92.7915344);break;
+                case 4:ArmParamSet_ramp(800,-30.4179478,52.9236412,56.3712158,-0.0729789734,92.7915344);break;
+                case 5:Z_heightSet_ramp(400,-172.915146);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;airpump_arm_state=1;break;
+
+                // case 6:Z_heightSet_ramp(400,-210);break;
+                // case 7:Z_heightSet_ramp_offset(1500,-20);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;airpump_arm_state=1;break;
                 //wait
-                case 6:Z_heightSet_ramp(400,-210);break;
-                case 7:Z_heightSet_ramp_offset(1500,-20);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;airpump_arm_state=1;break;
+
                 case 8:Z_heightSet_ramp(800,0);break;
-                //wait
-                case 9:ArmParamSet_ramp(4000,1.06551158,78.8425293,65.3374939,7.19727325,92.7915344);break;
+                case 9:ArmParamSet_ramp(4000,1.06551158,78.8425293,65.3374939,-0.0729789734,92.7915344);break;
                 case 10:Z_heightSet_ramp(800,-229.834473);break;
                 case 11:arm_data_send.arm_to_airpump &= ~AIRPUMP_ARM_OPEN;arm_data_send.arm_to_airpump|=AIRPUMP_ARM_CLOSE;arm_data_send.arm_to_airpump |= AIRPUMP_LINEAR_OPEN;delay_time=1000;airpump_arm_state=0;airpump_linear_state=1;break;
                 case 12:Z_heightSet_ramp(800,0);break;
-                case 13:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,7.19727325,92.7915344);break;
-                case 14:Z_heightSet_ramp(400,-172.915146);break;
+                case 13:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,-0.0729789734,92.7915344);break;
+                // case 14:Z_heightSet_ramp(400,-172.915146);break;
                 case 15:memset(&arm_data_send,0,sizeof(arm_data_send));arm_data_send.arm_to_airpump |= AIRPUMP_LINEAR_OPEN;break;
             }
         }
@@ -1037,9 +1058,9 @@ static void ArmSetAutoMode(){
         //     memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
         //     auto_mode_step_id[5] = current_auto_mode_step_id;
         //     switch(current_auto_mode_step_id){
-        //         case 1:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,7.19727325,92.7915344);break;
+        //         case 1:ArmParamSet_ramp(2000,2.14790106,94.1105499,-83.3500977,-0.0729789734,92.7915344);break;
         //         case 2:Z_heightSet_ramp(400,-172.915146);break;
-        //         case 3:ArmParamSet_ramp(800,-38.6365166,6.61812353,83.1231003,7.19727325,92.7915344);break;
+        //         case 3:ArmParamSet_ramp(800,-38.6365166,6.61812353,83.1231003,-0.0729789734,92.7915344);break;
                 
         //         case 4:Z_heightSet_ramp(800,-210);break;
         //         case 5:Z_heightSet_ramp_offset(800,-20);arm_data_send.arm_to_airpump |= AIRPUMP_ARM_OPEN;break;
@@ -1186,11 +1207,12 @@ static void host_control(){
             else if(arm_cmd_recv.contro_mode == ARM_CUSTOM_CONTRO){
                 // memcpy(&arm_auto_mode_data,&arm_recv_host_data,sizeof(arm_controller_data_s));
                 // Arm_ramp_to_target_position_flag |= Arm_joint_ramp_flag;
-                // arm_auto_mode_data.big_yaw_angle += big_yaw_origin_angle;
-                if(limit_bool(big_yaw_angle_ + custom_contro_offset_yaw,arm_recv_host_data.big_yaw_angle + 4,arm_recv_host_data.big_yaw_angle - 4)){
-                    custom_contro_offset_yaw = big_yaw_angle_ - custom_contro_offset_yaw;
-                }
-                custom_contro_offset_yaw -= arm_cmd_recv.Rotation_yaw; 
+                custom_contro_offset_yaw = big_yaw_origin_angle;
+                
+                // if(limit_bool(big_yaw_angle_ + custom_contro_offset_yaw,arm_recv_host_data.big_yaw_angle + 4,arm_recv_host_data.big_yaw_angle - 4)){
+                //     custom_contro_offset_yaw = big_yaw_angle_ - custom_contro_offset_yaw;
+                // }
+                // custom_contro_offset_yaw -= arm_cmd_recv.Rotation_yaw; 
                 memcpy(&arm_contro_data,&arm_recv_host_data,sizeof(arm_controller_data_s));
                 arm_contro_data.big_yaw_angle += custom_contro_offset_yaw;
                 memcpy(&arm_param_t,&arm_contro_data,sizeof(arm_controller_data_s));
@@ -1297,6 +1319,8 @@ void ArmTask()
         DJIMotorStop(assorted_motor_up);
     }
 
+    add_aroll_offset_angle();
+
     //机器人若死亡，需重新标定
     if(arm_cmd_recv.init_call == 1){
         arm_init_flag = 0;
@@ -1305,10 +1329,8 @@ void ArmTask()
     //自定义控制器模式由自定义控制进入
     if((custom_controller_comm_recv & 1) && (arm_cmd_recv.contro_mode!=ARM_ZERO_FORCE)){
         arm_cmd_recv.contro_mode = ARM_CUSTOM_CONTRO;
+        big_yaw_origin_angle -= arm_cmd_recv.Rotation_yaw;
     }
-    //进行Z轴标定-丢给中断了
-    // Z_GPIO = HAL_GPIO_ReadPin(Z_limit_detect_GPIO_Port, Z_limit_detect_Pin);
-    // Z_limit_sensor_detect();
 
     //计算臂臂关节角度，方便调试
     cal_joing_angle();

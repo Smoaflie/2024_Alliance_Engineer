@@ -331,9 +331,13 @@ static void MouseKeySet()
         current_speed_x = chassis_cmd_send.vx;
         current_speed_y = chassis_cmd_send.vy;
 
-        // ctrl+shift+w/s 微调推杆吸盘
         if(rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift){
-            airpump_cmd_send.sucker_offset_angle += 0.01*(rc_data->key[KEY_PRESS_WITH_CTRL].w-rc_data->key[KEY_PRESS_WITH_CTRL].s);
+        // ctrl+shift+w/s 微调推杆吸盘
+            // airpump_cmd_send.sucker_offset_angle += 0.01*(rc_data->key[KEY_PRESS_WITH_CTRL].w-rc_data->key[KEY_PRESS_WITH_CTRL].s);
+        // ctrl+shift+a/d 微调推杆吸盘
+            arm_cmd_send.aroll_angle_offset = 0.01*(rc_data->key[KEY_PRESS_WITH_CTRL].a-rc_data->key[KEY_PRESS_WITH_CTRL].d);
+        }else{
+            arm_cmd_send.aroll_angle_offset = 0;
         }
         
 
@@ -349,7 +353,7 @@ static void MouseKeySet()
         else chassis_cmd_send.special_func_flag = 0;
         // ctrl+shift+q'e控制臂臂旋转    
         if(rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift)   
-            arm_cmd_send.Rotation_yaw = (rc_data->key[KEY_PRESS_WITH_SHIFT].e - rc_data->key[KEY_PRESS_WITH_SHIFT].q) * 0.06;
+            arm_cmd_send.Rotation_yaw = (rc_data->key[KEY_PRESS_WITH_SHIFT].e - rc_data->key[KEY_PRESS_WITH_SHIFT].q) * 0.045;
     /* r&f */
     // shift+r'f控制臂 行走姿态 | 收回肚子
     if(!rc_data->key[KEY_PRESS].ctrl){
@@ -360,7 +364,7 @@ static void MouseKeySet()
     }
     if(!rc_data->key[KEY_PRESS].shift)
         // ctrl+r'f控制臂竖直移动
-        arm_cmd_send.Position_z = (rc_data->key[KEY_PRESS_WITH_CTRL].r - rc_data->key[KEY_PRESS_WITH_CTRL].f) * 0.5;
+        arm_cmd_send.Position_z = (rc_data->key[KEY_PRESS_WITH_CTRL].r - rc_data->key[KEY_PRESS_WITH_CTRL].f) * 0.3;
 
     /* 鼠标平移 */
         // 鼠标平移控制底盘旋转和云台pitch(按住右键时)
@@ -375,16 +379,16 @@ static void MouseKeySet()
     /* 鼠标右键 */
         // 鼠标右键-云台跟随Yaw,且鼠标平移控制底盘旋转
         if(rc_data->mouse.press_r && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift){
-            gimbal_cmd_send.gimbal_mode = GIMBAL_FOLLOW_YAW;
+            gimbal_cmd_send.gimbal_mode = GIMBAL_RESET;
         }else
         // ctrl+鼠标右键-云台跟随大Yaw+大Yaw复位
         if(rc_data->mouse.press_r && rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift){
-            gimbal_cmd_send.gimbal_mode = GIMBAL_GYRO_MODE;
+            gimbal_cmd_send.gimbal_mode = GIMBAL_FOLLOW_YAW;
             arm_cmd_send.auto_mode = Arm_big_yaw_reset;
         }else
         // shift+鼠标右键-云台跟随大Yaw+视觉兑矿模式
         if(rc_data->mouse.press_r && !rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift){
-            gimbal_cmd_send.gimbal_mode = GIMBAL_GYRO_MODE;
+            gimbal_cmd_send.gimbal_mode = GIMBAL_FOLLOW_YAW;
             arm_cmd_send.contro_mode = Arm_Control_by_vision;
         }
         // ctrl+shitf+鼠标右键-云台小陀螺后复位
@@ -502,7 +506,7 @@ static void MouseKeySet()
         airpump_cmd_send.halt_force_call = 0;
     }
     // ctrl+shift+x 强制终止臂臂自动模式
-    if(rc_data->key[KEY_PRESS].z && rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift){
+    if(rc_data->key[KEY_PRESS].x && rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift){
         arm_cmd_send.halt_force_call = 1;
     }else{
         arm_cmd_send.halt_force_call = 0;
