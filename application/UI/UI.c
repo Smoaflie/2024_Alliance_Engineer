@@ -23,6 +23,7 @@ static char char_valve_mode[50];
 // 辅助线图形变量
 static Graph_Data_t auxiliary_line_one;
 static Graph_Data_t auxiliary_line_two;
+static Graph_Data_t auxiliary_line_three;
 static Graph_Data_t circle_one;
 static Graph_Data_t circle_two;
 static Graph_Data_t circle_three;
@@ -56,8 +57,9 @@ static void ui_refresh(){
 
    
     //标定线（数据待改）
-    UILineDraw(&auxiliary_line_one, "111", Graphic_Operate_ADD, 5, Graphic_Color_Yellow, 2 ,816,560,635,0);
-    UILineDraw(&auxiliary_line_two, "112", Graphic_Operate_ADD, 5, Graphic_Color_Yellow, 2 ,970,560,1186,0);
+    UILineDraw(&auxiliary_line_one, "111", Graphic_Operate_ADD, 5, Graphic_Color_Yellow, 2 ,1120,391,1070,570);
+    UILineDraw(&auxiliary_line_two, "112", Graphic_Operate_ADD, 5, Graphic_Color_Yellow, 2 ,626,558,547,337);
+    UILineDraw(&auxiliary_line_three, "116", Graphic_Operate_ADD, 5, Graphic_Color_Yellow, 2 ,1180,568,1219,482);
     
     //圆
     UICircleDraw(&circle_one,  "113",Graphic_Operate_ADD,5,Graphic_Color_White,15,150,800,20);

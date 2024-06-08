@@ -23,7 +23,8 @@
             "cstdlib": "c",
             "type_traits": "c",
             "typeinfo": "c",
-            "limits": "c"
+            "limits": "c",
+            "compare": "c"
         },
         "[yaml]": {
             "editor.insertSpaces": true,

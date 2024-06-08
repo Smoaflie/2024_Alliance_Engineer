@@ -18,44 +18,20 @@
 
 typedef struct
 {
-    float angle_single_round; // 单圈角度
-    float speed_rads;         // speed rad/s
-    float real_current;     // 实际扭矩 Nm
-    // uint8_t temperature;      // 温度,C°
-
-    float total_angle;   // 总角度
-    int32_t total_round; // 总圈数
-
-    float feed_dt;
-    uint32_t feed_dwt_cnt;
-} DRMotor_Measure_t;
-
-typedef struct
-{
     Motor_Type_e motor_type;        // 电机类型
+    
+    Motor_Control_Setting_s motor_settings; // 电机设置
+    Motor_Controller_s motor_controller;    // 电机控制器
 
-    DRMotor_Measure_t measure;
-
-    Motor_Control_Setting_s motor_settings;
-
-    float *other_angle_feedback_ptr; // 其他反馈来源的反馈数据指针
-    float *other_speed_feedback_ptr;
-    float *speed_feedforward_ptr;   // 速度前馈数据指针,可以通过此指针设置速度前馈值,或LQR等时作为速度状态变量的输入
-    float *current_feedforward_ptr; // 电流前馈指针
-    PIDInstance current_PID;
-    PIDInstance speed_PID;
-    PIDInstance angle_PID;
-    float pid_ref;
+    CANInstance *motor_can_instance; // 电机CAN实例
 
     Motor_Working_Type_e stop_flag; // 启停标志
-
-    CANInstance *motor_can_ins;
-
+    Motor_Error_Detection_s motor_error_detection; // 异常检测
+    Motor_Measure_s measure;            // 电机测量值
+   
     DaemonInstance *daemon;
-
-
-    float last_angle;     //上次单圈角度，用于判断是否进入保护状态
-    uint16_t lost_cnt;  //碰撞保护检测
+    uint32_t feed_cnt;
+    float dt;
 } DRMotorInstance;
 
 /**

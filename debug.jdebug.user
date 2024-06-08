@@ -1,105 +1,41 @@
 
 
 
-
-
 Breakpoint=d:/Documents/github/2024_Engineer/application/airpump/airpump.c:290:26, State=BP_STATE_DISABLED
-Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:114:1, State=BP_STATE_DISABLED
-Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:127, State=BP_STATE_DISABLED
+Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:116:1, State=BP_STATE_DISABLED
+Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:129:1, State=BP_STATE_DISABLED
 Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:1023:1, State=BP_STATE_DISABLED
-Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:1333, State=BP_STATE_DISABLED
-GraphedExpression="Z_GPIO", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#e56a6f
-OpenDocument="encoder.c", FilePath="d:/Documents/github/2024_Engineer/modules/encoder/encoder.c", Line=0
-OpenDocument="master_process.c", FilePath="d:/Documents/github/2024_Engineer/modules/master_machine/master_process.c", Line=86
-OpenDocument="robot.c", FilePath="d:/Documents/github/2024_Engineer/application/robot.c", Line=30
-OpenDocument="arm.c", FilePath="d:/Documents/github/2024_Engineer/application/arm/arm.c", Line=167
+Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:1336:5, State=BP_STATE_DISABLED
+GraphedExpression="Z_GPIO", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#e56a6f, Show=0
+OpenDocument="bsp_dwt.c", FilePath="d:/Documents/github/2024_Engineer/bsp/dwt/bsp_dwt.c", Line=25
+OpenDocument="dji_motor.c", FilePath="d:/Documents/github/2024_Engineer/modules/motor/DJImotor/dji_motor.c", Line=120
+OpenDocument="tool.h", FilePath="d:/Documents/github/2024_Engineer/modules/tool/tool.h", Line=0
+OpenDocument="stm32h7xx_hal_fdcan.c", FilePath="d:/Documents/github/2024_Engineer/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.c", Line=3047
 OpenDocument="main.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/main.c", Line=69
-OpenDocument="stm32h7xx_it.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/stm32h7xx_it.c", Line=108
-OpenDocument="remote_control.c", FilePath="d:/Documents/github/2024_Engineer/modules/remote/remote_control.c", Line=114
-OpenDocument="startup_stm32h723vgtx.s", FilePath="d:/Documents/github/2024_Engineer/Core/Startup/startup_stm32h723vgtx.s", Line=52
-OpenDocument="bsp_init.h", FilePath="d:/Documents/github/2024_Engineer/bsp/bsp_init.h", Line=0
-OpenDocument="bsp_gpio.c", FilePath="d:/Documents/github/2024_Engineer/bsp/gpio/bsp_gpio.c", Line=16
-OpenDocument="robot_task.h", FilePath="d:/Documents/github/2024_Engineer/application/robot_task.h", Line=60
-OpenDocument="airpump.c", FilePath="d:/Documents/github/2024_Engineer/application/airpump/airpump.c", Line=220
-OpenDocument="chassis.c", FilePath="d:/Documents/github/2024_Engineer/application/chassis/chassis.c", Line=215
-OpenDocument="tasks.c", FilePath="d:/Documents/github/2024_Engineer/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3520
-OpenDocument="bsp_dwt.c", FilePath="d:/Documents/github/2024_Engineer/bsp/dwt/bsp_dwt.c", Line=80
-OpenDocument="bsp_can.c", FilePath="d:/Documents/github/2024_Engineer/bsp/can/bsp_can.c", Line=183
-OpenDocument="decode.h", FilePath="d:/Documents/github/2024_Engineer/application/arm/decode.h", Line=65
-OpenDocument="dji_motor.c", FilePath="d:/Documents/github/2024_Engineer/modules/motor/DJImotor/dji_motor.c", Line=110
-OpenDocument="stm32h7xx_hal_fdcan.c", FilePath="d:/Documents/github/2024_Engineer/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.c", Line=5266
-OpenDocument="controller.c", FilePath="d:/Documents/github/2024_Engineer/modules/algorithm/controller.c", Line=169
+OpenDocument="bsp_usart.h", FilePath="d:/Documents/github/2024_Engineer/bsp/usart/bsp_usart.h", Line=44
+OpenDocument="tasks.c", FilePath="d:/Documents/github/2024_Engineer/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3666
+OpenDocument="robot_cmd.c", FilePath="d:/Documents/github/2024_Engineer/application/cmd/robot_cmd.c", Line=837
+OpenDocument="arm.c", FilePath="d:/Documents/github/2024_Engineer/application/arm/arm.c", Line=816
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=0, w=300, h=623, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
-OpenWindow="Memory 1", DockArea=BOTTOM, x=1, y=0, w=729, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x21479C40
-OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=1190, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=1, w=300, h=102, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
+OpenWindow="Source Files", DockArea=LEFT, x=0, y=0, w=290, h=623, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Memory 1", DockArea=BOTTOM, x=4, y=0, w=396, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x21479C40
+OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=0, w=300, h=520, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Terminal", DockArea=BOTTOM, x=2, y=0, w=96, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=BOTTOM, x=1, y=0, w=264, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=680, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="5 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="0;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="313;0", CodeGraphLegendShown=0, CodeGraphLegendPosition="271;0"
+OpenWindow="Console", DockArea=BOTTOM, x=3, y=0, w=480, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
 TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
-TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Description"], ColWidths=[100;118;105]
+TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Description"], ColWidths=[100;118;259]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
-WatchedExpression="big_yaw_origin_angle", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="Z_current_height", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="big_yaw_angle_", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="mid_yaw_angle_", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="assorted_yaw_angle_", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="assorted_roll_angle_", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="tail_motor_angle_", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="arm_cmd_recv.auto_mode", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="arm_init_flag", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="arm_contro_data", RefreshRate=2, Window=Watched Data 1
-WatchedExpression="arm_cmd_recv", Window=Watched Data 1
-WatchedExpression="arm_auto_mode_id", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="AIRVALVE_CLAW_UP", Window=Watched Data 1
-WatchedExpression="Z_limit_sensor_gpio", RefreshRate=2, Window=Watched Data 1
-WatchedExpression="tail_roll_encoder", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="air_sucker_motor", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="chassis_vx", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="chassis_vy", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="func_doing_state", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="chassis_cmd_send.special_func_flag", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="func_doing_state&0x02", Window=Watched Data 1
-WatchedExpression="redlight_state", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="chassis_cmd_recv.special_func_flag", RefreshRate=2, Window=Watched Data 1
-WatchedExpression="((func_doing_state&0x02)>>1)", Window=Watched Data 1
-WatchedExpression="d_v", Window=Watched Data 1
-WatchedExpression="redlight_flag", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="air_sucker_motor", Window=Watched Data 1
-WatchedExpression="arm_cmd_recv.contro_mode", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="custom_controller_comm_recv", RefreshRate=1, Window=Watched Data 1
-WatchedExpression="custom_controller_data", RefreshRate=2, Window=Watched Data 1
-WatchedExpression="host_rec_flag", Window=Watched Data 1
-WatchedExpression="arm_recv_host_data", RefreshRate=2, Window=Watched Data 1
-WatchedExpression="mid_yaw_motor", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="big_yaw_motor", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="arm_position_init_flag", Window=Watched Data 1
-WatchedExpression="arm_cmd_recv", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="big_yaw_motor", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="arm_contro_data", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="arm_controller_TF", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="arm_cmd_recv.contro_mode", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="assorted_yaw_encoder", Window=Watched Data 1
-WatchedExpression="arm_rc_contro_place", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="Control_ARM_flag", RefreshRate=2, Window=Watched Data 1
-WatchedExpression="tmp", RefreshRate=2, Window=Watched Data 1
-WatchedExpression="n", RefreshRate=1, Window=Watched Data 1
-WatchedExpression="big_yaw_angle_", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="intersection_angle_1_deg", Window=Watched Data 1
-WatchedExpression="intersection_angle_2_deg", Window=Watched Data 1
-WatchedExpression="origin_yaw", Window=Watched Data 1
-WatchedExpression="arm_origin_place.big_yaw_angle", RefreshRate=1, Window=Watched Data 1
-WatchedExpression="assorted_yaw_angle_", Window=Watched Data 1
-WatchedExpression="mid_yaw_angle_", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="debug_value", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="airpump_cmd_rec", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="airpump_state", RefreshRate=2, Window=Watched Data 1
-WatchedExpression="(tail_roll_motor)->measure", Window=Watched Data 1
-WatchedExpression="tail_roll_motor", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="air_sucker_motor", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="airpump_state", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="debug_kp", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="tail_roll_motor", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="custom_controller_comm_recv", Window=Watched Data 1
-WatchedExpression="host_send_buf", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="assorted_up_encoder_offset", Window=Watched Data 1
-WatchedExpression="assorted_up_encoder", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="assorted_yaw_encoder", RefreshRate=2, Window=Watched Data 1
+TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[200;100;100;351]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Refresh"], ColWidths=[139;100;100]
+TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[239;100;100;100;854]
+TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" Z_GPIO"], ColWidths=[100;100;100]
+TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[363;158;100;100;100;100;100;107;107]
+WatchedExpression="kp", Window=Watched Data 1
+WatchedExpression="kd", Window=Watched Data 1
+WatchedExpression="current_feedforward", Window=Watched Data 1
+WatchedExpression="current_feedforward_rf", Window=Watched Data 1
+WatchedExpression="motor_rf", RefreshRate=2, Window=Watched Data 1

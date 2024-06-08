@@ -29,8 +29,11 @@ typedef struct
     uint32_t last_ecd;        // 上一次读取的编码器值
     uint32_t ecd;             // 0-65535,刻度总共有65535格
     float angle_single_round; // 单圈角度
+    float last_speed_aps;     // 上一次读取的角速度,单位为:度/秒
     float speed_aps;    // 旋转速度,度每秒
+    float dt;
 
+    float last_total_angle;   // 上次总角度
     float total_angle;   // 总角度,注意方向
     int32_t total_round; // 总圈数,注意方向
 } Encoder_Measure_s;

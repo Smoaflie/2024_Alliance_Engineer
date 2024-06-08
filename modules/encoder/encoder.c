@@ -49,10 +49,17 @@ static void DecodeEncoder(CANInstance *_instance)
         measure->total_round++;
     measure->angle_single_round = ECD_TO_DEG * (float)measure->ecd;
 
-    // todo: 写得很粗糙，后续可以优化
-    measure->speed_aps = (int32_t)(measure->ecd - measure->last_ecd) * ECD_TO_DEG / encoder->dt;
-
     measure->total_angle = measure->total_round * 360 + measure->angle_single_round;
+
+    // todo: 写得很粗糙，后续可以优化
+    measure->dt += encoder->dt;
+    if(measure->dt > 0.005f)
+    {
+        measure->last_speed_aps = measure->speed_aps;
+        measure->speed_aps = (measure->total_angle - measure->last_total_angle) / measure->dt;
+        measure->last_total_angle = measure->total_angle;
+        measure->dt = 0;
+    }
 }
 
 static void EncoderLostCallback(void *encoder_ptr)

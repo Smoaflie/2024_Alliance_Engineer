@@ -52,7 +52,7 @@ static void LKMotorDecode(CANInstance *_instance)
 static void LKMotorLostCallback(void *motor_ptr)
 {
     LKMotorInstance *motor = (LKMotorInstance *)motor_ptr;
-    LOGWARNING("[LKMotor] motor lost, id: %x", motor->motor_can_ins->tx_id);
+    // LOGWARNING("[LKMotor] motor lost, id: %x", motor->motor_can_ins->tx_id);
     motor->recv_data = 0;
 }
 
@@ -145,7 +145,7 @@ void LKMotorControl()
 
             if ((setting->close_loop_type & SPEED_LOOP) && setting->outer_loop_type & (ANGLE_LOOP | SPEED_LOOP))
             {
-                if (setting->angle_feedback_source == OTHER_FEED)
+                if (setting->speed_feedback_source == OTHER_FEED)
                     pid_measure = *motor->other_speed_feedback_ptr;
                 else
                     pid_measure = measure->speed_rads;
@@ -167,7 +167,7 @@ void LKMotorControl()
             memcpy(motor->motor_can_ins->tx_buff + 4, (uint8_t*)&set, sizeof(uint16_t));
             motor->motor_can_ins->tx_buff[0] = 0xA0;
 
-            if (motor->stop_flag == MOTOR_STOP || motor->recv_data == 0)
+            if (motor->stop_flag == MOTOR_STOP || !LKMotorIsOnline(motor))
             { // 若该电机处于停止状态,直接将发送buff置零
                 // 同上，暂时不采用多电机发送
                 // memset(sender_instance->tx_buff + (motor->motor_can_ins->tx_id - 0x280) * 2, 0, sizeof(uint16_t));

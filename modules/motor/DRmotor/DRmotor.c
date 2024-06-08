@@ -8,6 +8,8 @@
 uint8_t idx                                               = 0;
 static DRMotorInstance *drmotor_instance[DR_MOTOR_MX_CNT] = {NULL};
 
+void DRMotorErrorDetection(DRMotorInstance *motor);
+
 /**
  * @brief 电机反馈报文解析
  *
@@ -16,11 +18,11 @@ static DRMotorInstance *drmotor_instance[DR_MOTOR_MX_CNT] = {NULL};
 static void DRMotorDecode(CANInstance *_instance)
 {
     DRMotorInstance *motor     = (DRMotorInstance *)_instance->id; // 通过caninstance保存的father id获取对应的motorinstance
-    DRMotor_Measure_t *measure = &motor->measure;
+    Motor_Measure_s *measure = &motor->measure;
     uint8_t *rx_buff           = _instance->rx_buff;
 
     DaemonReload(motor->daemon); // 喂狗
-    measure->feed_dt = DWT_GetDeltaT(&measure->feed_dwt_cnt);
+    motor->dt = DWT_GetDeltaT(&motor->feed_cnt);
 
     float factor = 0.01f; // 系数 电机是将速度和扭矩数据*100后以整数方式传输的
 
@@ -33,36 +35,31 @@ static void DRMotorDecode(CANInstance *_instance)
     *(((uint8_t *)(&speed)) + 1)                = rx_buff[5];
     *(((uint8_t *)(&torque)) + 0)               = rx_buff[6];
     *(((uint8_t *)(&torque)) + 1)               = rx_buff[7];
-    measure->speed_rads                         = speed * factor;
+    measure->last_speed_aps                     = measure->speed_aps;
+    measure->speed_aps                          = speed * factor;
     measure->real_current                       = torque * factor;
-
-    // measure->speed_rads = (1 - SPEED_SMOOTH_COEF) * measure->speed_rads +
-    //                       DEGREE_2_RAD * SPEED_SMOOTH_COEF * measure->speed_rads;
-
-    // measure->real_current = (1 - CURRENT_SMOOTH_COEF) * measure->real_current +
-    //                         CURRENT_SMOOTH_COEF * measure->real_current;
-
-    // measure->temperature = rx_buff[1];
 
     measure->total_round        = measure->total_angle / 360;
     measure->angle_single_round = measure->total_angle - 360 * measure->total_round;
+
+    DRMotorErrorDetection(motor);
 }
 
 static void DRMotorLostCallback(void *motor_ptr)
 {
     DRMotorInstance *motor = (DRMotorInstance *)motor_ptr;
-    LOGWARNING("[DRMotor] motor lost, id: %d", (motor->motor_can_ins->tx_id & (0x1f<<5)) >> 5);
+    LOGWARNING("[DRMotor] motor lost, id: %d", (motor->motor_can_instance->tx_id & (0x1f<<5)) >> 5);
 
     if (motor->motor_type == DR_PDA04) {
         static uint8_t tx_buf_enable_PDA04_recall[] = {0xF1, 0x55, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00};
-        CANTransmit_once(motor->motor_can_ins->can_handle,
-                         (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x1f,
+        CANTransmit_once(motor->motor_can_instance->can_handle,
+                         (motor->motor_can_instance->tx_id & (0x1f << 5)) + 0x1f,
                          tx_buf_enable_PDA04_recall, 2);    
     }
     if (motor->motor_type == DR_B0X) {
         static uint8_t tx_buf_B0X_recall[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-        CANTransmit_once(motor->motor_can_ins->can_handle,
-                         (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x1e,
+        CANTransmit_once(motor->motor_can_instance->can_handle,
+                         (motor->motor_can_instance->tx_id & (0x1f << 5)) + 0x1e,
                          tx_buf_B0X_recall, 2);
     }
 }
@@ -74,11 +71,24 @@ DRMotorInstance *DRMotorInit(Motor_Init_Config_s *config)
     memset(motor, 0, sizeof(DRMotorInstance));
 
     motor->motor_settings = config->controller_setting_init_config;
-    PIDInit(&motor->current_PID, &config->controller_param_init_config.current_PID);
-    PIDInit(&motor->speed_PID, &config->controller_param_init_config.speed_PID);
-    PIDInit(&motor->angle_PID, &config->controller_param_init_config.angle_PID);
-    motor->other_angle_feedback_ptr = config->controller_param_init_config.other_angle_feedback_ptr;
-    motor->other_speed_feedback_ptr = config->controller_param_init_config.other_speed_feedback_ptr;
+    PIDInit(&motor->motor_controller.speed_PID, &config->controller_param_init_config.current_PID);
+    PIDInit(&motor->motor_controller.speed_PID, &config->controller_param_init_config.speed_PID);
+    PIDInit(&motor->motor_controller.angle_PID, &config->controller_param_init_config.angle_PID);
+    PIDInit(&motor->motor_controller.torque_PID, &config->controller_param_init_config.torque_PID);
+    motor->motor_controller.other_angle_feedback_ptr = config->controller_param_init_config.other_angle_feedback_ptr;
+    motor->motor_controller.other_speed_feedback_ptr = config->controller_param_init_config.other_speed_feedback_ptr;
+    motor->motor_controller.current_feedforward_ptr  = config->controller_param_init_config.current_feedforward_ptr;
+    motor->motor_controller.speed_feedforward_ptr    = config->controller_param_init_config.speed_feedforward_ptr;
+
+    motor->motor_error_detection.current = (config->motor_error_detection_config.current!=NULL ? config->motor_error_detection_config.current : &motor->motor_controller.output_current);
+    motor->motor_error_detection.last_speed = (config->motor_error_detection_config.last_speed!=NULL ? config->motor_error_detection_config.last_speed : &motor->measure.last_speed_aps);
+    motor->motor_error_detection.speed = (config->motor_error_detection_config.speed!=NULL ? config->motor_error_detection_config.speed : &motor->measure.speed_aps);
+    motor->motor_error_detection.stuck_speed = config->motor_error_detection_config.stuck_speed==0 ? 1.0f : config->motor_error_detection_config.stuck_speed;
+    motor->motor_error_detection.crash_detective_sensitivity = config->motor_error_detection_config.crash_detective_sensitivity==0 ? 5 : config->motor_error_detection_config.crash_detective_sensitivity;
+    motor->motor_error_detection.max_current = config->motor_error_detection_config.max_current==0 ? motor->motor_controller.speed_PID.MaxOut : config->motor_error_detection_config.max_current;
+    motor->motor_error_detection.stuck_current_ptr = config->motor_error_detection_config.stuck_current_ptr;
+    motor->motor_error_detection.error_callback = config->motor_error_detection_config.error_callback;
+    motor->motor_error_detection.error_detection_flag = config->motor_error_detection_config.error_detection_flag;
 
     motor->motor_type = config->motor_type;
 
@@ -96,23 +106,23 @@ DRMotorInstance *DRMotorInit(Motor_Init_Config_s *config)
     }
 
     config->can_init_config.tx_id = (config->can_init_config.tx_id << 5) + 0x1d; // 0x1d为控制扭矩的命令ID
-    motor->motor_can_ins          = CANRegister(&config->can_init_config);
+    motor->motor_can_instance          = CANRegister(&config->can_init_config);
 
     // 避免大然电机进入保护，每次初始化都将其重启
     static uint8_t tx_buf_DRmotor_reboot[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    CANTransmit_once(motor->motor_can_ins->can_handle,
+    CANTransmit_once(motor->motor_can_instance->can_handle,
                         (config->can_init_config.tx_id & (0x1f << 5)) + 0x08,
                         tx_buf_DRmotor_reboot, 2);
     // DR_PDA04电机每次上电都需要手动发送数据包开启实时状态反馈
     if (motor->motor_type == DR_PDA04) {
         static uint8_t tx_buf_enable_PDA04_recall[] = {0xF1, 0x55, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00};
-        CANTransmit_once(motor->motor_can_ins->can_handle,
+        CANTransmit_once(motor->motor_can_instance->can_handle,
                          (config->can_init_config.tx_id & (0x1f << 5)) + 0x1f,
                          tx_buf_enable_PDA04_recall, 2);
     }
 
     DRMotorStop(motor); //   默认关闭，避免出问题
-    DWT_GetDeltaT(&motor->measure.feed_dwt_cnt);
+    
     drmotor_instance[idx++] = motor;
 
     Daemon_Init_Config_s daemon_config = {
@@ -129,33 +139,34 @@ DRMotorInstance *DRMotorInit(Motor_Init_Config_s *config)
 void DRMotorControl()
 {
     float pid_measure, pid_ref;
-    float set;
     DRMotorInstance *motor;
-    DRMotor_Measure_t *measure;
+    Motor_Measure_s *measure;
     Motor_Control_Setting_s *setting;
+    Motor_Controller_s *motor_controller;
 
     for (size_t i = 0; i < idx; ++i) {
         motor   = drmotor_instance[i];
         measure = &motor->measure;
         setting = &motor->motor_settings;
-        pid_ref = motor->pid_ref;
+        motor_controller = &motor->motor_controller;
+        pid_ref = motor_controller->pid_ref;
 
         // DR_B0x电机不支持实施状态反馈，需要自己发送查询命令
         if (motor->motor_type == DR_B0X) {
             static uint8_t tx_buf_B0X_recall[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-            CANTransmit_once(motor->motor_can_ins->can_handle,
-                             (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x1e,
+            CANTransmit_once(motor->motor_can_instance->can_handle,
+                             (motor->motor_can_instance->tx_id & (0x1f << 5)) + 0x1e,
                              tx_buf_B0X_recall, 0.1);
         }
 
         if ((setting->close_loop_type & ANGLE_LOOP) && setting->outer_loop_type == ANGLE_LOOP) {
             if (setting->angle_feedback_source == OTHER_FEED)
-                pid_measure = *motor->other_angle_feedback_ptr;
+                pid_measure = *motor_controller->other_angle_feedback_ptr;
             else
                 pid_measure = measure->total_angle;
-            pid_ref = PIDCalculate(&motor->angle_PID, pid_measure, pid_ref);
+            pid_ref = PIDCalculate(&motor_controller->angle_PID, pid_measure, pid_ref);
             if (setting->feedforward_flag & SPEED_FEEDFORWARD)
-                pid_ref += *motor->speed_feedforward_ptr;
+                pid_ref += *motor_controller->speed_feedforward_ptr;
         }
 
         // 电机反转判断
@@ -164,54 +175,31 @@ void DRMotorControl()
 
         if ((setting->close_loop_type & SPEED_LOOP) && setting->outer_loop_type & (ANGLE_LOOP | SPEED_LOOP)) {
             if (setting->speed_feedback_source == OTHER_FEED)
-                pid_measure = *motor->other_speed_feedback_ptr;
+                pid_measure = *motor_controller->other_speed_feedback_ptr;
             else
-                pid_measure = measure->speed_rads;
-            pid_ref = PIDCalculate(&motor->speed_PID, pid_measure, pid_ref);
+                pid_measure = measure->speed_aps;
+            pid_ref = PIDCalculate(&motor_controller->speed_PID, pid_measure, pid_ref);
             if (setting->feedforward_flag & CURRENT_FEEDFORWARD)
-                pid_ref += *motor->current_feedforward_ptr;
+                pid_ref += *motor_controller->current_feedforward_ptr;
         }
 
         if (setting->close_loop_type & CURRENT_LOOP) {
-            pid_ref = PIDCalculate(&motor->current_PID, measure->real_current, pid_ref);
+            pid_ref = PIDCalculate(&motor_controller->current_PID, measure->real_current, pid_ref);
         }
 
-        set = pid_ref;
+        motor_controller->output_current = pid_ref;
 
-        memset(motor->motor_can_ins->tx_buff, 0, sizeof(motor->motor_can_ins->tx_buff));
+        memset(motor->motor_can_instance->tx_buff, 0, sizeof(motor->motor_can_instance->tx_buff));
 
-        memcpy(motor->motor_can_ins->tx_buff, &set, sizeof(float));
-        motor->motor_can_ins->tx_buff[6] = 0x01;
+        memcpy(motor->motor_can_instance->tx_buff, &motor_controller->output_current, sizeof(float));
 
         if (motor->stop_flag == MOTOR_STOP) { // 若该电机处于停止状态,直接将发送buff置零
-            memset(motor->motor_can_ins->tx_buff, 0, sizeof(float));
+            memset(motor->motor_can_instance->tx_buff, 0, sizeof(float));
         }
 
         // 发送
-        CANTransmit(motor->motor_can_ins, 0.1);
-
-        // // PDA04存在过热保护，需特别处理
-        // if(motor->motor_type == DR_PDA04 && motor->motor_settings.outer_loop_type == ANGLE_LOOP){
-        //     float offset = motor->angle_PID.Measure - motor->last_angle;
-        //     if((offset>1 || offset<-1) && (set>0.5||set<-0.5) && motor->stop_flag != MOTOR_STOP){
-        //         motor->lost_cnt++;
-        //     }else{
-        //         motor->lost_cnt=0;
-        //     }
-        //     if(motor->lost_cnt >= 1000){
-        //         LOGWARNING("[DRMotor] motor was crashed, id: %d", (motor->motor_can_ins->tx_id & (0x1f<<5)) >> 5);
-        //         motor->lost_cnt = 0;
-        //         static uint8_t tx_buf_motor_reboot[] = {0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-        //         CANTransmit_once(motor->motor_can_ins->can_handle,
-        //                  (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x08,
-        //                  tx_buf_motor_reboot, 2);
-        //         static uint8_t tx_buf_enable_PDA04_recall[] = {0xF1, 0x55, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00};
-        //         CANTransmit_once(motor->motor_can_ins->can_handle,
-        //                  (motor->motor_can_ins->tx_id & (0x1f << 5)) + 0x1f,
-        //                  tx_buf_enable_PDA04_recall, 2);    
-        //     }
-        //     motor->last_angle = motor->angle_PID.Measure;
-        // }
+        motor->motor_can_instance->tx_buff[6] = 0x01;
+        CANTransmit(motor->motor_can_instance, 0.1);
     }
 }
 
@@ -220,6 +208,10 @@ void DRMotorStop(DRMotorInstance *motor)
     motor->stop_flag = MOTOR_STOP;
 }
 
+void MotorOuterLoop(DRMotorInstance *motor, Closeloop_Type_e outer_loop)
+{
+    motor->motor_settings.outer_loop_type = outer_loop;
+}
 void DRMotorEnable(DRMotorInstance *motor)
 {
     motor->stop_flag = MOTOR_ENABLED;
@@ -227,10 +219,71 @@ void DRMotorEnable(DRMotorInstance *motor)
 
 void DRMotorSetRef(DRMotorInstance *motor, float ref)
 {
-    motor->pid_ref = ref;
+    motor->motor_controller.pid_ref = ref;
 }
 
 uint8_t DRMotorIsOnline(DRMotorInstance *motor)
 {
     return DaemonIsOnline(motor->daemon);
 }
+
+// 异常检测
+void DRMotorErrorDetection(DRMotorInstance *motor)
+{
+    /* todo:理论上该有个更泛用性的代码 */
+    // 碰撞检测
+    if(motor->motor_error_detection.error_detection_flag & MOTOR_ERROR_DETECTION_CRASH)
+    {
+        if(motor->motor_error_detection.stuck_current_ptr == NULL)
+        {
+            uint16_t can_bus;
+            can_bus                 = motor->motor_can_instance->can_handle == &hfdcan1 ? 1 : (motor->motor_can_instance->can_handle == &hfdcan2 ? 2 : 3);
+            LOGWARNING("[dji_motor] You should set the stuck current, can bus [%d] , id [%d]", can_bus, motor->motor_can_instance->tx_id);
+            while(1);
+        }else
+        {
+            if(!(motor->motor_error_detection.ErrorCode & MOTOR_ERROR_CRASH) && (abs(*motor->motor_error_detection.last_speed) - abs(*motor->motor_error_detection.speed) > abs(*motor->motor_error_detection.last_speed / (float)motor->motor_error_detection.crash_detective_sensitivity)) && (abs(*motor->motor_error_detection.last_speed) > motor->motor_error_detection.stuck_speed) )
+            {
+                motor->motor_error_detection.ErrorCode |= MOTOR_ERROR_DETECTION_CRASH;
+
+                uint16_t can_bus;
+                can_bus                 = motor->motor_can_instance->can_handle == &hfdcan1 ? 1 : (motor->motor_can_instance->can_handle == &hfdcan2 ? 2 : 3);
+                LOGWARNING("[dji_motor] Motor crashed! can bus [%d] , id [%d]", can_bus, motor->motor_can_instance->tx_id);
+            }
+        }
+    }
+    // 堵转检测
+    if(motor->motor_error_detection.error_detection_flag  & MOTOR_ERROR_DETECTION_STUCK)
+    {
+        if(motor->motor_error_detection.stuck_current_ptr == NULL)
+        {
+            uint16_t can_bus;
+            can_bus                 = motor->motor_can_instance->can_handle == &hfdcan1 ? 1 : (motor->motor_can_instance->can_handle == &hfdcan2 ? 2 : 3);
+            LOGWARNING("[DRmotor] You must set the stuck current, can bus [%d] , id [%d]", can_bus, motor->motor_can_instance->tx_id);
+            while(1);
+        }else
+        {
+            if(!(motor->motor_error_detection.ErrorCode & MOTOR_ERROR_DETECTION_STUCK) && (abs(*(motor->motor_error_detection.speed)) < motor->motor_error_detection.stuck_speed) && (abs(*(motor->motor_error_detection.current)) > *(motor->motor_error_detection.stuck_current_ptr)))
+            {
+                motor->motor_error_detection.stuck_cnt++;
+                if(motor->motor_error_detection.stuck_cnt > 10)
+                {
+                    motor->motor_error_detection.ErrorCode |= MOTOR_ERROR_DETECTION_STUCK;
+
+                    uint16_t can_bus;
+                    can_bus                 = motor->motor_can_instance->can_handle == &hfdcan1 ? 1 : (motor->motor_can_instance->can_handle == &hfdcan2 ? 2 : 3);
+                    LOGWARNING("[DRmotor] Motor stucked! can bus [%d] , id [%d]", can_bus, motor->motor_can_instance->tx_id);
+                }
+            }
+            else
+            {
+                motor->motor_error_detection.stuck_cnt = 0;
+            }
+        }
+    }
+
+    // 调用异常回调函数
+    if(motor->motor_error_detection.ErrorCode != MOTOR_ERROR_NONE)
+        if(motor->motor_error_detection.error_callback != NULL)
+            motor->motor_error_detection.error_callback(motor);
+}   

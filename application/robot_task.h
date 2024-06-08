@@ -71,7 +71,6 @@ void _gimbalTASK(void *argument)
     osDelay(1000);
     while (1) {
         GIMBALTask();
-        LKMotorControl();
         osDelay(2);
     }
 }

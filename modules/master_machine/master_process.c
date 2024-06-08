@@ -26,7 +26,7 @@ void HostUSART_RxEventCallback()
             {
                 DaemonReload(host_instance[i]->daemon);
             }
-            host_instance[i]->rec_len =   ((USARTInstance*)(host_instance[i]->comm_instance))->recv_buff_size;
+            host_instance[i]->recv_buff_size =   ((USARTInstance*)(host_instance[i]->comm_instance))->recv_buff_size;
             if(host_instance[i]->callback != NULL)
                 {
                     host_instance[i]->callback();
@@ -44,7 +44,7 @@ void HostVCP_RxEventCallback(uint16_t len)
             {
                 DaemonReload(host_instance[i]->daemon);
             }
-            host_instance[i]->rec_len = len;
+            host_instance[i]->recv_buff_size = len;
             if(host_instance[i]->callback != NULL)
                 {
                     host_instance[i]->callback();
@@ -90,12 +90,12 @@ HostInstance *HostInit(HostInstanceConf *host_conf)
             usart_conf.recv_buff_size  = host_conf->RECV_SIZE;
             usart_conf.usart_handle    = host_conf->usart_handle;
             _instance->comm_instance   = USARTRegister(&usart_conf);
-            _instance->rec_buf         = ((USARTInstance*)(_instance->comm_instance))->recv_buff;
+            _instance->recv_buff         = ((USARTInstance*)(_instance->comm_instance))->recv_buff;
             break;
         case HOST_VCP:
             USB_Init_Config_s usb_conf = {.tx_cbk = NULL,.rx_cbk = HostVCP_RxEventCallback};
             _instance->comm_instance   = USBInit(usb_conf);
-            _instance->rec_buf         = _instance->comm_instance;
+            _instance->recv_buff         = _instance->comm_instance;
             break;
         default:
             while (1)

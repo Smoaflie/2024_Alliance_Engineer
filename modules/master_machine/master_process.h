@@ -20,8 +20,8 @@ typedef struct {
     void *comm_instance;      // 通信实例，会被转换为串口或USB通信实例
     host_comm_mode comm_mode; // 通信方式
     DaemonInstance *daemon;   // 守护进程
-    uint16_t rec_len;         // 接收长度
-    uint8_t  *rec_buf;        // 接收缓冲区
+    uint16_t recv_buff_size;         // 接收长度
+    uint8_t  *recv_buff;        // 接收缓冲区
     host_module_callback callback;   // 解析收到的数据的回调函数
 } HostInstance;
 

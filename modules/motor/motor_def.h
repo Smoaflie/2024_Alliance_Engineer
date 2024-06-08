@@ -70,6 +70,42 @@ typedef enum
     MOTOR_ENABLED = 1,
 } Motor_Working_Type_e;
 
+/* 异常检测 */
+typedef enum
+{
+    MOTOR_ERROR_DETECTION_NONE = 0b000,
+    MOTOR_ERROR_DETECTION_CRASH = 0b001,
+    MOTOR_ERROR_DETECTION_STUCK = 0b010,
+    MOTOR_ERROR_PROTECTED = 0b100,
+} Motor_Error_Detection_Type_e;
+/* 异常代码 */
+typedef enum
+{
+    MOTOR_ERROR_NONE = 0b00,
+    MOTOR_ERROR_CRASH = 0b01,
+    MOTOR_ERROR_STUCK = 0b10,
+} Motor_ErrorCode_Type_e;
+typedef struct
+{
+    Motor_Error_Detection_Type_e error_detection_flag; // 是否启用异常检测
+    
+    float *speed;   // 当前速度
+    float *last_speed;      // 上次速度
+    float *current; // 当前电流
+
+    float *stuck_current_ptr;   // 堵转电流大小
+    float stuck_speed;   // 堵转速度大小
+    float max_current;   // (正常情况下)最大输出电流值
+
+    uint8_t stuck_cnt;
+    uint16_t crash_detective_sensitivity; // 碰撞检测灵敏度
+
+    float tmp_variable; // 临时变量，给回调函数存储需要的数据 //todo:可以优化？
+
+    void (*error_callback)(void* motor); // 异常回调函数
+
+    Motor_ErrorCode_Type_e ErrorCode;  // 异常代码
+} Motor_Error_Detection_s;
 /* 电机控制设置,包括闭环类型,反转标志和反馈来源 */
 typedef struct
 {
@@ -80,7 +116,6 @@ typedef struct
     Feedback_Source_e angle_feedback_source;       // 角度反馈类型
     Feedback_Source_e speed_feedback_source;       // 速度反馈类型
     Feedfoward_Type_e feedforward_flag;            // 前馈标志
-
 } Motor_Control_Setting_s;
 
 /* 电机控制器,包括其他来源的反馈数据指针,3环控制器和电机的参考输入*/
@@ -97,8 +132,25 @@ typedef struct
     PIDInstance angle_PID;
     PIDInstance torque_PID;
 
+    float output_current;     // 输出电流
     float pid_ref; // 将会作为每个环的输入和输出顺次通过串级闭环
 } Motor_Controller_s;
+
+typedef struct
+{
+    uint16_t last_ecd;        // 上一次读取的编码器值
+    uint16_t ecd;             // 编码器值
+    float angle_single_round; // 单圈角度
+    float last_speed_aps;     // 上一次读取的角速度,单位为:度/秒
+    float speed_aps;          // 角速度,单位为:度/秒
+    int16_t real_current;     // 实际电流
+    uint8_t temperature;      // 温度 Celsius
+
+    float total_angle;   // 总角度,注意方向
+    int32_t total_round; // 总圈数,注意方向
+    
+} Motor_Measure_s;
+
 
 /* 电机类型枚举 */
 typedef enum
@@ -114,6 +166,19 @@ typedef enum
     DR_B0X,
 } Motor_Type_e;
 
+typedef struct
+{
+    Motor_Type_e motor_type;        // 电机类型
+    
+    Motor_Control_Setting_s motor_settings; // 电机设置
+    Motor_Controller_s motor_controller;    // 电机控制器
+
+    CANInstance *motor_can_instance; // 电机CAN实例
+
+    Motor_Working_Type_e stop_flag; // 启停标志
+    Motor_Error_Detection_s motor_error_detection; // 异常检测
+    Motor_Measure_s measure;            // 电机测量值
+} Motor_Base_s;
 /* 电机控制方式枚举 */
 typedef enum
 {
@@ -147,6 +212,7 @@ typedef struct
     Motor_Type_e motor_type;
     CAN_Init_Config_s can_init_config;
     Motor_Contro_Type_e motor_contro_type;  //控制类型
+    Motor_Error_Detection_s motor_error_detection_config;
 } Motor_Init_Config_s;
 
 #endif // !MOTOR_DEF_H

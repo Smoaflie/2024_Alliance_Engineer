@@ -11,6 +11,17 @@
 #define Arm_height_ramp_doing 0x08
 #define Arm_target_ramp_flag 0x10
 #define Arm_target_ramp_doing 0x20
+#define Arm_sucker_ramp_flag 0x40
+#define Arm_sucker_ramp_doing 0x80
+
+typedef struct {
+    HostInstance *host_instance; // 上位机接口
+    uint8_t host_rec_flag;       // 上位机接收标志位
+    uint8_t host_send_buf[30];   // 上位机发送缓冲区
+    uint8_t sent_package_flag;     // 发送包标识
+    uint8_t recv_package_flag;     // 接收包标识
+}HOST_ARM_COMM;
+
 /**
  * @brief 初始化机械臂,会被RobotInit()调用
  * 

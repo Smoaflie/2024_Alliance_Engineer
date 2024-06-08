@@ -13,6 +13,7 @@ void MotorControlTask()
     cnt++;
     if(cnt%2==0)
     {
+        LKMotorControl();
         DRMotorControl();  
     }
     DJIMotorControl();

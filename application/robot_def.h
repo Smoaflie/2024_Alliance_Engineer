@@ -126,6 +126,9 @@ typedef enum {
     ARM_POSE_CONTRO_MODE_1,
     ARM_POSE_CONTRO_MODE_0,
     ARM_POSE_CONTRO_TARGET_MODE,
+    ARM_CustomTargetContro,
+    ARM_CustomPositionContro,
+    ARM_AUTO_MODE
 } arm_mode_e;
 
 /* ----------------CMD应用发布的控制数据,应当由gimbal/chassis/shoot订阅---------------- */
@@ -163,7 +166,9 @@ typedef struct
 // gimbal发布的云台数据,由cmd订阅
 typedef struct
 { // 云台角度控制
-    float yaw;
+    float yaw_imu;
+    float yaw_motor;
+    float yaw_offset;
     float pitch;
 } Gimbal_Data_s;
 
@@ -230,6 +235,8 @@ typedef struct{
     uint8_t convert_flag;   // 兑换模式标志位
     uint8_t reset_init_flag; // z轴重置标定
     float aroll_angle_offset; //混合roll的偏移值(单次累计值)
+
+    uint8_t debug_flag; // 调试用
 }Arm_Cmd_Data_s;
 
 /* 气阀/气泵控制 */

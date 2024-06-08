@@ -1,5 +1,6 @@
 #include "referee_protocol.h"
 #include "bsp_usart.h"
+#include "crc_ref.h"
 
 // 图传链路
 static USARTInstance *vision_usart;
