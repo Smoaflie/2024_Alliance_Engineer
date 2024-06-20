@@ -1,41 +1,49 @@
 
 
-
-Breakpoint=d:/Documents/github/2024_Engineer/application/airpump/airpump.c:290:26, State=BP_STATE_DISABLED
-Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:116:1, State=BP_STATE_DISABLED
-Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:129:1, State=BP_STATE_DISABLED
-Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:1023:1, State=BP_STATE_DISABLED
-Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm.c:1336:5, State=BP_STATE_DISABLED
-GraphedExpression="Z_GPIO", DisplayFormat=DISPLAY_FORMAT_DEC, Color=#e56a6f, Show=0
+GraphedExpression="chassis_cmd_recv.wz", Color=#e56a6f
+OpenDocument="startup_stm32h723vgtx.s", FilePath="d:/Documents/github/2024_Engineer/Core/Startup/startup_stm32h723vgtx.s", Line=52
+OpenDocument="tasks.c", FilePath="d:/Documents/github/2024_Engineer/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3423
+OpenDocument="robot_cmd.c", FilePath="d:/Documents/github/2024_Engineer/application/cmd/robot_cmd.c", Line=0
+OpenDocument="gimbal_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/gimbal/gimbal_interface.c", Line=27
+OpenDocument="gimbal.c", FilePath="d:/Documents/github/2024_Engineer/application/gimbal/gimbal.c", Line=0
 OpenDocument="bsp_dwt.c", FilePath="d:/Documents/github/2024_Engineer/bsp/dwt/bsp_dwt.c", Line=25
 OpenDocument="dji_motor.c", FilePath="d:/Documents/github/2024_Engineer/modules/motor/DJImotor/dji_motor.c", Line=120
 OpenDocument="tool.h", FilePath="d:/Documents/github/2024_Engineer/modules/tool/tool.h", Line=0
 OpenDocument="stm32h7xx_hal_fdcan.c", FilePath="d:/Documents/github/2024_Engineer/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.c", Line=3047
-OpenDocument="main.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/main.c", Line=69
+OpenDocument="main.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/main.c", Line=68
 OpenDocument="bsp_usart.h", FilePath="d:/Documents/github/2024_Engineer/bsp/usart/bsp_usart.h", Line=44
-OpenDocument="tasks.c", FilePath="d:/Documents/github/2024_Engineer/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3666
-OpenDocument="robot_cmd.c", FilePath="d:/Documents/github/2024_Engineer/application/cmd/robot_cmd.c", Line=837
-OpenDocument="arm.c", FilePath="d:/Documents/github/2024_Engineer/application/arm/arm.c", Line=816
+OpenDocument="robot_cmd_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/cmd/robot_cmd_interface.c", Line=677
+OpenDocument="chassis_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/chassis/chassis_interface.c", Line=204
+OpenDocument="arm.c", FilePath="d:/Documents/github/2024_Engineer/application/arm/arm.c", Line=0
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=1, w=300, h=102, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
+OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=1, w=300, h=113, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
 OpenWindow="Source Files", DockArea=LEFT, x=0, y=0, w=290, h=623, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Memory 1", DockArea=BOTTOM, x=4, y=0, w=396, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x21479C40
-OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=0, w=300, h=520, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=0, w=300, h=509, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Terminal", DockArea=BOTTOM, x=2, y=0, w=96, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Data Sampling", DockArea=BOTTOM, x=1, y=0, w=264, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
-OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=680, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="5 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="0;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="313;0", CodeGraphLegendShown=0, CodeGraphLegendPosition="271;0"
+OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=680, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="5 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="0;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="759;0", CodeGraphLegendShown=0, CodeGraphLegendPosition="773;0"
 OpenWindow="Console", DockArea=BOTTOM, x=3, y=0, w=480, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
-TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
 TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Description"], ColWidths=[100;118;259]
+TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" chassis_cmd_recv.wz"], ColWidths=[100;100;100]
+TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[363;100;100;102;100;102;100;107;107]
+TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[239;100;100;100;854]
+TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
 TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[200;100;100;351]
 TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Refresh"], ColWidths=[139;100;100]
-TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[239;100;100;100;854]
-TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";" Z_GPIO"], ColWidths=[100;100;100]
-TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[363;158;100;100;100;100;100;107;107]
 WatchedExpression="kp", Window=Watched Data 1
 WatchedExpression="kd", Window=Watched Data 1
 WatchedExpression="current_feedforward", Window=Watched Data 1
 WatchedExpression="current_feedforward_rf", Window=Watched Data 1
 WatchedExpression="motor_rf", RefreshRate=2, Window=Watched Data 1
+WatchedExpression="chassis_cmd_recv.wz", Window=Watched Data 1
+WatchedExpression="chassis_cmd_recv.offset_angle", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="chassis_cmd_recv.chassis_mode", RefreshRate=2, Window=Watched Data 1
+WatchedExpression="ControlMode", RefreshRate=2, Window=Watched Data 1
+WatchedExpression="LastControlMode", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="gimbal_yaw_angle", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="chassis_cmd_recv.offset_angle", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="arm_data_send.auto_mode_doing_state", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="arm_current_data", RefreshRate=5, Window=Watched Data 1

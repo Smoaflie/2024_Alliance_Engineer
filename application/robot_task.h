@@ -71,7 +71,7 @@ void _gimbalTASK(void *argument)
     osDelay(1000);
     while (1) {
         GIMBALTask();
-        osDelay(2);
+        osDelay(1);
     }
 }
 

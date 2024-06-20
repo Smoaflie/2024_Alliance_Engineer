@@ -9,10 +9,10 @@ static referee_info_t referee_vision_info;			  // 图传链路数据
 static uint8_t vision_recv_data[30];
 
 // 自定义控制器
-extern float qua_rec[4];
-extern float encoder_Data[3];
-extern uint8_t custom_controller_comm_recv; //自定义发送的自定义标志位	
-extern uint8_t custom_controller_data_refresh_flag; // 图传链路数据更新标志
+float qua_rec[4];
+float encoder_Data[3];
+uint8_t custom_controller_comm_recv; //自定义发送的自定义标志位	
+uint8_t custom_controller_data_refresh_flag = 0; // 图传链路数据更新标志
 
 // 图传控制数据
 extern RC_ctrl_t* vision_rc_data;

@@ -32,7 +32,6 @@ void OnProjectLoad (void) {
   //
   // User settings
   //
-  Edit.SysVar (VAR_HSS_SPEED, FREQ_500_HZ);
   File.Open ("$(ProjectDir)/build/Debug/2024_ENGINEER_Frame.elf");
 }
 

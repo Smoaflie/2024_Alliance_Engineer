@@ -1,4 +1,6 @@
 #include "arm_interface.h"
+// 上位机解析回调函数
+void HOST_RECV_CALLBACK();
 
 void ArmInit()
 {
@@ -17,11 +19,10 @@ void ArmTask()
     ArmParamPretreatment();
     //臂控制
     ArmControInterface();
-    //与上位机通讯
+    //向上位机发送数据包
     ArmCommunicateHOST();
     //发布臂任务数据
     ArmPubMessage();
-
 
     //调试用接口
     ArmDebugInterface();

@@ -55,7 +55,7 @@ void ChassisInit_Motor()
         .can_init_config.can_handle   = &hfdcan3,
         .controller_param_init_config = {
             .speed_PID = {
-                .Kp            = 3.5, // 4.5
+                .Kp            = 3, // 3.5
                 .Ki            = 0,  // 0
                 .Kd            = 0.005,  // 0
                 .IntegralLimit = 3000,
@@ -210,17 +210,19 @@ void ChassisModeSelect()
 
     // 根据控制模式设定旋转速度
     switch (chassis_cmd_recv.chassis_mode) {
-        case CHASSIS_NO_FOLLOW: // 底盘不旋转,但维持全向机动,一般用于调整云台姿态
-            chassis_cmd_recv.wz = 0;
+        case CHASSIS_NO_FOLLOW: // 底盘维持全向机动,并可受控旋转
+            chassis_cmd_recv.wz = chassis_cmd_recv.wz;
             break;
         case CHASSIS_FOLLOW_GIMBAL_YAW: // 跟随云台,不单独设置pid,以误差角度平方为速度输出
             chassis_cmd_recv.wz = -1.5f * chassis_cmd_recv.offset_angle * abs(chassis_cmd_recv.offset_angle);
             break;
-        case CHASSIS_ROTATE: // 自旋,同时保持全向机动;当前wz维持定值,后续增加不规则的变速策略
-            chassis_cmd_recv.wz = 4000;
+        case CHASSIS_FOLLOW_GIMBAL_YAW_REVERSE:
+            static float de;
+            de = ((chassis_cmd_recv.offset_angle+180) > 180 ? chassis_cmd_recv.offset_angle+180-360 : chassis_cmd_recv.offset_angle+180);
+            chassis_cmd_recv.wz = -1.5f * de * abs(de);
             break;
-        case CHASSIS_ROTATE_CONTRO: // 旋转由cmd直接控制,但维持全向移动
-            chassis_cmd_recv.wz = chassis_cmd_recv.wz;
+        case CHASSIS_ROTATE: // 自旋,同时保持全向机动；
+            chassis_cmd_recv.wz = 15000 + rand()%20000;
             break;
         default:
             break;

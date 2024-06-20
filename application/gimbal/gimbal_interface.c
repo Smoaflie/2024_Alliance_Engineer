@@ -73,7 +73,7 @@ void GimbalInit_Motor()
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 1, // 1
+                .Kp            = 0.4, // 1
                 .Ki            = 0,    // 0
                 .Kd            = 0,    // 0
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,

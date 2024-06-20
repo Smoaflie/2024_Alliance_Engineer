@@ -26,7 +26,7 @@ static Graph_Data_t auxiliary_line_two;
 static Graph_Data_t auxiliary_line_three;
 static Graph_Data_t circle_one;
 static Graph_Data_t circle_two;
-static Graph_Data_t circle_three;
+// static Graph_Data_t circle_three;
 static Graph_Data_t float_one;
 static Graph_Data_t float_two;
 

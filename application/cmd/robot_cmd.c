@@ -19,7 +19,8 @@ void RobotCMDTask()
     
     RobotCMDGenerateCommand();
     
+    RobotCMDDebugInterface();
     RobotCMDPubMessage();
 
-    RobotCMDDebugInterface();
+    // RobotCMDDebugInterface();
 }

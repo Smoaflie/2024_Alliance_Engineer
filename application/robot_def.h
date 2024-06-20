@@ -45,7 +45,7 @@
 #define GYRO2GIMBAL_DIR_ROLL          1 // 陀螺仪数据相较于云台的roll的方向,1为相同,-1为相反
 
 // 其他参数(尽量所有参数集中到此文件)
-#define BUZZER_SILENCE 1 // 蜂鸣器静音,1为静音,0为正常
+#define BUZZER_SILENCE 0 // 蜂鸣器静音,1为静音,0为正常
 
 // 陀螺仪校准数据，开启陀螺仪校准后可从INS中获取
 #define BMI088_PRE_CALI_GYRO_X_OFFSET -0.000909539289f
@@ -99,9 +99,9 @@ typedef enum {
 typedef enum {
     CHASSIS_ZERO_FORCE = 0,    // 电流零输入
     CHASSIS_ROTATE,            // 小陀螺模式
-    CHASSIS_NO_FOLLOW,         // 不跟随，允许全向平移
+    CHASSIS_NO_FOLLOW,         // 不跟随，允许全向平移和受控旋转
     CHASSIS_FOLLOW_GIMBAL_YAW, // 跟随模式，底盘叠加角度环控制
-    CHASSIS_ROTATE_CONTRO,     // 旋转受控模式，底盘旋转由操作手直接控制
+    CHASSIS_FOLLOW_GIMBAL_YAW_REVERSE, // 跟随模式，但头朝向背面
 } chassis_mode_e;
 
 // 云台模式设置
@@ -117,20 +117,20 @@ typedef enum {
 // 臂臂模式设置
 typedef enum {
     ARM_ZERO_FORCE = 0, // 电流零输入
-    ARM_POSE_CONTRO_MODE,      // 臂臂位置控制模式
-    ARM_REFER_MODE,      // 臂臂控制器
+    ARM_BASE_CONTRO_MODE,      // 臂臂基础控制(大Yaw&Z)
     ARM_FIXED,          // 保持位置
     ARM_CUSTOM_CONTRO,  // 自定义控制器(上位机控制，优先级最高)
-    ARM_VISION_CONTRO,  // 视觉兑矿(上位机控制，优先级最高)
-    ARM_CONTROL_BY_KEYBOARD,    // 键盘控制，优先级仅次于俩上位机模式
-    ARM_POSE_CONTRO_MODE_1,
-    ARM_POSE_CONTRO_MODE_0,
-    ARM_POSE_CONTRO_TARGET_MODE,
-    ARM_CustomTargetContro,
-    ARM_CustomPositionContro,
     ARM_AUTO_MODE
 } arm_mode_e;
 
+// 机器人控制模式
+typedef enum{
+    ControlMode_FetchCube = 0,
+    ControlMode_ConvertCube,
+    ControlMode_Move,
+    ControlMode_ReverseMove,
+    ControlMode_RotateMove
+}_RobotControlMode;
 /* ----------------CMD应用发布的控制数据,应当由gimbal/chassis/shoot订阅---------------- */
 /**
  * @brief 对于双板情况,遥控器和pc在云台,裁判系统在底盘
@@ -145,6 +145,7 @@ typedef struct
     float wz;           // 旋转速度
     float offset_angle; // 底盘和归中位置的夹角
     chassis_mode_e chassis_mode;
+    _RobotControlMode robotControlMode;
 
     uint8_t special_func_flag;  // 特殊动作
     // UI部分
@@ -212,28 +213,28 @@ typedef struct{
     uint8_t arm_to_airpump;
 
     uint8_t auto_mode_doing_state;
-    uint8_t control_mode_t;
 }Arm_Data_s;
 
 typedef struct{
     float Translation_x;
     float Translation_y;
+    uint8_t Translation_mode;
     float Roatation_Vertical;
     float Roatation_Horizontal;
+    uint8_t Rotation_mode;
+    uint8_t host_sent_mode;
     // 上四个为控制末端位姿，下两个为控制臂指向
     float Position_z;
     float Rotation_yaw;
     arm_mode_e contro_mode; // 臂臂控制模式
     uint8_t auto_mode; // 臂臂自动模式
-    int8_t sucker_state; // 吸盘状态
-    uint8_t vision_signal; // 触发视觉识别的信号
     uint8_t optimize_signal; // 优化信号（修正臂的yaw偏向和混合roll角度）
 
-    uint8_t init_call;  // 相关参数重初始化请求（当机器人死亡复活后由cmd置位）
+    int8_t sucker_call; // 吸盘动作命令
     uint8_t halt_force_call;  // 强制停止命令
     uint8_t halt_temp_call;  // 临时暂停命令
-    uint8_t convert_flag;   // 兑换模式标志位
     uint8_t reset_init_flag; // z轴重置标定
+    uint8_t z_slowly_down_call; // z轴缓慢下降命令
     float aroll_angle_offset; //混合roll的偏移值(单次累计值)
 
     uint8_t debug_flag; // 调试用
@@ -281,13 +282,11 @@ typedef struct
 #define Arm_get_goldcube_right 0x80 // 臂臂取右侧金矿
 #define Arm_fetch_cube_from_warehouse1 0x01 // 臂臂从矿仓1取矿
 #define Arm_fetch_cube_from_warehouse2 0x03 // 臂臂从矿仓2取矿
-#define Arm_big_yaw_reset   0x08    // 大Yaw归中
 #define Arm_get_silvercube_left 0x02// 取小资源岛左侧矿
 #define Arm_get_silvercube_mid  0x20// 取小资源岛中间矿
 #define Arm_get_silvercube_right 0x40// 取小资源岛右侧矿
-#define Fetch_gronded_cube 0x90 // 取地矿
-#define Fetch_gronded_cube_P 0xA0 // 取地矿姿势
-#define Arm_forward_P 0xB0 // 前伸姿态
+#define Arm_fetch_gronded_cube 0xA0 // 取地矿姿势
+#define Arm_ConvertCube 0xB0 // 兑矿模式
 // 臂臂控制模式
 #define Arm_Control_with_Chassis 1// 控制底盘臂臂
 #define Arm_Control_only_Arm     2// 仅控制臂臂
