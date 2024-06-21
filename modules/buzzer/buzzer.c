@@ -20,6 +20,8 @@
 
 extern osThreadId_t BuzzerHandle; // 由于线程挂起后无法自己恢复，所以需要使用线程句柄
 static BuzzerInstance *buzzer = NULL;
+static float buzzer_one_note_time;
+static uint8_t buzzer_one_note_flag = 0;
 // 音符偏移量
 static const uint8_t _note_tab[] = {9, 11, 0, 2, 4, 5, 7};
 // 音符频率
@@ -332,8 +334,9 @@ void buzzer_one_note(uint16_t Note, float delay)
 #else
     PWMSetDutyRatio(buzzer->buzzer_pwm, 0.5f); // 音量
 #endif
-    DWT_Delay(delay);
-    PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
+    buzzer_one_note_flag = 0;
+    buzzer_one_note_time = delay;
+    osThreadResume(BuzzerHandle); // 恢复线程
 }
 /**
  * @brief :  蜂鸣器任务，播放完毕后自动挂起线程，循环播放除外
@@ -347,11 +350,20 @@ __attribute__((noreturn)) void BuzzerTask(void *argument)
             osThreadSuspend(BuzzerHandle); // 挂起线程
             continue;
         }
-        do {
-            string_handle();
-            buzzer_silence();
-        } while (buzzer->_repeat);
-        buzzer->busy = 0;   
+        if(buzzer_one_note_flag)
+        {
+            DWT_Delay(buzzer_one_note_time);
+            PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
+        }
+        else
+        {
+            do {
+                string_handle();
+                buzzer_silence();
+            } while (buzzer->_repeat);
+            buzzer->busy = 0;   
+        }
+            
         osThreadSuspend(BuzzerHandle); // 挂起线程
     }
 }

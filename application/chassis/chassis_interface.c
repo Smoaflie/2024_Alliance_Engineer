@@ -60,7 +60,7 @@ void ChassisInit_Motor()
                 .Kd            = 0.005,  // 0
                 .IntegralLimit = 3000,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .MaxOut        = 12000,
+                .MaxOut        = 16384,
                 },
             .current_PID = {
                 .Kp            = 0.5, // 0.4
@@ -222,7 +222,7 @@ void ChassisModeSelect()
             chassis_cmd_recv.wz = -1.5f * de * abs(de);
             break;
         case CHASSIS_ROTATE: // 自旋,同时保持全向机动；
-            chassis_cmd_recv.wz = 15000 + rand()%20000;
+            chassis_cmd_recv.wz = 7000 + rand()%3000;
             break;
         default:
             break;
@@ -236,6 +236,11 @@ void ChassisModeSelect()
     chassis_vx = chassis_cmd_recv.vx * cos_theta - chassis_cmd_recv.vy * sin_theta;
     chassis_vy = chassis_cmd_recv.vx * sin_theta + chassis_cmd_recv.vy * cos_theta;
 }
+//车身倾倒检测
+//todo:反方向倾倒+参数优化
+void RobotTumbleDetect(){
+    chassis_vy += chassis_cmd_recv.gimbal_pitch_imu * 1000;
+}    
 void ChassisDebugInterface()
 {
     // static float kp=5.5,ki=0,kd=0.0145;

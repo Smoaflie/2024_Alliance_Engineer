@@ -3,7 +3,6 @@
   "type": "ARM",
   "dependenceList": [],
   "srcDirs": [
-    ".eide/deps",
     "Core",
     "Middlewares",
     "Drivers",
@@ -61,7 +60,6 @@
           "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
           "Drivers/CMSIS/Device/ST/STM32H7xx/Include",
           "Drivers/CMSIS/Include",
-          ".eide/deps",
           "bsp",
           "bsp/dwt",
           "bsp/can",
@@ -122,13 +120,14 @@
           "application/airpump",
           "application/UI",
           "modules/tool",
-          "application/UI_reality"
+          "application/UI_reality",
+          "bsp/flash",
+          "application/flash"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",
           "modules/algorithm"
         ],
-        "sourceDirList": [],
         "defineList": [
           "DEBUG",
           "USE_HAL_DRIVER",
@@ -185,5 +184,5 @@
       }
     }
   },
-  "version": "3.3"
+  "version": "3.4"
 }

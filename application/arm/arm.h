@@ -27,7 +27,7 @@ typedef struct {
 typedef struct {
     HostInstance *host_instance; // 上位机接口
     uint8_t host_rec_flag;       // 上位机接收标志位
-    uint8_t host_send_buf[30];   // 上位机发送缓冲区
+    uint8_t host_send_buf[33];   // 上位机发送缓冲区
     uint8_t sent_package_flag;     // 发送包标识
     uint8_t recv_package_flag;     // 接收包标识
     ARM_TRANSLATE_PARAM translate_param; //平移操作参数

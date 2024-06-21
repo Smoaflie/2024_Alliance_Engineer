@@ -144,6 +144,7 @@ typedef struct
     float vy;           // 横移方向速度
     float wz;           // 旋转速度
     float offset_angle; // 底盘和归中位置的夹角
+    float gimbal_pitch_imu;
     chassis_mode_e chassis_mode;
     _RobotControlMode robotControlMode;
 
@@ -171,6 +172,7 @@ typedef struct
     float yaw_motor;
     float yaw_offset;
     float pitch;
+    float pitch_imu;
 } Gimbal_Data_s;
 
 // airpump发布的云台数据,由cmd订阅
@@ -178,6 +180,7 @@ typedef struct
 { // 云台角度控制
     uint8_t pump_state;
 } Airpump_Data_s;
+
 /* ----------------gimbal/shoot/chassis发布的反馈数据----------------*/
 /**
  * @brief 由cmd订阅,其他应用也可以根据需要获取.
@@ -206,6 +209,12 @@ typedef struct
  * @brief 由cmd订阅和发送.
  *
  */
+typedef struct
+{
+    uint32_t address;
+    uint32_t *data;
+    uint8_t len;
+}Flash_write_param_t;
 typedef struct{
     float big_yaw_angle;
 
@@ -213,6 +222,8 @@ typedef struct{
     uint8_t arm_to_airpump;
 
     uint8_t auto_mode_doing_state;
+
+    Flash_write_param_t flash_data;
 }Arm_Data_s;
 
 typedef struct{
@@ -236,6 +247,8 @@ typedef struct{
     uint8_t reset_init_flag; // z轴重置标定
     uint8_t z_slowly_down_call; // z轴缓慢下降命令
     float aroll_angle_offset; //混合roll的偏移值(单次累计值)
+    int8_t assorted_roll_encoder_amend_call;
+    int8_t tail_encoder_amend_call;
 
     uint8_t debug_flag; // 调试用
 }Arm_Cmd_Data_s;
@@ -259,6 +272,10 @@ typedef struct{
     uint8_t chassis_auto_mod_id;
 }UI_reality_Data_s;
 
+typedef struct{
+    Flash_write_param_t flash_param[5];
+}FLASH_Data_s;
+
 typedef struct
 { 
     uint8_t pump_one_mode_t;    //气泵1
@@ -271,6 +288,8 @@ typedef struct
     uint8_t control_mode_t; //自定义控制器模式
     uint8_t relay_contr_state; //臂继电器状态
 }UI_data_t;
+
+
 
 #pragma pack() // 关闭字节对齐,结束前面的#pragma pack(1)
 

@@ -159,6 +159,7 @@ void GimbalContro()
 {
     if(gimbal_imu_init)
     {
+        gimbal_yaw_motor->motor_settings.angle_feedback_source = OTHER_FEED; //todo:
         /* 云台控制 */
         if(gimbal_cmd_recv.gimbal_mode == GIMBAL_ZERO_FORCE)    
         {
@@ -209,6 +210,7 @@ void GimbalContro()
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET_WITH_ROTATE){
             Servo_Motor_Start(gimbal_pitch_motor);
             LKMotorEnable(gimbal_yaw_motor);
+            gimbal_yaw_motor->motor_settings.angle_feedback_source = MOTOR_FEED;
 
                 gimbal_yaw_motor->measure.total_round = 0;
                 gimbal_yaw_motor->measure.total_angle = gimbal_yaw_motor->measure.angle_single_round;
@@ -232,6 +234,7 @@ void GimbalPubMessage()
     angle = gimbal_data_send.yaw_imu - gimbal_data_send.yaw_motor;
     gimbal_data_send.yaw_offset = (angle>180)?(angle-360):((angle<-180)?(angle+360):angle);
     gimbal_data_send.pitch = gimbal_pitch_angle;
+    gimbal_data_send.pitch_imu = gimbal_eulur[0];
     PubPushMessage(gimbal_pub,&gimbal_data_send);
 }
 

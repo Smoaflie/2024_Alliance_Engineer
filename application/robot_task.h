@@ -25,6 +25,7 @@
 #include "test.h"
 #include "UI_reality.h"
 #include "UI.h"
+#include "flashtask.h"
 
 #ifdef ROBOT_TEST
 void TestTask(void *argument)
@@ -74,7 +75,6 @@ void _gimbalTASK(void *argument)
         osDelay(1);
     }
 }
-
 void _chassisTASK(void *argument)
 {
     UNUSED(argument);
@@ -135,4 +135,17 @@ void _refereeTask(void *argument)
         osDelay(100);
     }
 }
+
+void _FlashTask(void *argument)
+{
+  /* USER CODE BEGIN _FlashTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    flashTask();
+    osDelay(1000);
+  }
+  /* USER CODE END _FlashTask */
+}
+
 #endif

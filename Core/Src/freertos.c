@@ -66,13 +66,13 @@ osThreadId_t DaemonHandle;
 const osThreadAttr_t Daemon_attributes = {
   .name = "Daemon",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityBelowNormal,
+  .priority = (osPriority_t) osPriorityBelowNormal1,
 };
 /* Definitions for Test */
 osThreadId_t TestHandle;
 const osThreadAttr_t Test_attributes = {
   .name = "Test",
-  .stack_size = 4096 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for gimbal */
@@ -93,7 +93,7 @@ const osThreadAttr_t chassis_attributes = {
 osThreadId_t armHandle;
 const osThreadAttr_t arm_attributes = {
   .name = "arm",
-  .stack_size = 4096 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for cmd */
@@ -124,6 +124,13 @@ const osThreadAttr_t referee_attributes = {
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityBelowNormal,
 };
+/* Definitions for flash */
+osThreadId_t flashHandle;
+const osThreadAttr_t flash_attributes = {
+  .name = "flash",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityRealtime1,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -141,6 +148,7 @@ void _cmdTASK(void *argument);
 void _motorTASK(void *argument);
 void _airpumpTASK(void *argument);
 void _refereeTask(void *argument);
+void _FlashTask(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -204,6 +212,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of referee */
   refereeHandle = osThreadNew(_refereeTask, NULL, &referee_attributes);
+
+  /* creation of flash */
+  flashHandle = osThreadNew(_FlashTask, NULL, &flash_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -413,6 +424,24 @@ __weak void _refereeTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END _refereeTask */
+}
+
+/* USER CODE BEGIN Header__FlashTask */
+/**
+* @brief Function implementing the flash thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header__FlashTask */
+__weak void _FlashTask(void *argument)
+{
+  /* USER CODE BEGIN _FlashTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END _FlashTask */
 }
 
 /* Private application code --------------------------------------------------*/
