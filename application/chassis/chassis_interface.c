@@ -40,6 +40,7 @@ static DJIMotorInstance *motor_lf, *motor_rf, *motor_lb, *motor_rb; // left righ
 // static float t;
 
 /* 私有函数计算的中介变量,设为静态避免参数传递的开销 */
+static float current_chassis_vx, current_chassis_vy; // 底盘实时速度
 static float chassis_vx, chassis_vy;     // 将云台系的速度投影到底盘
 static float vt_lf, vt_rf, vt_lb, vt_rb; // 底盘速度解算后的临时输出,待进行限幅
 
@@ -47,7 +48,9 @@ static GPIOInstance *redLight_detect_gpio; // 红外测距传感器
 
 void ChassisInit_Motor()
 {
-    // static float current_feedforward_rb = 500; 
+    static float current_feedforward_lb = 1200; 
+    static float current_feedforward_lf = -1200; 
+    static float current_feedforward_rb = 1200; 
     static float current_feedforward_rf = -1200; 
 
     // 四个轮子的参数一样,改tx_id和反转标志位即可
@@ -72,6 +75,7 @@ void ChassisInit_Motor()
             },
         },
         .controller_setting_init_config = {
+            .feedforward_flag      = CURRENT_FEEDFORWARD,
             .angle_feedback_source = MOTOR_FEED,
             .speed_feedback_source = MOTOR_FEED,
             .outer_loop_type       = SPEED_LOOP,
@@ -80,17 +84,17 @@ void ChassisInit_Motor()
         .motor_type = M3508,
     };
     //  @todo: 当前还没有设置电机的正反转,仍然需要手动添加reference的正负号,需要电机module的支持,待修改.
+    chassis_motor_config.controller_param_init_config.current_feedforward_ptr = &current_feedforward_lf;
     chassis_motor_config.can_init_config.tx_id                             = 4;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_lf                                                               = DJIMotorInit(&chassis_motor_config);
 
+    chassis_motor_config.controller_param_init_config.current_feedforward_ptr = &current_feedforward_lb;
     chassis_motor_config.can_init_config.tx_id                             = 1;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_lb                                                               = DJIMotorInit(&chassis_motor_config);
     
-    // chassis_motor_config.controller_setting_init_config.feedforward_flag = CURRENT_FEEDFORWARD,
-
-    // chassis_motor_config.controller_param_init_config.current_feedforward_ptr = &current_feedforward_rb;
+    chassis_motor_config.controller_param_init_config.current_feedforward_ptr = &current_feedforward_rb;
     chassis_motor_config.can_init_config.tx_id                             = 3;
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_rb                                                               = DJIMotorInit(&chassis_motor_config);
@@ -124,6 +128,41 @@ void ChassisInit_IO()
  */
 void MecanumCalculate()
 {
+    //根据当前速度对目标速度进行限制
+    static float limit_add_speed_x = 3000;
+    static float limit_add_speed_x_stop = 3000;
+    static float limit_add_speed_y = 3000;
+    static float limit_add_speed_y_stop = 3000;
+    if(chassis_cmd_recv.chassis_mode != CHASSIS_ROTATE){
+        if(chassis_cmd_recv.arm_height <= -240){
+            limit_add_speed_x = 3500;
+            limit_add_speed_y = 3000;
+            limit_add_speed_x_stop = 3000;
+            limit_add_speed_y_stop = 3000;
+        }else{
+            limit_add_speed_x = 3200;
+            limit_add_speed_y = 2500;
+            limit_add_speed_x_stop = 1500;
+            limit_add_speed_y_stop = 1500;
+        }
+        if(current_chassis_vx > 0){
+            if(chassis_vx - current_chassis_vx > limit_add_speed_x) chassis_vx = current_chassis_vx + limit_add_speed_x;
+            else if(chassis_vx - current_chassis_vx < -limit_add_speed_x_stop) chassis_vx = current_chassis_vx - limit_add_speed_x_stop;
+        }else{
+            if(chassis_vx - current_chassis_vx > limit_add_speed_x_stop) chassis_vx = current_chassis_vx + limit_add_speed_x_stop;
+            else if(chassis_vx - current_chassis_vx < -limit_add_speed_x) chassis_vx = current_chassis_vx - limit_add_speed_x;
+        }
+        if(current_chassis_vy > 0){
+            if(chassis_vy - current_chassis_vy > limit_add_speed_y) chassis_vy = current_chassis_vy + limit_add_speed_y;
+            else if(chassis_vy - current_chassis_vy < -limit_add_speed_y_stop) chassis_vy = current_chassis_vy - limit_add_speed_y_stop;
+        }else{
+            if(chassis_vy - current_chassis_vy > limit_add_speed_y_stop) chassis_vy = current_chassis_vy + limit_add_speed_y_stop;
+            else if(chassis_vy - current_chassis_vy < -limit_add_speed_y) chassis_vy = current_chassis_vy - limit_add_speed_y;
+        }
+            
+    }
+
+    //计算得目标速度
     vt_lf = -chassis_vx - chassis_vy - chassis_cmd_recv.wz * LF_CENTER;
     vt_rf = -chassis_vx + chassis_vy - chassis_cmd_recv.wz * RF_CENTER;
     vt_lb = chassis_vx - chassis_vy - chassis_cmd_recv.wz * LB_CENTER;
@@ -136,7 +175,6 @@ void MecanumCalculate()
  */
 void SetChassisRef()
 {
-    // 工程没有功率限制pwp
     DJIMotorSetRef(motor_lf, vt_lf);
     DJIMotorSetRef(motor_rf, vt_rf);
     DJIMotorSetRef(motor_lb, vt_lb);
@@ -145,54 +183,69 @@ void SetChassisRef()
 
 //底盘特殊功能处理
 void SpecialFuncApply(){
-    static GPIO_PinState redlight_last_state = 0; //红外测距状态 1为触发
-    static GPIO_PinState redlight_state = 0; //红外测距状态 1为触发
-    static uint16_t redlight_detection_cnt = 0;
-    // redlight_state = GPIORead(redLight_detect_gpio);
-    redlight_state = HAL_GPIO_ReadPin(redLight_detect_GPIO_Port,redLight_detect_Pin);
+    // static GPIO_PinState redlight_last_state = 0; //红外测距状态 1为触发
+    // static GPIO_PinState redlight_state = 0; //红外测距状态 1为触发
+    // static uint16_t redlight_detection_cnt = 0;
+    // // redlight_state = GPIORead(redLight_detect_gpio);
+    // redlight_state = HAL_GPIO_ReadPin(redLight_detect_GPIO_Port,redLight_detect_Pin);
 
-    static uint8_t func_doing_state = 0;
-    //斜坡向左移动-切换
-    static uint8_t slope_move_l_switch = 0;
-    if(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_L && !(slope_move_l_switch==1)){
-        func_doing_state &= ~0x02;
-        (func_doing_state & 0x01) ? (func_doing_state&=~0x01) : (func_doing_state|=0x01); 
-        slope_move_l_switch = 1;
-        redlight_last_state = redlight_state;
-    }else if(!(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_L)){
-        slope_move_l_switch=0;
-    }
-    //斜坡向右移动-切换
-    static uint8_t slope_move_r_switch = 0;
-    if(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_R && !(slope_move_r_switch==1)){
-        func_doing_state &= ~0x01;
-        (func_doing_state & 0x02) ? (func_doing_state&=~0x02) : (func_doing_state|=0x02); 
-        slope_move_r_switch = 1;
-        redlight_last_state = redlight_state;
-    }else if(!(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_R)){
-        slope_move_r_switch=0;
-    }
-    //斜向移动
-    if(func_doing_state & 0x03){
-        if(redlight_state != redlight_last_state){
-            chassis_vx = 0;
-            chassis_vy = 0;
-            redlight_detection_cnt++;
-            if(redlight_detection_cnt > 200)
-                func_doing_state &= ~0x03;
-        }else{
-            // static float d_v = 2500;
-            redlight_detection_cnt = 0;
-            chassis_vx = (((func_doing_state&0x02)>>1) - (func_doing_state&0x01)) * 2500;
-            chassis_vy = 800;
-        }
-    }
+    // static uint8_t func_doing_state = 0;
+    // //斜坡向左移动-切换
+    // static uint8_t slope_move_l_switch = 0;
+    // if(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_L && !(slope_move_l_switch==1)){
+    //     func_doing_state &= ~0x02;
+    //     (func_doing_state & 0x01) ? (func_doing_state&=~0x01) : (func_doing_state|=0x01); 
+    //     slope_move_l_switch = 1;
+    //     redlight_last_state = redlight_state;
+    // }else if(!(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_L)){
+    //     slope_move_l_switch=0;
+    // }
+    // //斜坡向右移动-切换
+    // static uint8_t slope_move_r_switch = 0;
+    // if(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_R && !(slope_move_r_switch==1)){
+    //     func_doing_state &= ~0x01;
+    //     (func_doing_state & 0x02) ? (func_doing_state&=~0x02) : (func_doing_state|=0x02); 
+    //     slope_move_r_switch = 1;
+    //     redlight_last_state = redlight_state;
+    // }else if(!(chassis_cmd_recv.special_func_flag == CHASSIS_SLOPE_MOVE_R)){
+    //     slope_move_r_switch=0;
+    // }
+    // //斜向移动
+    // if(func_doing_state & 0x03){
+    //     if(redlight_state != redlight_last_state){
+    //         chassis_vx = 0;
+    //         chassis_vy = 0;
+    //         redlight_detection_cnt++;
+    //         if(redlight_detection_cnt > 200)
+    //             func_doing_state &= ~0x03;
+    //     }else{
+    //         // static float d_v = 2500;
+    //         redlight_detection_cnt = 0;
+    //         chassis_vx = (((func_doing_state&0x02)>>1) - (func_doing_state&0x01)) * 2500;
+    //         chassis_vy = 800;
+    //     }
+    // }
     
 }
 
 void ChassisSubMessage()
 {
     while(!SubGetMessage(chassis_sub, &chassis_cmd_recv));
+}
+void ChassisGetCurrentSpeed()
+{
+    //todo: 目前在旋转与平移中间态时存在错误数据
+    float vc_lf,vc_rf,vc_lb,vc_rb;
+    vc_lf = motor_lf->measure.speed_aps + chassis_cmd_recv.wz * LF_CENTER;
+    vc_rf = motor_rf->measure.speed_aps + chassis_cmd_recv.wz * RF_CENTER;
+    vc_lb = motor_lb->measure.speed_aps + chassis_cmd_recv.wz * LB_CENTER;
+    vc_rb = motor_rb->measure.speed_aps + chassis_cmd_recv.wz * RB_CENTER;
+    // vt_lf = -chassis_vx - chassis_vy - chassis_cmd_recv.wz * LF_CENTER;
+    // vt_rf = -chassis_vx + chassis_vy - chassis_cmd_recv.wz * RF_CENTER;
+    // vt_lb = chassis_vx - chassis_vy - chassis_cmd_recv.wz * LB_CENTER;
+    // vt_rb = chassis_vx + chassis_vy - chassis_cmd_recv.wz * RB_CENTER;
+    current_chassis_vx = -(-(vc_lf + vc_rf) + (vc_lb + vc_rb))/4.0f;
+    current_chassis_vy = -(-(vc_lf - vc_rf) - (vc_lb - vc_rb))/4.0f;
 }
 void ChassisModeSelect()
 {
@@ -212,17 +265,24 @@ void ChassisModeSelect()
     switch (chassis_cmd_recv.chassis_mode) {
         case CHASSIS_NO_FOLLOW: // 底盘维持全向机动,并可受控旋转
             chassis_cmd_recv.wz = chassis_cmd_recv.wz;
+            chassis_cmd_recv.offset_angle = 0;
+            break;
+        case CHASSIS_NO_FOLLOW_CONVERTMODE:
+            chassis_cmd_recv.wz = chassis_cmd_recv.wz;
+            chassis_cmd_recv.offset_angle = -90;
             break;
         case CHASSIS_FOLLOW_GIMBAL_YAW: // 跟随云台,不单独设置pid,以误差角度平方为速度输出
             chassis_cmd_recv.wz = -1.5f * chassis_cmd_recv.offset_angle * abs(chassis_cmd_recv.offset_angle);
+            VAL_LIMIT(chassis_cmd_recv.wz,-6000,6000);
             break;
         case CHASSIS_FOLLOW_GIMBAL_YAW_REVERSE:
             static float de;
             de = ((chassis_cmd_recv.offset_angle+180) > 180 ? chassis_cmd_recv.offset_angle+180-360 : chassis_cmd_recv.offset_angle+180);
             chassis_cmd_recv.wz = -1.5f * de * abs(de);
+            VAL_LIMIT(chassis_cmd_recv.wz,-6000,6000);
             break;
         case CHASSIS_ROTATE: // 自旋,同时保持全向机动；
-            chassis_cmd_recv.wz = 7000 + rand()%3000;
+            chassis_cmd_recv.wz = 4000 + 2000*(rand()%6);
             break;
         default:
             break;

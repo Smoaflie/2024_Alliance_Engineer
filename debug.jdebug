@@ -5,7 +5,7 @@
 **********************************************************************
 
 File          : D:/Documents/github/2024_Engineer/debug.jdebug
-Created       : 19 May 2024 23:07
+Created       : 2 Jul 2024 10:09
 Ozone Version : V3.32
 */
 
@@ -33,6 +33,7 @@ void OnProjectLoad (void) {
   // User settings
   //
   File.Open ("$(ProjectDir)/build/Debug/2024_ENGINEER_Frame.elf");
+  Edit.SysVar (VAR_HSS_SPEED, FREQ_100_HZ);
 }
 
 /*********************************************************************

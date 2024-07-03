@@ -1,6 +1,7 @@
 // app
 #include "robot_def.h"
 #include "robot_cmd.h"
+#include "flashtask.h"
 // module
 #include "remote_control.h"
 #include "ins_task.h"
@@ -58,8 +59,8 @@ static uint8_t chassis_auto_mod_id = 1; //底盘自动模式
 // 地盘速度斜坡函数
 static ramp_t chassis_speed_ramp[4][4]; // l/m/h x/y 低中高速
 static ramp_t chassis_stop_ramp[2]; // 停车斜坡
-static int32_t ramp_feriod = 1000; //斜坡周期
-static int32_t ramp_stop_feriod = 6000; //斜坡周期
+static int32_t ramp_feriod_slow = 500,ramp_feriod_mid = 1000,ramp_feriod_hight = 1500; //斜坡周期
+static int32_t ramp_stop_feriod = 1000; //斜坡周期
 
 static GPIOInstance *relay_contro_gpio; //继电器io口
 
@@ -84,14 +85,13 @@ void RobotCMDInit_RC()
 void RobotCMDInit_Param()
 {
     robot_state = ROBOT_STOP;                // 启动时机器人为停止状态，避免一上电创死场地
-    zero_output_init_flag = 1;               // 启动时置为1，当遥控器双下过一次后复位
     memset(&arm_cmd_send, 0, sizeof(arm_cmd_send));
 
     for(int i = 0; i < 4; i++)
         for(int j = 0; j < 4; j++)
-            ramp_init(&chassis_speed_ramp[i][j],ramp_feriod);
-    ramp_init(&chassis_stop_ramp[0], ramp_feriod);
-    ramp_init(&chassis_stop_ramp[1], ramp_feriod);
+            ramp_init(&chassis_speed_ramp[i][j],ramp_feriod_mid);
+    ramp_init(&chassis_stop_ramp[0], ramp_feriod_slow);
+    ramp_init(&chassis_stop_ramp[1], ramp_feriod_slow);
 }
 void RobotCMDInit_IO()
 {
@@ -124,11 +124,11 @@ static void arm_auto_mode_select(){
         case 1: //红
             arm_cmd_send.auto_mode = Reset_arm_cmd_param_flag;break; //行走模式
         case 2: //橙
-            arm_cmd_send.auto_mode = Recycle_arm_in;break; //收臂臂回肚子
+            arm_cmd_send.auto_mode = Recycle_arm_in;ControlMode = ControlMode_Move;break; //收臂臂回肚子
         case 3: //黄
             arm_cmd_send.auto_mode = Recycle_arm_out;break; //臂臂伸出肚子
         case 4: //绿
-            arm_cmd_send.auto_mode = Arm_fetch_cube_from_warehouse1;break; //从矿仓中取矿 W1
+            arm_cmd_send.auto_mode = Arm_fetch_cube_from_warehouse1;ControlMode = ControlMode_ConvertCube;break; //从矿仓中取矿 W1
         case 5: //青
             arm_cmd_send.auto_mode = Arm_get_goldcube_right;break;// 金矿右 GL
         case 6: //蓝
@@ -138,11 +138,11 @@ static void arm_auto_mode_select(){
         case 8: //粉
             arm_cmd_send.auto_mode = Arm_get_silvercube_right;break; //银矿右    SR
         case 9:
-            arm_cmd_send.auto_mode = Arm_fetch_cube_from_warehouse2;break; //从矿仓2中取矿
+            arm_cmd_send.auto_mode = Arm_fetch_cube_from_warehouse2;ControlMode = ControlMode_ConvertCube;break; //从矿仓2中取矿
         case 10:
             arm_cmd_send.auto_mode = Arm_fetch_gronded_cube;break; // 地矿
         case 11:
-            arm_cmd_send.auto_mode = Arm_ConvertCube;break; //兑矿姿态
+            arm_cmd_send.auto_mode = Arm_ConvertCube;ControlMode = ControlMode_ConvertCube;break; //兑矿姿态
     }
 }
 static void chassis_auto_mode_select(){
@@ -158,7 +158,7 @@ static void chassis_auto_mode_select(){
  */
 static void RemoteControlSet_SwitchLeftMid()
 {
-    ControlMode = ControlMode_FetchCube;
+    // ControlMode = ControlMode_FetchCube;
 
     static uint8_t arm_contro_mode_id = 1; //标志控制方式
     switch(arm_contro_mode_id){
@@ -229,24 +229,13 @@ static void RemoteControlSet_SwitchLeftMid()
         // todo：后续ui中可加上当前选择的模式标识
         static uint8_t switch_flag = 0;
         if(dial_flag == 1 && !(switch_flag & 0x01)){
+            ControlMode = ControlMode_FetchCube;
             switch_flag |= 0x01;
             arm_auto_mode_id++;
             if(arm_auto_mode_id>11)   arm_auto_mode_id=1;
         }else if(!(dial_flag == 1)){
             switch_flag &= ~0x01;
         }
-        //LED标示模式
-        // switch(arm_auto_mode_id){
-        //     case 1:DM_board_LEDSet(0xff4546);break;// 红色
-        //     case 2:DM_board_LEDSet(0xffa308);break;// 橙色 
-        //     case 3:DM_board_LEDSet(0xffee46);break;// 黄色
-        //     case 4:DM_board_LEDSet(0xa8ff2d);break;// 绿色
-        //     case 5:DM_board_LEDSet(0x45fff2);break;// 青色
-        //     case 6:DM_board_LEDSet(0x0000ff);break;// 蓝色
-        //     case 7:DM_board_LEDSet(0xf029f6);break;// 紫色
-        //     case 8:DM_board_LEDSet(0xff648e);break;// 粉色
-        //     case 9:DM_board_LEDSet(0xffffff);break;// 白色
-        // }
         // 拨轮向下时应用模式
         if(dial_flag == -1){
             arm_cmd_send.contro_mode = ARM_AUTO_MODE;
@@ -256,7 +245,6 @@ static void RemoteControlSet_SwitchLeftMid()
 }
 static void RemoteControlSet_SwitchLeftDown()
 {
-    // ControlMode = ControlMode_Move;
     arm_cmd_send.contro_mode = ARM_FIXED; // 臂臂固定
     
     // 左摇杆控制底盘移动，右摇杆控制云台
@@ -337,6 +325,7 @@ static void RemoteControlSet()
 static void MouseKeyControlSet()
 {
     robot_state = ROBOT_READY;
+    chassis_cmd_send.chassis_mode = CHASSIS_FOLLOW_GIMBAL_YAW; //底盘跟随云台
 
     // ctrl+shift+r 重置C板
     static uint16_t reset_press_cnt = 0;
@@ -353,98 +342,21 @@ static void MouseKeyControlSet()
     }
 
     // wasd 控制底盘全向移动 中速/ctrl慢速/shift高速
-        static float current_speed_x = 0;
-        static float current_speed_y = 0;
-            
-        /* 斜坡对应 [012慢中高] [0123|wasd 4x_stop 5y_stop]*/
-        current_speed_y = chassis_cmd_send.vy ;
-        current_speed_x = chassis_cmd_send.vx ;
-        const float spped[3] = {10000, 20000, 60000};
-        uint8_t mask = 0;
-        if(!rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift) {   //wasd-中速
-            if(rc_data->key[KEY_PRESS].w && !rc_data->key[KEY_PRESS].s)
-                {chassis_cmd_send.vy += (spped[1] - current_speed_y)* ramp_calc(&chassis_speed_ramp[1][0]);mask&=0x01<<0;}
-            else if(!rc_data->key[KEY_PRESS].w && rc_data->key[KEY_PRESS].s)
-                {chassis_cmd_send.vy += (-spped[1] - current_speed_y)* ramp_calc(&chassis_speed_ramp[1][2]);mask&=0x01<<2;}
-            
-            if(rc_data->key[KEY_PRESS].a && !rc_data->key[KEY_PRESS].d)
-                {chassis_cmd_send.vx += (spped[1] - current_speed_x)* ramp_calc(&chassis_speed_ramp[1][1]);mask&=0x01<<1;}
-            else if(!rc_data->key[KEY_PRESS].a && rc_data->key[KEY_PRESS].d)
-                {chassis_cmd_send.vx += (-spped[1] - current_speed_x)* ramp_calc(&chassis_speed_ramp[1][3]);mask&=0x01<<3;}
-            
-            for(int i = 0; i < 3; i++){
-                for(int j = 0; j < 4; j++){
-                    if((mask & (0x01<<j)) || i==1)
-                        continue;
-                    else
-                        ramp_init(&chassis_speed_ramp[i][j],ramp_feriod);
-                }
-            }
-        }
-        else if(rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift) {   //ctrl+wasd-慢速
-            if(rc_data->key[KEY_PRESS].w && !rc_data->key[KEY_PRESS].s)
-                {chassis_cmd_send.vy += (spped[0] - current_speed_y)* ramp_calc(&chassis_speed_ramp[0][0]);mask&=0x01<<0;}
-            else if(!rc_data->key[KEY_PRESS].w && rc_data->key[KEY_PRESS].s)
-                {chassis_cmd_send.vy += (-spped[0] - current_speed_y)* ramp_calc(&chassis_speed_ramp[0][2]);mask&=0x01<<2;}
-
-            if(rc_data->key[KEY_PRESS].a && !rc_data->key[KEY_PRESS].d)
-                {chassis_cmd_send.vx += (spped[0] - current_speed_x)* ramp_calc(&chassis_speed_ramp[0][1]);mask&=0x01<<1;}
-            else if(!rc_data->key[KEY_PRESS].a && rc_data->key[KEY_PRESS].d)
-                {chassis_cmd_send.vx += (-spped[0] - current_speed_x)* ramp_calc(&chassis_speed_ramp[0][3]);mask&=0x01<<3;}
-            
-            for(int i = 0; i < 3; i++){
-                for(int j = 0; j < 4; j++){
-                    if((mask & (0x01<<j)) || i==0)
-                        continue;
-                    else
-                        ramp_init(&chassis_speed_ramp[i][j],ramp_feriod);
-                }
-            }
-        }
-        else if(!rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift) {   //shift+wasd-高速
-            if(rc_data->key[KEY_PRESS].w && !rc_data->key[KEY_PRESS].s)
-                {chassis_cmd_send.vy += (spped[2] - current_speed_y)* ramp_calc(&chassis_speed_ramp[2][0]);mask&=0x01<<0;}
-            else if(!rc_data->key[KEY_PRESS].w && rc_data->key[KEY_PRESS].s)
-                {chassis_cmd_send.vy += (-spped[2] - current_speed_y)* ramp_calc(&chassis_speed_ramp[2][2]);mask&=0x01<<2;}
-
-            if(rc_data->key[KEY_PRESS].a && !rc_data->key[KEY_PRESS].d)
-                {chassis_cmd_send.vx += (spped[2] - current_speed_x)* ramp_calc(&chassis_speed_ramp[2][1]);mask&=0x01<<1;}
-            else if(!rc_data->key[KEY_PRESS].a && rc_data->key[KEY_PRESS].d)
-                {chassis_cmd_send.vx += (-spped[2] - current_speed_x)* ramp_calc(&chassis_speed_ramp[2][3]);mask&=0x01<<3;}
-            
-            for(int i = 0; i < 3; i++){
-                for(int j = 0; j < 4; j++){
-                    if((mask & (0x01<<j)) || i==2)
-                        continue;
-                    else
-                        ramp_init(&chassis_speed_ramp[i][j],ramp_feriod);
-                }
-            }
-        }
-        
-        if(!rc_data->key[KEY_PRESS].w && !rc_data->key[KEY_PRESS].s)
-            chassis_cmd_send.vy += (0 - current_speed_y) * ramp_calc(&chassis_stop_ramp[0]);
-        else
-            ramp_init(&chassis_stop_ramp[0],ramp_stop_feriod);
-
-        if(!rc_data->key[KEY_PRESS].a && !rc_data->key[KEY_PRESS].d)
-            chassis_cmd_send.vx += (0 - current_speed_x) * ramp_calc(&chassis_stop_ramp[1]);
-        else
-            ramp_init(&chassis_stop_ramp[1],ramp_stop_feriod);
-
-            
-
-        current_speed_x = chassis_cmd_send.vx;
-        current_speed_y = chassis_cmd_send.vy;
-
-        // if(rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift){
-        // // ctrl+shift+w/s 微调推杆吸盘
-        //     // airpump_cmd_send.sucker_offset_angle += 0.01*(rc_data->key[KEY_PRESS_WITH_CTRL].w-rc_data->key[KEY_PRESS_WITH_CTRL].s);
-        // // ctrl+shift+a/d 微调推杆吸盘
-        //     arm_cmd_send.aroll_angle_offset = 0.01*(rc_data->key[KEY_PRESS_WITH_CTRL].a-rc_data->key[KEY_PRESS_WITH_CTRL].d);
-        // }else{
-        //     arm_cmd_send.aroll_angle_offset = 0;
-        // }
+    const float speed[3] = {15000, 30000, 80000};
+    
+    if(ControlMode==ControlMode_ConvertCube) {   //wasd-中速
+        chassis_cmd_send.vy = (rc_data->key[KEY_PRESS].w - rc_data->key[KEY_PRESS].s) * 6000;
+        chassis_cmd_send.vx = (rc_data->key[KEY_PRESS].a - rc_data->key[KEY_PRESS].d) * 6000;
+    }else if((!rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift) && !(ControlMode==ControlMode_FetchCube)) {   //wasd-中速
+        chassis_cmd_send.vy = (rc_data->key[KEY_PRESS].w - rc_data->key[KEY_PRESS].s) * speed[1];
+        chassis_cmd_send.vx = (rc_data->key[KEY_PRESS].a - rc_data->key[KEY_PRESS].d) * speed[1];
+    }else if((rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift) || (ControlMode==ControlMode_FetchCube)) {   //ctrl+wasd-慢速
+        chassis_cmd_send.vy = (rc_data->key[KEY_PRESS].w - rc_data->key[KEY_PRESS].s) * speed[0];
+        chassis_cmd_send.vx = (rc_data->key[KEY_PRESS].a - rc_data->key[KEY_PRESS].d) * speed[0];
+    }else if((!rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift)) {   //ctrl+wasd-快速
+        chassis_cmd_send.vy = (rc_data->key[KEY_PRESS].w - rc_data->key[KEY_PRESS].s) * speed[2];
+        chassis_cmd_send.vx = (rc_data->key[KEY_PRESS].a - rc_data->key[KEY_PRESS].d) * speed[2];
+    }
 
     /* q&e */
         // q'e / shift+q'e控制底盘旋转
@@ -464,7 +376,7 @@ static void MouseKeyControlSet()
     // shift+r'f控制臂 行走姿态 | 收回肚子
     if(!rc_data->key[KEY_PRESS].ctrl && rc_data->mouse.press_l){ //+左键确认
         if(rc_data->key[KEY_PRESS_WITH_SHIFT].r){
-            ControlMode = ControlMode_Move;
+            // ControlMode = ControlMode_Move;
             arm_cmd_send.auto_mode = Reset_arm_cmd_param_flag;//shift+r 臂行走姿态
             arm_cmd_send.contro_mode = ARM_AUTO_MODE;
         }
@@ -587,27 +499,26 @@ static void MouseKeyControlSet()
     }else{
         arm_cmd_send.halt_force_call = 0;
     }
-    // ctrl/shift + C键 修正混合roll偏差角/修正臂解算方式
+    // C键
         //shift+c，修正臂解算方式（默认为右解)
         if(rc_data->key[KEY_PRESS].c && !rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift)
             arm_cmd_send.optimize_signal |= 0x01;
         else
             arm_cmd_send.optimize_signal &= ~0x01;
-        //ctrl+c，修正混合roll偏差角
-        if(rc_data->key[KEY_PRESS].c && rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift && rc_data->mouse.press_l)
+        //ctrl+c，(兑矿模式下)切换自定义控制器模式,
+        if(rc_data->key[KEY_PRESS].c && rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)
+            arm_cmd_send.switch_custom_controller_mode_call = 1;
+        else
+            arm_cmd_send.switch_custom_controller_mode_call = 0;
+
+        // (+左键)ctrl+shift+c 修正混合roll偏差角
+        if(rc_data->key[KEY_PRESS].c && rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift && rc_data->mouse.press_l)
             arm_cmd_send.optimize_signal |= 0x02;
         else
             arm_cmd_send.optimize_signal &= ~0x02;
+        
+            
     /* 鼠标右键 */
-        //(+左键) 底盘小陀螺
-        static uint8_t chassis_rotate_switch = 0;
-        if(rc_data->mouse.press_r && rc_data->mouse.press_l && !(rc_data->key[KEY_PRESS].shift && rc_data->key[KEY_PRESS].ctrl) && !chassis_rotate_switch){
-            chassis_cmd_send.chassis_mode = chassis_cmd_send.chassis_mode == CHASSIS_ROTATE ? CHASSIS_FOLLOW_GIMBAL_YAW : CHASSIS_ROTATE;
-            chassis_rotate_switch = 1;
-        }  
-        else if(!(rc_data->mouse.press_r && rc_data->mouse.press_l && !(rc_data->key[KEY_PRESS].shift && rc_data->key[KEY_PRESS].ctrl))){
-            chassis_rotate_switch = 0;
-        }
         //ctrl+shift+右键 云台小陀螺
         if(rc_data->mouse.press_r && (rc_data->key[KEY_PRESS].shift && rc_data->key[KEY_PRESS].ctrl))
             gimbal_cmd_send.gimbal_mode = GIMBAL_RESET_WITH_ROTATE;
@@ -617,37 +528,17 @@ static void MouseKeyControlSet()
             arm_cmd_send.z_slowly_down_call = 1;
         else arm_cmd_send.z_slowly_down_call = 0;
         // z/x+鼠标左键 暂停(继续)自动动作
-        static uint8_t switch_arm_auto_mode_on,switch_valve_auto_mode_on,switch_auto_mode_on_flag;
-        static uint8_t current_arm_auto_mode_on,current_valve_auto_mode_on;
-        current_arm_auto_mode_on = arm_cmd_send.auto_mode==0 ? current_arm_auto_mode_on : arm_cmd_send.auto_mode; 
-        current_valve_auto_mode_on = airpump_cmd_send.airvalve_mode==0 ? current_valve_auto_mode_on : airpump_cmd_send.airvalve_mode; 
         //z+鼠标左键 暂停(继续)推杆自动动作
-        if((rc_data->mouse.press_l && rc_data->key[KEY_PRESS].z && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift) && !(switch_auto_mode_on_flag&0x01)){
-            if(switch_valve_auto_mode_on && switch_valve_auto_mode_on != current_valve_auto_mode_on){
-                airpump_cmd_send.airvalve_mode = switch_valve_auto_mode_on;
-                switch_valve_auto_mode_on=0;
-            }else{
-                switch_valve_auto_mode_on = current_valve_auto_mode_on;
-                airpump_cmd_send.halt_temp_call = 1;
-            }
-            switch_auto_mode_on_flag |= 0x01;
-        }else if(!(rc_data->mouse.press_l && rc_data->key[KEY_PRESS].z && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)){
+        if((rc_data->mouse.press_l && rc_data->key[KEY_PRESS].z && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)){
+            airpump_cmd_send.halt_temp_call = 1;
+        }else{
             airpump_cmd_send.halt_temp_call = 0;
-            switch_auto_mode_on_flag &= ~0x01;
         }
         // x+鼠标左键 暂停(继续)臂臂自动动作
-        if((rc_data->mouse.press_l && rc_data->key[KEY_PRESS].x && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift) && !(switch_auto_mode_on_flag&0x02)){
-            if(switch_arm_auto_mode_on && switch_arm_auto_mode_on == current_arm_auto_mode_on){
-                arm_cmd_send.auto_mode = switch_valve_auto_mode_on;
-                switch_arm_auto_mode_on=0;
-            }else{
-                switch_arm_auto_mode_on = current_arm_auto_mode_on;
-                arm_cmd_send.halt_temp_call = 1;
-            }
-            switch_auto_mode_on_flag |= 0x02;
-        }else if(!(rc_data->mouse.press_l && rc_data->key[KEY_PRESS].x && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)){
+        if((rc_data->mouse.press_l && rc_data->key[KEY_PRESS].x && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)){
+            arm_cmd_send.halt_temp_call = 1;
+        }else{
             arm_cmd_send.halt_temp_call = 0;
-            switch_auto_mode_on_flag &= ~0x02;
         }
         // c+鼠标左键 切换为兑矿模式
         if(rc_data->mouse.press_l && rc_data->key[KEY_PRESS].c && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift){
@@ -663,7 +554,20 @@ static void MouseKeyControlSet()
         }
         // g+鼠标左键 切换为取矿模式
         if((rc_data->mouse.press_l && rc_data->key[KEY_PRESS].g && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift))
+            ControlMode = (gimbal_data_recv.yaw_motor<=90&&gimbal_data_recv.yaw_motor>=-90) ? ControlMode_Move : ControlMode_ReverseMove;
+        // 仅鼠标左键（除wasdqe) 切换为取矿模式
+        if(rc_data->mouse.press_l && !rc_data->mouse.press_r && !(rc_data->key[KEY_PRESS].keys & ~0x00cf))
             ControlMode = ControlMode_FetchCube;
+        // 鼠标右键+鼠标左键 底盘小陀螺
+        static uint8_t chassis_rotate_switch = 0;
+        if(rc_data->mouse.press_r && rc_data->mouse.press_l && !(rc_data->key[KEY_PRESS].shift && rc_data->key[KEY_PRESS].ctrl) && !chassis_rotate_switch){
+            chassis_cmd_send.chassis_mode = CHASSIS_ROTATE;
+            // chassis_cmd_send.chassis_mode = chassis_cmd_send.chassis_mode == CHASSIS_ROTATE ? CHASSIS_FOLLOW_GIMBAL_YAW : CHASSIS_ROTATE;
+        //     chassis_rotate_switch = 1;
+        }  
+        // else if(!(rc_data->mouse.press_r && rc_data->mouse.press_l && !(rc_data->key[KEY_PRESS].shift && rc_data->key[KEY_PRESS].ctrl))){
+        //     chassis_rotate_switch = 0;
+        // }
 }
 
 /**
@@ -723,6 +627,7 @@ static void MessageCenterDispose(){
     chassis_cmd_send.gimbal_pitch_imu = gimbal_data_recv.pitch_imu;
     chassis_cmd_send.robotControlMode = ControlMode;
     chassis_cmd_send.offset_angle = gimbal_data_recv.yaw_motor; //计算底盘偏差角度
+    chassis_cmd_send.arm_height = arm_data_recv.arm_height;
     gimbal_cmd_send.arm_big_yaw_offset = arm_data_recv.big_yaw_angle;   //云台因大Yaw移动产生的偏转角
     airpump_cmd_send.arm_to_airvalve = arm_data_recv.arm_to_airvalve; //臂任务对夹爪状态的控制
     airpump_cmd_send.arm_to_airpump = arm_data_recv.arm_to_airpump; //臂臂任务控制气泵，优先级比键鼠控制高 
@@ -783,12 +688,12 @@ static void state_detection_for_UI(){
 }
 void RobotActive()
 {
-    if(zero_output_init_flag==1)
+    while(zero_output_init_flag!=1)
     {
-        if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)))
-            zero_output_init_flag=0;
-        else if(rc_data->key[KEY_PRESS].r)
-        return;
+        if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) || rc_data->key[KEY_PRESS].r)
+            zero_output_init_flag=1;
+        else
+            osDelay(1);
     }
 }
 void RobotCMDSubMessage()
@@ -812,7 +717,7 @@ void RobotCMDParamPretreatment()
     // 监测红外测距模块状态
     redlight_detect();
 
-    //如果遥控器离线，切换为图传链路
+    //如果遥控器离线，ctrl+shift+b 切换为图传链路
     static uint8_t switch_to_vision_rc_flag = 0;
     if(rc_data->rc.switch_left==0 && rc_data->rc.switch_right==0)
     {
@@ -855,12 +760,14 @@ void RobotCMDGenerateCommand()
         else if(ControlMode == ControlMode_ReverseMove)
             chassis_cmd_send.chassis_mode = CHASSIS_FOLLOW_GIMBAL_YAW_REVERSE; //底盘跟随云台（换头
     }
-    if(ControlMode == ControlMode_FetchCube || ControlMode == ControlMode_ConvertCube)
+    if(ControlMode == ControlMode_ConvertCube)
+        chassis_cmd_send.chassis_mode = CHASSIS_NO_FOLLOW_CONVERTMODE;  //底盘自由移动
+    if(ControlMode == ControlMode_FetchCube)
         chassis_cmd_send.chassis_mode = CHASSIS_NO_FOLLOW;  //底盘自由移动
     if(arm_data_recv.auto_mode_doing_state)
         chassis_cmd_send.chassis_mode = CHASSIS_NO_FOLLOW;  //底盘自由移动
         
-    if(ControlMode == ControlMode_ConvertCube && custom_controller_comm_recv&0x01 && arm_cmd_send.auto_mode == 0){
+    if(ControlMode == ControlMode_ConvertCube && arm_cmd_send.auto_mode == 0){
         arm_cmd_send.contro_mode = ARM_CUSTOM_CONTRO;
         arm_cmd_send.auto_mode = 0;
     }

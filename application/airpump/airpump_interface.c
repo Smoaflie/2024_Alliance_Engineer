@@ -62,9 +62,9 @@ void AirpumpInit_IO()
 }
 void AirpumpInit_Motor()
 {
-Motor_Init_Config_s air_sucker_motor_config = {
-        .can_init_config.can_handle   = &hfdcan2,
-        .can_init_config.tx_id  = 4,
+    Motor_Init_Config_s air_sucker_motor_config = {
+        .can_init_config.can_handle   = &hfdcan1,
+        .can_init_config.tx_id  = 1,
         .controller_param_init_config = {
             .torque_PID = {
                 .Kp            = 0, // 0
@@ -235,14 +235,17 @@ void AirpumpContro_Valve()
         airvalve_state |= AIRVALVE_SEND_CODER;
     }
 
-    // 发送部分，发送标志位(0x80)置位后才会发送
+    // 发送部分，发送标志位(0x80)置位 或者 计时器到达1000后才会发送
     // 由该条件，发送动作在状态切换的时候才会进行
-    if(airvalve_state & AIRVALVE_SEND_CODER){
+    static uint16_t send_time_cnt = 0;
+    send_time_cnt++;
+    if((airvalve_state & AIRVALVE_SEND_CODER) || send_time_cnt>=1000){
         memcpy(airvalve_tx_buf+3,(uint8_t*)&airvalve_tx_coder,4);
         airvalve_tx_buf[7]=(uint8_t)(airvalve_tx_buf[3] + airvalve_tx_buf[4] + airvalve_tx_buf[5] + airvalve_tx_buf[6]);
         memcpy(airvalve_can_instance->tx_buff,airvalve_tx_buf,8);
         CANTransmit(airvalve_can_instance,1);
         airvalve_state&=~AIRVALVE_SEND_CODER;
+        send_time_cnt = 0;
     }
 }
 void AirpumpContro_Pump()
@@ -392,9 +395,21 @@ void AirpumpEmergencyHandler()
         airvalve_mode_cnt = 0;
     }
     //临时暂停
-    if(airpump_cmd_rec.halt_temp_call == 1){
+    static uint16_t airvalve_state_log;
+    static uint8_t halt_temp_switch_flag = 0;
+    if(airvalve_state)   airvalve_state_log = 0;
+    airvalve_state_log = airvalve_state;
+    if(airpump_cmd_rec.halt_temp_call == 1 && !halt_temp_switch_flag){
+        if(airvalve_state_log){
+            airvalve_state = airvalve_state_log;
+            airvalve_state_log = 0;
+        }else{
+            airvalve_state_log = airvalve_state;
+            airvalve_state = 0;
+        }
         airvalve_state = 0;
-    }
+        halt_temp_switch_flag = 1;
+    }if(!(airpump_cmd_rec.halt_temp_call == 1)) halt_temp_switch_flag = 0;
 }
 void AirpumpPubMessage()
 {

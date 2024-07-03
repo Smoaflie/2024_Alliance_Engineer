@@ -58,6 +58,7 @@ typedef struct
 
     DaemonInstance* daemon;
 
+    uint8_t ErrorCode;
     uint32_t feed_cnt;
     float dt;
 } EncoderInstance_s;

@@ -47,7 +47,6 @@ void RobotInit()
     ArmInit();
     GIMBALInit();
     AIRPUMPInit();
-    flashInit();
 #endif
 
 #ifdef ROBOT_TEST

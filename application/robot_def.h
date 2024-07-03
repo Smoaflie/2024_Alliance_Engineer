@@ -100,6 +100,7 @@ typedef enum {
     CHASSIS_ZERO_FORCE = 0,    // 电流零输入
     CHASSIS_ROTATE,            // 小陀螺模式
     CHASSIS_NO_FOLLOW,         // 不跟随，允许全向平移和受控旋转
+    CHASSIS_NO_FOLLOW_CONVERTMODE,         // 不跟随，允许全向平移和受控旋转-兑矿模式转90°
     CHASSIS_FOLLOW_GIMBAL_YAW, // 跟随模式，底盘叠加角度环控制
     CHASSIS_FOLLOW_GIMBAL_YAW_REVERSE, // 跟随模式，但头朝向背面
 } chassis_mode_e;
@@ -145,6 +146,7 @@ typedef struct
     float wz;           // 旋转速度
     float offset_angle; // 底盘和归中位置的夹角
     float gimbal_pitch_imu;
+    float arm_height;
     chassis_mode_e chassis_mode;
     _RobotControlMode robotControlMode;
 
@@ -217,6 +219,7 @@ typedef struct
 }Flash_write_param_t;
 typedef struct{
     float big_yaw_angle;
+    float arm_height;
 
     uint8_t arm_to_airvalve;
     uint8_t arm_to_airpump;
@@ -241,6 +244,7 @@ typedef struct{
     uint8_t auto_mode; // 臂臂自动模式
     uint8_t optimize_signal; // 优化信号（修正臂的yaw偏向和混合roll角度）
 
+    uint8_t switch_custom_controller_mode_call; //切换自定义控制器模式
     int8_t sucker_call; // 吸盘动作命令
     uint8_t halt_force_call;  // 强制停止命令
     uint8_t halt_temp_call;  // 临时暂停命令
@@ -274,6 +278,7 @@ typedef struct{
 
 typedef struct{
     Flash_write_param_t flash_param[5];
+    uint8_t save_call;
 }FLASH_Data_s;
 
 typedef struct

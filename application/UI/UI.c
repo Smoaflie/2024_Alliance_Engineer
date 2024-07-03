@@ -6,7 +6,7 @@
 #include "message_center.h"
 #include "rm_referee.h"
 #include "UI_ref.h"
-#include "ui.h"
+#include "UI.h"
 #include <string.h>
 
 referee_info_t *referee_data;

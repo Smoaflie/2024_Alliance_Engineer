@@ -26,7 +26,7 @@ static Subscriber_t *gimbal_sub;                   // 用于订阅云台的控�
 static Publisher_t *gimbal_pub;                   // 用于发送云台的数据信息
 static Gimbal_Ctrl_Cmd_s gimbal_cmd_recv; // 云台应用接收的信息
 static Gimbal_Data_s     gimbal_data_send;// 云台发布的信息
-static float gimbal_yaw_angle,gimbal_pitch_angle;
+static float gimbal_yaw_angle = 0,gimbal_pitch_angle;
 
 static GPIOInstance *relay_contro_gpio; //继电器io口
 
@@ -81,7 +81,7 @@ void GimbalInit_Motor()
                 .MaxOut        = 30,
             },
             .speed_PID = {
-                .Kp            = 40, // 0
+                .Kp            = 35, // 0
                 .Ki            = 0,  // 0
                 .Kd            = 0,      // 0
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
@@ -113,6 +113,9 @@ void GimbalInit_Motor()
         .Servo_type       = Servo180,
     };
     gimbal_pitch_motor = ServoInit(&servo_config);
+    gimbal_pitch_angle = 35;
+    Servo_Motor_FreeAngle_Set(gimbal_pitch_motor,(int16_t)gimbal_pitch_angle);
+
 }
 void GimbalInit_IO()
 {
@@ -124,7 +127,6 @@ void GimbalInit_IO()
 }
 void GimbalInit_Param()
 {
-    gimbal_pitch_angle = 0;
 }
 
 void GimbalSubMessage()
@@ -142,15 +144,19 @@ void GimbalParamPretreatment()
         gimbal_imu_init = 1;
     }
 
+    LKMotorEnable(gimbal_yaw_motor);
+
     /* 云台电机掉线监测 */
     if(!LKMotorIsOnline(gimbal_yaw_motor))
     {
-        osDelay(10000);
+        LKMotorStop(gimbal_yaw_motor);
+
+        osDelay(2000);
         if(!LKMotorIsOnline(gimbal_yaw_motor))
         {
             GPIOReset(relay_contro_gpio);
             LOGWARNING("[Gimbal] Gimbal yaw motor lost, trying to restart it.");
-            osDelay(2000);
+            osDelay(1000);
             GPIOSet(relay_contro_gpio);
         }
     }
@@ -168,10 +174,9 @@ void GimbalContro()
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_GYRO_MODE)
         {
             Servo_Motor_Start(gimbal_pitch_motor);
-            LKMotorEnable(gimbal_yaw_motor);
 
-            gimbal_pitch_angle -= gimbal_cmd_recv.pitch;
-            VAL_LIMIT(gimbal_pitch_angle, 0, 65);    /* 限幅 */
+            gimbal_pitch_angle += gimbal_cmd_recv.pitch;
+            VAL_LIMIT(gimbal_pitch_angle, 0, 180);    /* 限幅 */
 
             gimbal_yaw_angle -= gimbal_cmd_recv.yaw;
 
@@ -180,10 +185,9 @@ void GimbalContro()
             // LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle-gimbal_cmd_recv.arm_big_yaw_offset);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_FOLLOW_YAW){
             Servo_Motor_Start(gimbal_pitch_motor);
-            LKMotorEnable(gimbal_yaw_motor);
 
-            gimbal_pitch_angle -= gimbal_cmd_recv.pitch;
-            VAL_LIMIT(gimbal_pitch_angle, 0, 65);    /* 限幅 */
+            gimbal_pitch_angle += gimbal_cmd_recv.pitch;
+            VAL_LIMIT(gimbal_pitch_angle, 0, 180);    /* 限幅 */
 
             gimbal_yaw_angle = 0;
 
@@ -192,7 +196,6 @@ void GimbalContro()
             // LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET){
             Servo_Motor_Start(gimbal_pitch_motor);
-            LKMotorEnable(gimbal_yaw_motor);
 
             // gimbal_pitch_angle = 0;
             LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
@@ -209,7 +212,6 @@ void GimbalContro()
             // Servo_Motor_FreeAngle_Set(gimbal_pitch_motor,(int16_t)gimbal_pitch_angle);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET_WITH_ROTATE){
             Servo_Motor_Start(gimbal_pitch_motor);
-            LKMotorEnable(gimbal_yaw_motor);
             gimbal_yaw_motor->motor_settings.angle_feedback_source = MOTOR_FEED;
 
                 gimbal_yaw_motor->measure.total_round = 0;

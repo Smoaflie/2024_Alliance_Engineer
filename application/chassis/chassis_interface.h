@@ -5,8 +5,9 @@ void ChassisInit_Motor();
 void ChassisInit_Communication();
 void ChassisInit_IO();
 
-void RobotTumbleDetect();
+// void RobotTumbleDetect();
 void ChassisSubMessage();
+void ChassisGetCurrentSpeed();
 void ChassisModeSelect();
 void SpecialFuncApply();
 void MecanumCalculate();

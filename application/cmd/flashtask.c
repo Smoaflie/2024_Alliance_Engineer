@@ -31,26 +31,14 @@ static void flashRefresh()
     flash_erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
     flash_erase.NbSectors = 1;
     flash_erase.Banks = FLASH_BANK_1;
-    // osMutexAcquire(flashHandle, osWaitForever);
-        HAL_FLASH_Unlock();
-        if(HAL_FLASHEx_Erase(&flash_erase,&SectorError) == HAL_OK)
-            write_flag = 1;
-        HAL_FLASH_Lock();
-    // osMutexRelease(flashHandle);
+    HAL_FLASH_Unlock();
+    if(HAL_FLASHEx_Erase(&flash_erase,&SectorError) == HAL_OK)
+        write_flag = 1;
+    HAL_FLASH_Lock();
 }
-// void HAL_FLASH_EndOfOperationCallback(uint32_t ReturnValue) {
-//     SectorError = ReturnValue;
-//     erase_flag = 0;
-//     if (ReturnValue == 0xFFFFFFFF) {
-//         // Erase completed successfully
-//         write_flag = 1;
-//     } else {
-//         // Error occurred
-//     }
-// }
-void flashTask()
+void flashWrite(FLASH_Data_s flash_param)
 {
-    if(SubGetMessage(flash_cmd_sub, &flash_param)){
+    if(SubGetMessage(flash_cmd_sub, &flash_param) && flash_param.save_call){
         uint8_t flash_refresh_flag = 0;
         data_cnt = 0;
         if(erase_flag==0){
@@ -63,14 +51,12 @@ void flashTask()
                     data_cnt++;
                 }
             }
-        }
-        
-
-        if(flash_refresh_flag)
-            flashRefresh();
-        if(write_flag){
-            write_flag = 0;
-            flash_write_single_address(ADDR_FLASH_SECTOR_7, flash_data_toWrite, 3);
+            if(flash_refresh_flag)
+                flashRefresh();
+            if(write_flag){
+                write_flag = 0;
+                flash_write_single_address(ADDR_FLASH_SECTOR_7, flash_data_toWrite, 3);
+            }
         }
     }
 }

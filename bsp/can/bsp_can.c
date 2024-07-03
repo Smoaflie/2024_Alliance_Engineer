@@ -130,7 +130,15 @@ uint8_t CANTransmit(CANInstance *_instance, float timeout)
         if (DWT_GetTimeline_ms() - dwt_start > timeout) // 超时
         {
             LOGWARNING("[bsp_can] CAN MAILbox full! failed to add msg to mailbox. Cnt [%d]", busy_count);
-            // busy_count++;
+            busy_count++;
+            if(busy_count > 300)
+            {
+                HAL_FDCAN_Stop(_instance->can_handle);
+                HAL_FDCAN_AbortTxRequest(_instance->can_handle, FDCAN_TX_BUFFER0);
+                HAL_FDCAN_AbortTxRequest(_instance->can_handle, FDCAN_TX_BUFFER1);
+                HAL_FDCAN_AbortTxRequest(_instance->can_handle, FDCAN_TX_BUFFER2);
+                HAL_FDCAN_Start(_instance->can_handle);
+            }   
             return 0;
         }
     }

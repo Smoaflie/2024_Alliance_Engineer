@@ -56,7 +56,7 @@ static float tail_roll_stuck_current = 6000;
 static float z_stuck_current = 10000;   /* 各关节堵转电流 */
 static float assorted_detected_speed, assorted_detected_last_speed;
 // 编码器实例
-static uint32_t encoder_offset[3] = {5452, 167766, 92519};
+static uint32_t encoder_offset[3] = {202360, 167766, 92519};
 static EncoderInstance_s *assorted_up_encoder, *assorted_yaw_encoder, *tail_motor_encoder, *tail_roll_encoder; // 四个编码器，大YAW不另设编码器
 
 // PID实例
@@ -82,7 +82,7 @@ HOST_ARM_COMM host_comm;
 
 static GPIOInstance *Z_limit_sensor_gpio; // 限位传感器io
 
-static uint8_t arm_init_flag;   // 臂臂初始化标志
+static uint8_t arm_init_flag = 0;   // 臂臂初始化标志
 static uint8_t Arm_goto_target_position_flag = 0;  // 臂臂移动至目标点标志
 static uint8_t Arm_inside_flag = 0; // 臂臂收回肚子标志
 
@@ -102,16 +102,19 @@ extern uint8_t custom_controller_comm_recv; //自定义发送的自定义标志�
 static uint8_t custom_control_enable = 0;
 
 static float roll_offset_angle;
+static float custom_control_bigyaw_angle_offset = -90;
 
 static uint8_t nuc_flag;
 // Z轴标定（原理为等待触发Z限位开关）
 static void Z_limit_sensor_detect()
 {
-    arm_init_flag |= Z_motor_init_clt;
-    if ((z_motor->measure.total_round > 2 || z_motor->measure.total_round < -2)) {
-        z_motor->measure.total_round = 0;
-        arm_param_t.height = 0;
-        DJIMotorStop(z_motor);
+    if(HAL_GPIO_ReadPin(Z_limit_detect_GPIO_Port,Z_limit_detect_Pin) == GPIO_PIN_RESET){
+        arm_init_flag |= Z_motor_init_clt;
+        if ((z_motor->measure.total_round > 2 || z_motor->measure.total_round < -2)) {
+            z_motor->measure.total_round = 0;
+            arm_param_t.height = 0;
+            DJIMotorStop(z_motor);
+        }
     }
 }
 // 上位机解析回调函数
@@ -160,7 +163,8 @@ static void JointErrorCallback()
 }
 void ArmInit_Encoder()
 {
-    flash_read(ADDR_FLASH_SECTOR_7,encoder_offset,3);
+    if(!(encoder_offset[0] || encoder_offset[1] || encoder_offset[2]))
+        flash_read(ADDR_FLASH_SECTOR_7,encoder_offset,3);
     Encoder_Init_Config_s encoder_config;
     // 编码器初始化
     encoder_config.encoder_type = MT6825;
@@ -183,7 +187,7 @@ void ArmInit_Motor()
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 3, // 0
+                .Kp            = 5, // 3
                 .Ki            = 0, // 0
                 .Kd            = 0, // 0
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
@@ -446,7 +450,7 @@ void ArmInit_Communication()
     arm_data_sub  = PubRegister("arm_data", sizeof(Arm_Data_s));
 
     host_comm.host_send_buf[0]=0xff;host_comm.host_send_buf[1]=0x52;
-    host_comm.sent_package_flag = 1;
+    host_comm.sent_package_flag = 0;
 }
 void ArmInit_IO()
 {
@@ -588,14 +592,17 @@ static void ArmParamSet_ramp(int32_t outtime,float big_yaw_angle,float mid_yaw_a
     arm_joint_outtime = outtime;
     Arm_goto_target_position_flag |= Arm_joint_ramp_flag;
 }
-//斜坡平移臂末端
-// static void ArmTargetParamSet_ramp_offset(int32_t ramp_feriod,uint8_t mode,float x_offset,float y_offset){
-//     arm_automode_target_offset_x = x_offset;
-//     arm_automode_target_offset_y = y_offset;
-//     arm_automode_target_mode = mode;
-//     arm_joint_outtime = ramp_feriod;
-//     Arm_goto_target_position_flag |= Arm_target_ramp_flag;
-// }
+//斜坡设定臂臂关节目标角度-相对值
+static void ArmParamSet_ramp_offset(int32_t outtime,float big_yaw_angle,float mid_yaw_angle,float assorted_yaw_angle,float assorted_roll_angle,float tail_motor_angle){
+    arm_auto_mode_data.big_yaw_angle = arm_auto_mode_data.big_yaw_angle+big_yaw_angle;
+    arm_auto_mode_data.mid_yaw_angle = arm_auto_mode_data.mid_yaw_angle+mid_yaw_angle;
+    arm_auto_mode_data.assorted_yaw_angle = arm_auto_mode_data.assorted_yaw_angle+assorted_yaw_angle;
+    arm_auto_mode_data.assorted_roll_angle = arm_auto_mode_data.assorted_roll_angle+assorted_roll_angle;
+    arm_auto_mode_data.tail_motor_angle = arm_auto_mode_data.tail_motor_angle+tail_motor_angle;
+
+    arm_joint_outtime = outtime;
+    Arm_goto_target_position_flag |= Arm_target_ramp_flag;
+}
 //使臂到达范围高度内
 static void Z_heightSet_range(int32_t outtime, float range_low, float range_high, float setting_height){
     if(arm_current_data.height <= range_high && arm_current_data.height >= range_low){
@@ -644,10 +651,9 @@ static void ArmSetAutoMode(){
         memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
         auto_mode_step_id[7] = current_auto_mode_step_id;
         switch(current_auto_mode_step_id){
-            case 1:ArmParamSet_ramp(4000,0,119.557182,83.1560593,67.1859589,90.5);break;
-            case 2:ArmParamSet_ramp(2000,-26,119.557182,83.1560593,67.1859589,90.5);break;
+            case 2:ArmParamSet_ramp_offset(2000,-30.557182,0,0,0,0);break;
             case 3:Z_heightSet_ramp_offset(1000,230);break;
-            case 4:ArmParamSet_ramp(2000,-26,55.8287811,86.9134064,67.1859589,90.5);break;
+            case 4:ArmParamSet_ramp_offset(2000,0,-60,3,0,0);break;
             case 5:Z_heightSet_ramp_offset(800,100); Arm_inside_flag=0;break;
             case 6:if(arm_init_flag & Z_motor_init_clt) Z_heightSet_range(800,-160,20,-120);break;
         }
@@ -669,10 +675,10 @@ static void ArmSetAutoMode(){
             switch(current_auto_mode_step_id){
                 case 1:Z_heightSet_ramp(1000,-100);break;
                 case 2:ArmParamSet_ramp(4000,-40.1328545,70,83.1560593,67.1859589,90.5);break;
-                case 3:Z_heightSet_ramp(1000,-301.788391);break;
-                case 4:ArmParamSet_ramp(4000,-29.0567245,119.557182,83.1560593,67.1859589,90.5);break;
-                case 5:Z_heightSet_ramp(1000,-500);break;
-                case 6:ArmParamSet_ramp(2000,0,119.557182,83.1560593,67.1859589,90.5);break;
+                case 3:Z_heightSet_ramp(1000,-200);break;
+                case 4:ArmParamSet_ramp_offset(4000,11,49.5,0,0,0);break;
+                case 5:Z_heightSet_ramp_offset(1000,-200);break;
+                case 6:ArmParamSet_ramp_offset(2000,11,70,0,0,0);break;
                 case 7:Z_heightSet_ramp(1000,-570); auto_mode_step_id[0]=0;auto_mode_doing_state&=~(0x0001<<0);Arm_inside_flag =1;break;
                 //由于Arm_inside_flag置1后无法再进入该位置，因此需同时清除stepid和自动模式状态量
             }
@@ -715,7 +721,7 @@ static void ArmSetAutoMode(){
                     Arm_goto_target_position_flag |= Arm_joint_ramp_flag;
                     break;
                 case 2:Z_heightSet_range(800,-160,-60,-120);break;
-                case 3:ArmParamSet_ramp(2000,-60,-80.4619751,-83.837616,0, 90.5);break;
+                case 3:ArmParamSet_ramp_offset(2000,-80,0,0,0,0);break;
             }
             return;
         }
@@ -952,15 +958,19 @@ static void ArmApplyControMode(){
 
     if(!Arm_inside_flag){
         // 控制臂臂 大YAW&Z
-        arm_param_t.big_yaw_angle -= arm_cmd_recv.Rotation_yaw;
-        arm_param_t.height += arm_cmd_recv.Position_z;
-        arm_custom_control_origin_height += arm_cmd_recv.Position_z;    //todo:
+        if(arm_cmd_recv.contro_mode == ARM_CUSTOM_CONTRO){
+            arm_custom_control_origin_height += arm_cmd_recv.Position_z;
+            custom_control_bigyaw_angle_offset -= arm_cmd_recv.Rotation_yaw;
+        }else{
+            arm_param_t.big_yaw_angle -= arm_cmd_recv.Rotation_yaw;
+            arm_param_t.height += arm_cmd_recv.Position_z;
+        }
+        
         if (arm_init_flag & Z_motor_init_clt)
             VAL_LIMIT(arm_param_t.height, -620, 30);
         else
             VAL_LIMIT(arm_param_t.height, -620, 620);
 
-        // host_comm.sent_package_flag = arm_cmd_recv.host_sent_mode;
 
         host_comm.translate_param.Front_Back = arm_cmd_recv.Translation_x;
         host_comm.translate_param.Left_Right = arm_cmd_recv.Translation_y;
@@ -977,9 +987,17 @@ static void ArmApplyControMode(){
 }
 //上位机控制
 static void host_control(){
+    static uint8_t custom_control_position = 0;
+    static uint8_t custom_control_mode_switch = 0;
+    if(arm_cmd_recv.switch_custom_controller_mode_call && !custom_control_mode_switch){
+        custom_control_position = !custom_control_position;
+        custom_control_mode_switch = 1;
+    }else if(!arm_cmd_recv.switch_custom_controller_mode_call)custom_control_mode_switch = 0;
     //兑矿模式-开关自定义控制器模式
     if(arm_cmd_recv.contro_mode == ARM_CUSTOM_CONTRO){
-        host_comm.sent_package_flag = 1;
+        if(custom_control_position) host_comm.sent_package_flag = 2; //控制位置
+        else    host_comm.sent_package_flag = 1;    //控制位姿(默认)
+        
         static uint8_t switch_flag = 0;
         if(custom_controller_comm_recv & 0x01 && !switch_flag){
             custom_control_enable = !custom_control_enable;
@@ -989,7 +1007,7 @@ static void host_control(){
             if(host_comm.host_rec_flag){
                 memcpy(&arm_auto_mode_data,&arm_recv_host_data,sizeof(arm_controller_data_s));
                 arm_auto_mode_data.height = arm_recv_host_data.height + arm_custom_control_origin_height;
-                arm_auto_mode_data.big_yaw_angle += -90;
+                arm_auto_mode_data.big_yaw_angle += custom_control_bigyaw_angle_offset;
                 arm_joint_outtime = arm_height_outtime = 30;
                 Arm_goto_target_position_flag |= Arm_joint_ramp_flag;
                 Arm_goto_target_position_flag |= Arm_height_ramp_flag;
@@ -997,10 +1015,12 @@ static void host_control(){
             }
         }
     }else{
+        custom_control_bigyaw_angle_offset = -90;
+        host_comm.sent_package_flag = 0;
+        custom_control_position = 0;
         custom_control_enable = 0;
         arm_custom_control_origin_height = arm_current_data.height;
     }
-
 }
 
 // 控制末端吸盘roll
@@ -1023,12 +1043,12 @@ static void ArmModifyFlashParam(){
     arm_data_send.flash_data.address = ADDR_FLASH_SECTOR_7;
     arm_data_send.flash_data.data = encoder_offset;
     arm_data_send.flash_data.len = 3;
-    if(HAL_GPIO_ReadPin(KEY_GPIO_Port,KEY_Pin)==GPIO_PIN_RESET)  arm_cmd_recv.assorted_roll_encoder_amend_call = 1;
+    // if(HAL_GPIO_ReadPin(KEY_GPIO_Port,KEY_Pin)==GPIO_PIN_RESET)  arm_cmd_recv.assorted_roll_encoder_amend_call = 1;
 
-    encoder_offset[assorted_up_encoder_offset] += arm_cmd_recv.assorted_roll_encoder_amend_call;
-    assorted_up_encoder->offset = encoder_offset[assorted_up_encoder_offset];
-    encoder_offset[tail_motor_encoder_offset] += arm_cmd_recv.tail_encoder_amend_call;
-    tail_motor_encoder->offset  =  encoder_offset[tail_motor_encoder_offset];
+    // encoder_offset[assorted_up_encoder_offset] += arm_cmd_recv.assorted_roll_encoder_amend_call;
+    // assorted_up_encoder->offset = encoder_offset[assorted_up_encoder_offset];
+    // encoder_offset[tail_motor_encoder_offset] += arm_cmd_recv.tail_encoder_amend_call;
+    // tail_motor_encoder->offset  =  encoder_offset[tail_motor_encoder_offset];
 }
 /* 臂各种参数的预处理 */
 void ArmParamPretreatment()
@@ -1121,12 +1141,24 @@ void ArmControInterface()
             ArmApplyControMode();
         }
         // 临时暂停
-        if(arm_cmd_recv.halt_temp_call == 1){
+        static uint16_t auto_mode_doing_state_log = 0;
+        static uint8_t halt_temp_switch_flag = 0;
+        if(auto_mode_doing_state)   auto_mode_doing_state_log = 0;
+        if(arm_cmd_recv.halt_temp_call == 1 && !halt_temp_switch_flag){
             reset_arm_param();
-            auto_mode_doing_state = 0;
-            Arm_goto_target_position_flag = 0;
-            auto_mode_delay_time = 0;
-        }
+            if(auto_mode_doing_state_log){
+                auto_mode_doing_state_log = auto_mode_doing_state;
+                auto_mode_doing_state = 0;
+                Arm_goto_target_position_flag = 0;
+                auto_mode_delay_time = 0;
+                memcpy(&arm_param_t, &arm_current_data, sizeof(arm_controller_data_s));
+                memcpy(&arm_contro_data, &arm_param_t, sizeof(arm_controller_data_s));
+            }else{
+                auto_mode_doing_state = auto_mode_doing_state_log;
+                auto_mode_doing_state_log = 0;
+            }
+            halt_temp_switch_flag = 1;
+        }else if(!(arm_cmd_recv.halt_temp_call == 1))   halt_temp_switch_flag = 0;
 
         // 强制停止
         if (arm_cmd_recv.halt_force_call == 1) {
@@ -1161,6 +1193,9 @@ void ArmCommunicateHOST()
     {
         switch(host_comm.sent_package_flag)
         {
+            case 0:
+                host_comm.host_send_buf[2] = 0;
+                break;
             case 4:
                 host_comm.host_send_buf[2] = 0x01<<3;                
                 memcpy(host_comm.host_send_buf+3, &arm_current_data, sizeof(arm_controller_data_s));
@@ -1193,6 +1228,10 @@ void ArmPubMessage()
     arm_data_send.auto_mode_doing_state = 0;
     for (int i = 0; i < sizeof(auto_mode_step_id); i++)
         arm_data_send.auto_mode_doing_state = (auto_mode_step_id[i] || arm_data_send.auto_mode_doing_state);
+    if(!(arm_init_flag & Z_motor_init_clt))
+        arm_data_send.arm_height = arm_current_data.height;
+    if(Arm_inside_flag)
+        arm_data_send.arm_height = -250;
     PubPushMessage(arm_data_sub,&arm_data_send);
 }
 void ArmDebugInterface()

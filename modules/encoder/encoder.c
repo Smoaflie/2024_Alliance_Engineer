@@ -31,6 +31,7 @@ static void DecodeEncoder(CANInstance *_instance)
             ECD_HALF_VAL = 131072;
             ECD_TO_DEG   = MT6825_ECD_TO_DEG;
             measure->ecd = rxbuff[2] << 16 | rxbuff[1] << 8 | rxbuff[0];
+            encoder->ErrorCode = rxbuff[4];
             break;
         case me02_can:
             ECD_MAX_VAL  = 32768;

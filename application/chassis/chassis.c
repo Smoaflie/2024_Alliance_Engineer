@@ -11,11 +11,12 @@ void ChassisInit()
 void ChassisTask()
 {
     ChassisSubMessage();
-
     // 底盘模式选择&设定移动速度
     ChassisModeSelect();
     // 车身倾倒检测
-    RobotTumbleDetect();
+    // RobotTumbleDetect();
+    //计算实时速度
+    ChassisGetCurrentSpeed();
     // 根据控制模式进行正运动学解算,计算底盘输出
     MecanumCalculate();
 
