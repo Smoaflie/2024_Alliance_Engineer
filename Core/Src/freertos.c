@@ -79,7 +79,7 @@ const osThreadAttr_t Test_attributes = {
 osThreadId_t gimbalHandle;
 const osThreadAttr_t gimbal_attributes = {
   .name = "gimbal",
-  .stack_size = 258 * 4,
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for chassis */
@@ -114,22 +114,15 @@ const osThreadAttr_t motor_attributes = {
 osThreadId_t airpumpHandle;
 const osThreadAttr_t airpump_attributes = {
   .name = "airpump",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for referee */
 osThreadId_t refereeHandle;
 const osThreadAttr_t referee_attributes = {
   .name = "referee",
-  .stack_size = 1024 * 4,
+  .stack_size = 4096 * 4,
   .priority = (osPriority_t) osPriorityBelowNormal,
-};
-/* Definitions for flash */
-osThreadId_t flashHandle;
-const osThreadAttr_t flash_attributes = {
-  .name = "flash",
-  .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityRealtime1,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -148,7 +141,6 @@ void _cmdTASK(void *argument);
 void _motorTASK(void *argument);
 void _airpumpTASK(void *argument);
 void _refereeTask(void *argument);
-void _FlashTask(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -212,9 +204,6 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of referee */
   refereeHandle = osThreadNew(_refereeTask, NULL, &referee_attributes);
-
-  /* creation of flash */
-  flashHandle = osThreadNew(_FlashTask, NULL, &flash_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -424,24 +413,6 @@ __weak void _refereeTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END _refereeTask */
-}
-
-/* USER CODE BEGIN Header__FlashTask */
-/**
-* @brief Function implementing the flash thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header__FlashTask */
-__weak void _FlashTask(void *argument)
-{
-  /* USER CODE BEGIN _FlashTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END _FlashTask */
 }
 
 /* Private application code --------------------------------------------------*/

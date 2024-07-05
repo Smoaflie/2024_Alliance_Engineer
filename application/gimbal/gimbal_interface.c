@@ -124,6 +124,7 @@ void GimbalInit_IO()
         .GPIO_Pin = relay_contro_Pin,
     };
     relay_contro_gpio = GPIORegister(&gpio_conf_relay_contro);
+    GPIOSet(relay_contro_gpio);
 }
 void GimbalInit_Param()
 {
@@ -138,7 +139,7 @@ void GimbalParamPretreatment()
     /* 初始化云台陀螺仪yaw角度偏移量(使之零点为车辆正方向) */
     if(!gimbal_imu_init)
     {
-        while((gimbal_yaw_motor->measure.feed_dt == 0) || (gimbal_cmd_recv.arm_big_yaw_offset==0))    {SubGetMessage(gimbal_sub, &gimbal_cmd_recv);osDelay(1);}
+        // while((gimbal_yaw_motor->measure.feed_dt == 0) || (gimbal_cmd_recv.arm_big_yaw_offset==0))    {SubGetMessage(gimbal_sub, &gimbal_cmd_recv);osDelay(1);}
         
         gimbal_imu_offset = gimbal_imu_yaw_total_angle - gimbal_cmd_recv.arm_big_yaw_offset - gimbal_yaw_motor->measure.total_angle;
         gimbal_imu_init = 1;
@@ -147,34 +148,37 @@ void GimbalParamPretreatment()
     LKMotorEnable(gimbal_yaw_motor);
 
     /* 云台电机掉线监测 */
-    if(!LKMotorIsOnline(gimbal_yaw_motor))
+    static uint16_t cnt = 0;
+    if(!LKMotorIsOnline(gimbal_yaw_motor) || gimbal_cmd_recv.gimbal_debug_flag)
     {
         LKMotorStop(gimbal_yaw_motor);
-
-        osDelay(2000);
-        if(!LKMotorIsOnline(gimbal_yaw_motor))
+        cnt++;
+        if(cnt > 3000)
         {
             GPIOReset(relay_contro_gpio);
             LOGWARNING("[Gimbal] Gimbal yaw motor lost, trying to restart it.");
-            osDelay(1000);
+            osDelay(500);
             GPIOSet(relay_contro_gpio);
+            osDelay(3000);
+            gimbal_yaw_angle = gimbal_cmd_recv.arm_big_yaw_offset;
+            gimbal_imu_yaw_total_round = 0;
         }
-    }
+    }else cnt = 0;
 }
 void GimbalContro()
 {
     if(gimbal_imu_init)
     {
+        if(gimbal_yaw_angle>gimbal_imu_yaw_total_angle + 360) gimbal_yaw_angle-=360;
+        else if(gimbal_yaw_angle < gimbal_imu_yaw_total_angle - 360)    gimbal_yaw_angle+=360;
         gimbal_yaw_motor->motor_settings.angle_feedback_source = OTHER_FEED; //todo:
         /* 云台控制 */
         if(gimbal_cmd_recv.gimbal_mode == GIMBAL_ZERO_FORCE)    
         {
             LKMotorStop(gimbal_yaw_motor);
-            Servo_Motor_Stop(gimbal_pitch_motor);
+            // Servo_Motor_Stop(gimbal_pitch_motor);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_GYRO_MODE)
         {
-            Servo_Motor_Start(gimbal_pitch_motor);
-
             gimbal_pitch_angle += gimbal_cmd_recv.pitch;
             VAL_LIMIT(gimbal_pitch_angle, 0, 180);    /* 限幅 */
 
@@ -184,7 +188,6 @@ void GimbalContro()
             LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
             // LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle-gimbal_cmd_recv.arm_big_yaw_offset);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_FOLLOW_YAW){
-            Servo_Motor_Start(gimbal_pitch_motor);
 
             gimbal_pitch_angle += gimbal_cmd_recv.pitch;
             VAL_LIMIT(gimbal_pitch_angle, 0, 180);    /* 限幅 */
@@ -195,7 +198,6 @@ void GimbalContro()
             LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle+gimbal_cmd_recv.arm_big_yaw_offset);
             // LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET){
-            Servo_Motor_Start(gimbal_pitch_motor);
 
             // gimbal_pitch_angle = 0;
             LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
@@ -211,7 +213,6 @@ void GimbalContro()
 
             // Servo_Motor_FreeAngle_Set(gimbal_pitch_motor,(int16_t)gimbal_pitch_angle);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET_WITH_ROTATE){
-            Servo_Motor_Start(gimbal_pitch_motor);
             gimbal_yaw_motor->motor_settings.angle_feedback_source = MOTOR_FEED;
 
                 gimbal_yaw_motor->measure.total_round = 0;

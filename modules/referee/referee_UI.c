@@ -198,7 +198,7 @@ void UIOvalDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, 
 
 void UIArcDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, uint32_t Graph_Layer, uint32_t Graph_Color,
 			   uint32_t Graph_StartAngle, uint32_t Graph_EndAngle, uint32_t Graph_Width, uint32_t Start_x, uint32_t Start_y,
-			   uint32_t end_x, uint32_t end_y)
+			   uint32_t x_Length, uint32_t y_Length)
 {
 	int i;
 	for (i = 0; i < 3 && graphname[i] != '\0'; i++)
@@ -217,8 +217,8 @@ void UIArcDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, u
 	graph->start_x = Start_x;
 	graph->start_y = Start_y;
 	graph->radius = 0;
-	graph->end_x = end_x;
-	graph->end_y = end_y;
+	graph->end_x = x_Length;
+	graph->end_y = y_Length;
 }
 
 /************************************************绘制浮点型数据*************************************************
@@ -239,7 +239,6 @@ void UIArcDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, u
 void UIFloatDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, uint32_t Graph_Layer, uint32_t Graph_Color,
 				 uint32_t Graph_Size, uint32_t Graph_Digit, uint32_t Graph_Width, uint32_t Start_x, uint32_t Start_y, int32_t Graph_Float)
 {
-
 	int i;
 	for (i = 0; i < 3 && graphname[i] != '\0'; i++)
 	{
@@ -398,6 +397,7 @@ void UIGraphRefresh(referee_id_t *_id, int cnt, ...)
 /************************************************UI推送字符（使更改生效）*********************************/
 void UICharRefresh(referee_id_t *_id, String_Data_t string_Data)
 {
+	if(_id == NULL)	return;
 	static UI_CharReFresh_t UI_CharReFresh_data;
 
 	uint8_t temp_datalength = Interactive_Data_LEN_Head + UI_Operate_LEN_DrawChar; // 计算交互数据长度

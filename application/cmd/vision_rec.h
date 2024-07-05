@@ -13,7 +13,8 @@ float qua_rec[4];
 float encoder_Data[3];
 uint8_t custom_controller_comm_recv; //自定义发送的自定义标志位	
 uint8_t custom_controller_data_refresh_flag = 0; // 图传链路数据更新标志
-
+int vision_connection_state = 0;
+int custom_contro_connection_state = 0;
 // 图传控制数据
 extern RC_ctrl_t* vision_rc_data;
 
@@ -77,9 +78,12 @@ static void JudgeVisionReadData(uint8_t* buff){
 							qua_rec[2]=-qua_rec[2];
 							qua_rec[3]=-qua_rec[3];
                         custom_controller_data_refresh_flag = 1;
+						custom_contro_connection_state = 1;
 					    break;
 					case 0x0304://键鼠遥控数据
 						vision_to_rc(buff + DATA_Offset);
+						vision_connection_state = 1;
+						break;
                     default:
                         break;
                 }

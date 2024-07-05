@@ -4,14 +4,14 @@
 #include <stdlib.h>
 #include "stdio.h"
 
-typedef struct {
-    float big_yaw_angle;
-    float height;
-    float mid_yaw_angle;
-    float assorted_yaw_angle;
-    float assorted_roll_angle;
-    float tail_motor_angle;
-} arm_controller_data_s;
+// typedef struct {
+//     float big_yaw_angle;
+//     float height;
+//     float mid_yaw_angle;
+//     float assorted_yaw_angle;
+//     float assorted_roll_angle;
+//     float tail_motor_angle;
+// } arm_controller_data_s;
 
 typedef struct {
     float x;

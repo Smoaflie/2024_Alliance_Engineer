@@ -126,7 +126,8 @@ typedef enum {
 
 // 机器人控制模式
 typedef enum{
-    ControlMode_FetchCube = 0,
+    ControlMode_None = 0,
+    ControlMode_FetchCube,
     ControlMode_ConvertCube,
     ControlMode_Move,
     ControlMode_ReverseMove,
@@ -165,6 +166,8 @@ typedef struct
     float arm_big_yaw_offset;
 
     gimbal_mode_e gimbal_mode;
+
+    uint8_t gimbal_debug_flag;
 } Gimbal_Ctrl_Cmd_s;
 
 // gimbal发布的云台数据,由cmd订阅
@@ -180,7 +183,8 @@ typedef struct
 // airpump发布的云台数据,由cmd订阅
 typedef struct
 { // 云台角度控制
-    uint8_t pump_state;
+    int airvalve_mode;
+    int air_auto_mode_selecting;
 } Airpump_Data_s;
 
 /* ----------------gimbal/shoot/chassis发布的反馈数据----------------*/
@@ -217,14 +221,24 @@ typedef struct
     uint32_t *data;
     uint8_t len;
 }Flash_write_param_t;
+typedef struct {
+    float big_yaw_angle;
+    float height;
+    float mid_yaw_angle;
+    float assorted_yaw_angle;
+    float assorted_roll_angle;
+    float tail_motor_angle;
+} arm_controller_data_s;
 typedef struct{
+    arm_controller_data_s current_data;
+    arm_controller_data_s target_data;
     float big_yaw_angle;
     float arm_height;
 
     uint8_t arm_to_airvalve;
-    uint8_t arm_to_airpump;
 
-    uint8_t auto_mode_doing_state;
+    uint8_t auto_mode_state;
+    uint8_t arm_auto_mode_selecting;
 
     Flash_write_param_t flash_data;
 }Arm_Data_s;
@@ -263,7 +277,6 @@ typedef struct{
     uint8_t airvalve_mode;
 
     uint8_t arm_to_airvalve;
-    uint8_t arm_to_airpump;
     uint8_t init_call;  // 相关参数重初始化请求（当机器人死亡复活后由cmd置位）
     uint8_t halt_force_call;  // 强制停止命令
     uint8_t halt_temp_call;  // 临时停止命令
@@ -283,15 +296,29 @@ typedef struct{
 
 typedef struct
 { 
-    uint8_t pump_one_mode_t;    //气泵1
-    uint8_t pump_two_mode_t;    //气泵2
-    uint8_t auto_mode_t;        //自动模式
-    uint8_t arm_mode_t;         //臂姿态  
-    uint8_t rotate_mode_t;      //陀螺模式
+    int rc_connection_mode_t;    //遥控器连接
+    int vision_connection_mode_t;    //图传连接
+    int custom_contro_connection_mode_t;    //自定义控制器连接
+    int pump_arm_mode_t;    //臂气泵
+    int pump_valve_mode_t;    //推杆气泵
+    int arm_mode;   //臂状态圈 0-无动作 1-进行中 2-暂停
+    int valve_mode; //推杆状态圈 0-无动作 1-进行中 2-暂停
 
-    uint8_t UI_refresh_request; //重置UI请求
-    uint8_t control_mode_t; //自定义控制器模式
-    uint8_t relay_contr_state; //臂继电器状态
+    int Contro_mode; //控制模式
+    int arm_selected_mode;
+    int arm_selected_mode_state; // 0表示当前(运行/暂停中)模式，1为选中待确认(后覆盖当前模式)
+    int valve_selected_mode;
+    int valve_selected_mode_state; // 0表示当前(运行/暂停中)模式，1为选中待确认(后覆盖当前模式)
+    
+    int arm_temp_halt_selected;
+    int valve_temp_halt_selected;
+    int relay_contr_state; //臂继电器状态
+
+    float gimbal_offset_angle;
+    arm_controller_data_s arm_current_data;
+    arm_controller_data_s arm_target_data;
+
+    uint8_t UI_refresh_request;
 }UI_data_t;
 
 
@@ -300,17 +327,17 @@ typedef struct
 
 /* 一些自定义的宏定义 */
 // 臂臂自动模式
-#define Reset_arm_cmd_param_flag 0x10   // 重置臂臂
-#define Recycle_arm_in 0x04 // 臂臂回收到肚子内
-#define Recycle_arm_out 0x05 // 臂臂从肚子内伸出
-#define Arm_get_goldcube_right 0x80 // 臂臂取右侧金矿
-#define Arm_fetch_cube_from_warehouse1 0x01 // 臂臂从矿仓1取矿
-#define Arm_fetch_cube_from_warehouse2 0x03 // 臂臂从矿仓2取矿
-#define Arm_get_silvercube_left 0x02// 取小资源岛左侧矿
-#define Arm_get_silvercube_mid  0x20// 取小资源岛中间矿
-#define Arm_get_silvercube_right 0x40// 取小资源岛右侧矿
-#define Arm_fetch_gronded_cube 0xA0 // 取地矿姿势
-#define Arm_ConvertCube 0xB0 // 兑矿模式
+#define Arm_walk_state 1   // 臂臂行走态
+#define Recycle_arm_in 2 // 臂臂回收到肚子内
+#define Recycle_arm_out 3 // 臂臂从肚子内伸出
+#define Arm_get_goldcube_right 4 // 臂臂取右侧金矿
+#define Arm_fetch_cube_from_warehouse1 5 // 臂臂从矿仓1取矿
+#define Arm_fetch_cube_from_warehouse2 6 // 臂臂从矿仓2取矿
+#define Arm_get_silvercube_left 7// 取小资源岛左侧矿
+#define Arm_get_silvercube_mid  8// 取小资源岛中间矿
+#define Arm_get_silvercube_right 9// 取小资源岛右侧矿
+#define Arm_fetch_gronded_cube 10 // 取地矿姿势
+#define Arm_ConvertCube 11 // 兑矿模式
 // 臂臂控制模式
 #define Arm_Control_with_Chassis 1// 控制底盘臂臂
 #define Arm_Control_only_Arm     2// 仅控制臂臂
