@@ -75,6 +75,12 @@ void MatInit(mat *m, uint8_t row, uint8_t col);
 #define VAL_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define VAL_MAX(a, b) ((a) > (b) ? (a) : (b))
 
+typedef enum {
+    EDGE_NONE,
+    EDGE_RISING,
+    EDGE_FALLING
+} EdgeType;
+
 /**
  * @brief 返回一块干净的内存,不过仍然需要强制转换为你需要的类型
  *
@@ -117,3 +123,5 @@ float AverageFilter(float new_data, float *buf, uint8_t len);
 float sin_signal_generate(float F_start, float F_end, float repeat_time, uint8_t *SE_signal,float *F_out);
 
 #endif
+
+EdgeType detect_edge(uint8_t *prev_state, uint8_t current_state);

@@ -41,6 +41,7 @@ char No_RC_sound[]        = "T200L8 O5ecececec";
 char RoboMaster_You[]     = "T75 L4O5ef g.L8e gL16eL8g.L4b O6c. O5L8cdeL4g L8a...L16gL8aL16gL8g.g L2d L4efL2g L8gL16eL8g.O6L4dc. O5L8cde O6L4c O5L8a...L16g L8aL16gL8a. O6L4cd. P8O5L8deL16d L1c";
 char RoboMaster_Prepare[] = "T140L8 O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa L2O5eL1O6c L2O5eL1O5a L2O5cL1O5f L2O4bL1O5e L2O5eL1O6c L2O5eL1O5a L2O5cL1O5f L2O4bL1O5e";
 char Test[]               = "T240L8 O5aO6dc O5aO6dc O5aO6dc L16dcdcdcdc";
+// char Di-Di[]              = "";
 /**
  * @brief :  蜂鸣器注册
  * @return  void
@@ -332,9 +333,9 @@ void buzzer_one_note(uint16_t Note, float delay)
 #if (BUZZER_SILENCE == 1)
     PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
 #else
-    PWMSetDutyRatio(buzzer->buzzer_pwm, 0.5f); // 音量
+    PWMSetDutyRatio(buzzer->buzzer_pwm, 0.8f); // 音量
 #endif
-    buzzer_one_note_flag = 0;
+    buzzer_one_note_flag = 1;
     buzzer_one_note_time = delay;
     osThreadResume(BuzzerHandle); // 恢复线程
 }
@@ -353,7 +354,8 @@ __attribute__((noreturn)) void BuzzerTask(void *argument)
         if(buzzer_one_note_flag)
         {
             DWT_Delay(buzzer_one_note_time);
-            PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
+            buzzer_silence();
+            buzzer_one_note_flag = 0;
         }
         else
         {

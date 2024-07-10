@@ -2,6 +2,8 @@
 #define _BSP_FLASH_H
 #include "main.h"
 
+#define FLASH_WRITE_SIZE 32  // 每次写入 32 字节（256 位）
+
 /* Base address of the Flash sectors */
 #define ADDR_FLASH_SECTOR_0 ((uint32_t)0x08000000)  /* Base address of Sector 0, 128 Kbytes   */
 #define ADDR_FLASH_SECTOR_1 ((uint32_t)0x08020000)  /* Base address of Sector 1, 128 Kbytes   */

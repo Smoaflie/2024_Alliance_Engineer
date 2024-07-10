@@ -30,7 +30,7 @@ static Airpump_Cmd_Data_s airpump_cmd_rec;
 static float sucker_zero_angle;
 static uint8_t sucker_motor_init_flag = 0;
 static uint16_t sucker_motor_init_cnt = 0;
-static uint8_t  sucker_motor_mode = 0;
+static uint8_t  sucker_motor_mode = 3;
 
 static uint8_t airvalve_tx_buf[8] = {0x11,0x88,0x99,0x00,0x00,0x00,0x00,0x00};
 static uint32_t airvalve_tx_coder = 0;
@@ -75,7 +75,7 @@ void AirpumpInit_Motor()
                 .MaxOut        = 10,
             },
             .angle_PID = {
-                .Kp            = 10, // 0
+                .Kp            = 30, // 0
                 .Ki            = 0,    // 0
                 .Kd            = 0,    // 0
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
@@ -88,7 +88,7 @@ void AirpumpInit_Motor()
                 .Kd            = 0.001, // 0
                 .IntegralLimit = 3000,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .MaxOut        = 12000,
+                .MaxOut        = 8000,
             },
         },
         .controller_setting_init_config = {
@@ -181,7 +181,7 @@ void AirpumpContro_Valve()
                             // airvalve_state&=~AIRVALVE_LEFT_CUBE_DOING;
                             break;//抬升
                     case 7: airvalve_tx_coder = 0b0000001100100110010101;airvalve_delay_time = 300;break;//缩回
-                    case 8: airvalve_tx_coder = 0b0000001100100101010101;airvalve_delay_time = 300;break;//旋转
+                    case 8: airvalve_tx_coder = 0b0000001100100101010101;airvalve_delay_time = 1000;break;//旋转
                     case 9: airvalve_tx_coder = 0b0000001100100101101001;airvalve_delay_time = 300;break;//第一段缩回
                     case 10:airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_up();airvalve_state_in_auto_mode=0;break;//初始状态
                 }
@@ -271,16 +271,16 @@ void AirpumpContro_Sucker()
 {
     /* 推杆吸盘电机控制 */
     if(sucker_motor_mode == 1){ // up
-        static uint16_t sucker_stuck_cnt = 0;
-        if(abs(air_sucker_motor->measure.speed_aps) < abs(air_sucker_motor->motor_controller.speed_PID.Ref)-200) sucker_stuck_cnt++;
-        else sucker_stuck_cnt = 0;
-        if(sucker_stuck_cnt > 1000){
-            air_sucker_motor->measure.total_round = 0;
-            air_sucker_motor->measure.last_ecd = air_sucker_motor->measure.ecd;
-            air_sucker_motor->measure.total_angle = air_sucker_motor->measure.angle_single_round;
-            sucker_zero_angle = air_sucker_motor->measure.total_angle;
-            sucker_stuck_cnt = 0;
-        }
+        // static uint16_t sucker_stuck_cnt = 0;
+        // if(abs(air_sucker_motor->measure.speed_aps) < abs(air_sucker_motor->motor_controller.speed_PID.Ref)-200) sucker_stuck_cnt++;
+        // else sucker_stuck_cnt = 0;
+        // if(sucker_stuck_cnt > 1000){
+        //     air_sucker_motor->measure.total_round = 0;
+        //     air_sucker_motor->measure.last_ecd = air_sucker_motor->measure.ecd;
+        //     air_sucker_motor->measure.total_angle = air_sucker_motor->measure.angle_single_round;
+        //     sucker_zero_angle = air_sucker_motor->measure.total_angle;
+        //     sucker_stuck_cnt = 0;
+        // }
 
         DJIMotorEnable(air_sucker_motor);
         DJIMotorOuterLoop(air_sucker_motor,ANGLE_LOOP);
@@ -292,7 +292,7 @@ void AirpumpContro_Sucker()
         DJIMotorSetRef(air_sucker_motor,sucker_zero_angle+3408+airpump_cmd_rec.sucker_offset_angle);
     }else if(sucker_motor_mode == 3 && !(airpump_cmd_rec.airvalve_mode & AIRVALVE_STOP)){ //init
         DJIMotorEnable(air_sucker_motor);
-        if(sucker_motor_init_cnt > 1000){
+        if(sucker_motor_init_cnt > 300){
             if(sucker_motor_init_flag==0){
                 sucker_motor_init_flag=1;
                 air_sucker_motor->measure.total_round = 0;

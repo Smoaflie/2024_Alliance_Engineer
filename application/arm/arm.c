@@ -8,6 +8,7 @@ void ArmInit()
     ArmInit_Motor();
     ArmInit_Communication();
     ArmInit_IO();
+    ArmInit_Param();
 }
 
 /* 机器人机械臂控制核心任务 */

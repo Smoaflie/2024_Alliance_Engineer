@@ -73,4 +73,6 @@ void DRMotorEnable(DRMotorInstance *motor);
 
 uint8_t DRMotorIsOnline(DRMotorInstance *motor);
 
+void DRMotorReset(DRMotorInstance* motor);
+
 #endif // DRmotor_H

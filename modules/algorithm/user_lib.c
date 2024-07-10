@@ -236,3 +236,22 @@ float sin_signal_generate(float F_start, float F_end, float repeat_time, uint8_t
     }
     return cnt;
 }
+
+// 检测上升沿或下降沿的函数
+EdgeType detect_edge(uint8_t *prev_state, uint8_t current_state) {
+    EdgeType edge = EDGE_NONE;
+
+    // 检测上升沿
+    if (!(*prev_state) && current_state) {
+        edge = EDGE_RISING;
+    }
+    // 检测下降沿
+    else if (*prev_state & !current_state) {
+        edge = EDGE_FALLING;
+    }
+
+    // 更新前一状态
+    *prev_state = current_state;
+
+    return edge;
+}

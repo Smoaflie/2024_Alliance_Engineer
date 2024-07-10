@@ -75,7 +75,7 @@ void ChassisInit_Motor()
             },
         },
         .controller_setting_init_config = {
-            .feedforward_flag      = CURRENT_FEEDFORWARD,
+            // .feedforward_flag      = CURRENT_FEEDFORWARD,
             .angle_feedback_source = MOTOR_FEED,
             .speed_feedback_source = MOTOR_FEED,
             .outer_loop_type       = SPEED_LOOP,
@@ -129,9 +129,9 @@ void ChassisInit_IO()
 void MecanumCalculate()
 {
     //根据当前速度对目标速度进行限制
-    static float limit_add_speed_x = 3000;
+    static float limit_add_speed_x = 2200;
     static float limit_add_speed_x_stop = 3000;
-    static float limit_add_speed_y = 3000;
+    static float limit_add_speed_y = 1800;
     static float limit_add_speed_y_stop = 3000;
     if(chassis_cmd_recv.chassis_mode != CHASSIS_ROTATE){
         if(chassis_cmd_recv.arm_height <= -240){
@@ -140,10 +140,10 @@ void MecanumCalculate()
             limit_add_speed_x_stop = 3000;
             limit_add_speed_y_stop = 3000;
         }else{
-            limit_add_speed_x = 1800;
+            limit_add_speed_x = 2200;
             limit_add_speed_y = 1800;
-            limit_add_speed_x_stop = 1500;
-            limit_add_speed_y_stop = 1500;
+            limit_add_speed_x_stop = 1100;
+            limit_add_speed_y_stop = 1100;
         }
         if(current_chassis_vx > 0){
             if(chassis_vx - current_chassis_vx > limit_add_speed_x) chassis_vx = current_chassis_vx + limit_add_speed_x;

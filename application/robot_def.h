@@ -215,19 +215,14 @@ typedef struct
  * @brief 由cmd订阅和发送.
  *
  */
-typedef struct
-{
-    uint32_t address;
-    uint32_t *data;
-    uint8_t len;
-}Flash_write_param_t;
+
 typedef struct {
     float big_yaw_angle;
-    float height;
     float mid_yaw_angle;
     float assorted_yaw_angle;
     float assorted_roll_angle;
     float tail_motor_angle;
+    float height;
 } arm_controller_data_s;
 typedef struct{
     arm_controller_data_s current_data;
@@ -239,36 +234,40 @@ typedef struct{
 
     uint8_t auto_mode_state;
     uint8_t arm_auto_mode_selecting;
-
-    Flash_write_param_t flash_data;
 }Arm_Data_s;
 
 typedef struct{
     float Translation_x;
     float Translation_y;
-    uint8_t Translation_mode;
     float Roatation_Vertical;
     float Roatation_Horizontal;
     uint8_t Rotation_mode;
-    uint8_t host_sent_mode;
+    uint8_t Translation_mode;
     // 上四个为控制末端位姿，下两个为控制臂指向
     float Position_z;
     float Rotation_yaw;
     arm_mode_e contro_mode; // 臂臂控制模式
     uint8_t auto_mode; // 臂臂自动模式
-    uint8_t optimize_signal; // 优化信号（修正臂的yaw偏向和混合roll角度）
 
-    uint8_t switch_custom_controller_mode_call; //切换自定义控制器模式
-    int8_t sucker_call; // 吸盘动作命令
-    uint8_t halt_force_call;  // 强制停止命令
-    uint8_t halt_temp_call;  // 临时暂停命令
-    uint8_t reset_init_flag; // z轴重置标定
-    uint8_t z_slowly_down_call; // z轴缓慢下降命令
-    float aroll_angle_offset; //混合roll的偏移值(单次累计值)
-    int8_t assorted_roll_encoder_amend_call;
-    int8_t tail_encoder_amend_call;
+    struct{
+        uint8_t optimize_signal : 2; // 优化信号（修正臂的yaw偏向和混合roll角度）
+        uint8_t switch_custom_controller_mode_call : 1; //切换自定义控制器模式
+        uint8_t sucker_call : 2; // 吸盘动作命令
+        uint8_t halt_force_call : 1;  // 强制停止命令
+        uint8_t halt_temp_call : 1;  // 临时暂停命令
+        uint8_t reset_init_flag : 1; // 软复位标志
+        uint8_t reset_z_init_flag : 1; // z轴重置标定
+        uint8_t z_slowly_down_call : 1; // z轴缓慢下降命令
+    }call;
 
-    uint8_t debug_flag; // 调试用
+    struct{
+        uint8_t reset_encoder_offset_value  : 1;
+        uint8_t selected_encoder_id         : 3;
+        int8_t modify_encoder_offset_value  : 8;
+        uint8_t selected_auto_mode_id       : 4;
+        uint8_t auto_mode_record_pause_call : 1;
+        uint8_t auto_mode_record_start_call : 1;
+    }debug;
 }Arm_Cmd_Data_s;
 
 /* 气阀/气泵控制 */
@@ -288,12 +287,6 @@ typedef struct{
     uint8_t arm_auto_mode_id;
     uint8_t chassis_auto_mod_id;
 }UI_reality_Data_s;
-
-typedef struct{
-    Flash_write_param_t flash_param[5];
-    uint8_t save_call;
-}FLASH_Data_s;
-
 typedef struct
 { 
     int rc_connection_mode_t;    //遥控器连接
@@ -331,13 +324,18 @@ typedef struct
 #define Recycle_arm_in 2 // 臂臂回收到肚子内
 #define Recycle_arm_out 3 // 臂臂从肚子内伸出
 #define Arm_get_goldcube_right 4 // 臂臂取右侧金矿
-#define Arm_fetch_cube_from_warehouse1 5 // 臂臂从矿仓1取矿
-#define Arm_fetch_cube_from_warehouse2 6 // 臂臂从矿仓2取矿
+#define Arm_fetch_cube_from_warehouse_up 5 // 臂臂从上矿仓取矿
+#define Arm_fetch_cube_from_warehouse_down 6 // 臂臂从下矿仓取矿
 #define Arm_get_silvercube_left 7// 取小资源岛左侧矿
 #define Arm_get_silvercube_mid  8// 取小资源岛中间矿
 #define Arm_get_silvercube_right 9// 取小资源岛右侧矿
 #define Arm_fetch_gronded_cube 10 // 取地矿姿势
 #define Arm_ConvertCube 11 // 兑矿模式
+#define Arm_recordbase 11 // 自动记录模式
+#define Arm_record1_auto_mode 12 // 自动记录模式
+#define Arm_record2_auto_mode 13 // 自动记录模式
+#define Arm_record3_auto_mode 14 // 自动记录模式
+#define Arm_record4_auto_mode 15 // 自动记录模式
 // 臂臂控制模式
 #define Arm_Control_with_Chassis 1// 控制底盘臂臂
 #define Arm_Control_only_Arm     2// 仅控制臂臂
@@ -345,7 +343,7 @@ typedef struct
 #define Arm_Control_by_vision   8  // 视觉控制
 // 臂臂吸盘旋转
 #define Arm_sucker_clockwise_rotation 1 //吸盘顺时针旋转
-#define Arm_sucker_anticlockwise_rotation -1 //吸盘逆时针旋转
+#define Arm_sucker_anticlockwise_rotation 2 //吸盘逆时针旋转
 #define Arm_sucker_none_rotation    0   //吸盘不旋转
 // 气泵开关命令
 #define AIRPUMP_ARM_OPEN 0x01   //开臂臂的气泵

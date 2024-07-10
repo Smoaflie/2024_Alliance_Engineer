@@ -64,7 +64,7 @@ void UIIntDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, u
                uint32_t Graph_Size, uint32_t Graph_Width, uint32_t Start_x, uint32_t Start_y, int32_t Graph_Integer);
 
 void UICharDraw(String_Data_t *graph, char graphname[3], uint32_t Graph_Operate, uint32_t Graph_Layer, uint32_t Graph_Color,
-                uint32_t Graph_Size, uint32_t Graph_Width, uint32_t Start_x, uint32_t Start_y, char *fmt, ...);
+                uint32_t Graph_Size, uint32_t Graph_Width, uint32_t Start_x, uint32_t Start_y,const char *fmt, ...);
 
 void UIGraphRefresh(referee_id_t *_id, int cnt, ...);
 

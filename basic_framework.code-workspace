@@ -28,7 +28,8 @@
             "type_traits": "c",
             "typeinfo": "c",
             "limits": "c",
-            "compare": "c"
+            "compare": "c",
+            "random": "c"
         },
         "[yaml]": {
             "editor.insertSpaces": true,

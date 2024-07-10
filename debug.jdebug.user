@@ -1,56 +1,60 @@
 
 
-OpenDocument="stm32h7xx_it.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/stm32h7xx_it.c", Line=103
-OpenDocument="list.c", FilePath="d:/Documents/github/2024_Engineer/Middlewares/Third_Party/FreeRTOS/Source/list.c", Line=90
-OpenDocument="startup_stm32h723vgtx.s", FilePath="d:/Documents/github/2024_Engineer/Core/Startup/startup_stm32h723vgtx.s", Line=51
-OpenDocument="robot_cmd_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/cmd/robot_cmd_interface.c", Line=766
+
+Breakpoint=d:/Documents/github/2024_Engineer/application/UI/UI_interface.c:58, State=BP_STATE_ON
+Breakpoint=d:/Documents/github/2024_Engineer/application/UI/UI_interface.c:143, State=BP_STATE_ON
+Breakpoint=d:/Documents/github/2024_Engineer/application/UI/UI_interface.c:167, State=BP_STATE_ON
+Breakpoint=d:/Documents/github/2024_Engineer/application/UI/UI.c:187, State=BP_STATE_ON
+Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm_interface.c:701:17, State=BP_STATE_DISABLED
+Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm_interface.c:1354:8, State=BP_STATE_DISABLED
+Breakpoint=d:/Documents/github/2024_Engineer/application/cmd/robot_cmd_interface.c:859:23, State=BP_STATE_DISABLED
+Breakpoint=d:/Documents/github/2024_Engineer/application/arm/auto_mode_.h:84:62, State=BP_STATE_DISABLED
+Breakpoint=d:/Documents/github/2024_Engineer/application/arm/auto_mode_.h:112, State=BP_STATE_DISABLED
+OpenDocument="UI_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/UI/UI_interface.c", Line=75
+OpenDocument="_default_types.h", FilePath="d:/program files/arm-gnu-toolchain-12.3.rel1-mingw-w64-i686-arm-none-eabi/arm-none-eabi/include/machine/_default_types.h", Line=0
+OpenDocument="UI.c", FilePath="d:/Documents/github/2024_Engineer/application/UI/UI.c", Line=178
+OpenDocument="Ozone_Watched_Data_1_240707.csv", FilePath="D:/tmp/Ozone_Watched_Data_1_240707.csv", Line=8
+OpenDocument="auto_mode_.h", FilePath="d:/Documents/github/2024_Engineer/application/arm/auto_mode_.h", Line=65
+OpenDocument="arm_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/arm/arm_interface.c", Line=946
+OpenDocument="main.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/main.c", Line=69
+OpenDocument="servo_motor.h", FilePath="d:/Documents/github/2024_Engineer/modules/motor/servo_motor/servo_motor.h", Line=32
+OpenDocument="tasks.c", FilePath="d:/Documents/github/2024_Engineer/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3423
+OpenDocument="startup_stm32h723vgtx.s", FilePath="d:/Documents/github/2024_Engineer/Core/Startup/startup_stm32h723vgtx.s", Line=52
+OpenDocument="Ozone_Watched_Data_1_240707.csv", FilePath="D:/Documents/github/2024_Engineer/Ozone_Watched_Data_1_240707.csv", Line=0
+OpenDocument="robot_cmd_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/cmd/robot_cmd_interface.c", Line=833
 OpenDocument="stm32h7xx_hal_fdcan.c", FilePath="d:/Documents/github/2024_Engineer/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.c", Line=3047
-OpenDocument="main.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/main.c", Line=68
+OpenDocument="stm32h7xx_hal_uart.c", FilePath="d:/Documents/github/2024_Engineer/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.c", Line=2382
 OpenDocument="message_center.c", FilePath="d:/Documents/github/2024_Engineer/modules/message_center/message_center.c", Line=76
 OpenDocument="robot_cmd.c", FilePath="d:/Documents/github/2024_Engineer/application/cmd/robot_cmd.c", Line=0
-OpenDocument="gimbal_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/gimbal/gimbal_interface.c", Line=126
-OpenDocument="UI.c", FilePath="d:/Documents/github/2024_Engineer/application/UI/UI.c", Line=223
+OpenDocument="gimbal_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/gimbal/gimbal_interface.c", Line=34
+OpenDocument="list.c", FilePath="d:/Documents/github/2024_Engineer/Middlewares/Third_Party/FreeRTOS/Source/list.c", Line=90
 OpenDocument="robot_task.h", FilePath="d:/Documents/github/2024_Engineer/application/robot_task.h", Line=63
 OpenDocument="chassis_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/chassis/chassis_interface.c", Line=225
 OpenDocument="controller.c", FilePath="d:/Documents/github/2024_Engineer/modules/algorithm/controller.c", Line=184
-OpenDocument="bsp_dwt.c", FilePath="d:/Documents/github/2024_Engineer/bsp/dwt/bsp_dwt.c", Line=34
+OpenDocument="bsp_dwt.c", FilePath="d:/Documents/github/2024_Engineer/bsp/dwt/bsp_dwt.c", Line=103
 OpenDocument="bsp_can.c", FilePath="d:/Documents/github/2024_Engineer/bsp/can/bsp_can.c", Line=192
-OpenDocument="tasks.c", FilePath="d:/Documents/github/2024_Engineer/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=3423
+OpenDocument="stm32h7xx_it.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/stm32h7xx_it.c", Line=104
 OpenDocument="gimbal.c", FilePath="d:/Documents/github/2024_Engineer/application/gimbal/gimbal.c", Line=0
 OpenDocument="dji_motor.c", FilePath="d:/Documents/github/2024_Engineer/modules/motor/DJImotor/dji_motor.c", Line=309
 OpenDocument="robot.c", FilePath="d:/Documents/github/2024_Engineer/application/robot.c", Line=31
-OpenDocument="arm_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/arm/arm_interface.c", Line=487
+OpenDocument="buzzer.c", FilePath="d:/Documents/github/2024_Engineer/modules/buzzer/buzzer.c", Line=316
+OpenToolbar="File", Floating=0, x=1, y=0
 OpenToolbar="Debug", Floating=0, x=0, y=0
+OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=0, w=430, h=483, TabPos=1, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Source Files", DockArea=LEFT, x=0, y=0, w=308, h=623, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=434, h=239, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Memory 1", DockArea=BOTTOM, x=4, y=0, w=120, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x21479C40
-OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=1, w=434, h=383, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Terminal", DockArea=BOTTOM, x=2, y=0, w=449, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Data Sampling", DockArea=BOTTOM, x=1, y=0, w=552, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
-OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=670, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="5 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="45;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="459;-1", CodeGraphLegendShown=0, CodeGraphLegendPosition="417;0"
-OpenWindow="Console", DockArea=BOTTOM, x=3, y=0, w=125, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=430, h=123, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=0, w=430, h=483, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Terminal", DockArea=BOTTOM, x=2, y=0, w=348, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=BOTTOM, x=0, y=0, w=264, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=BOTTOM, x=1, y=0, w=908, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="5 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="0;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="701;-1", CodeGraphLegendShown=0, CodeGraphLegendPosition="715;0"
+OpenWindow="Console", DockArea=BOTTOM, x=3, y=0, w=397, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
+TableHeader="Call Stack", SortCol="Function", SortOrder="ASCENDING", VisibleCols=["Function";"Stack Frame";"Source";"PC";"Return Address";"Stack Used"], ColWidths=[100;100;100;100;112;100]
 TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[239;100;100;100;854]
-TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time"], ColWidths=[100;777]
-TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="DESCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[363;100;100;100;100;100;100;107;107]
+TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time"], ColWidths=[100;100]
+TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="DESCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[100;100;100;100;100;100;100;107;107]
 TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
-TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Refresh"], ColWidths=[372;257;100]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Refresh"], ColWidths=[196;257;100]
 TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[200;100;100;351]
-WatchedExpression="arm_current_data", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="assorted_up_encoder", Window=Watched Data 1
-WatchedExpression="gimbal_yaw_motor->measure", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="gimbal_cmd_recv.arm_big_yaw_offset", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="gimbal_imu_yaw_total_round", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="graph_group_temp", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="graph_group", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="chassis_cmd_recv", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="sub", Window=Watched Data 1
-WatchedExpression="gimbal_sub", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="gimbal_cmd_pub->first_subs", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="iter", Window=Watched Data 1
-WatchedExpression="pub", Window=Watched Data 1
-WatchedExpression="pub", Window=Watched Data 1
-WatchedExpression="ret", Window=Watched Data 1
-WatchedExpression="robot_state", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="big_yaw_motor", Window=Watched Data 1
+WatchedExpression="config", Window=Watched Data 1

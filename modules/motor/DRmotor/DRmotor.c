@@ -109,10 +109,7 @@ DRMotorInstance *DRMotorInit(Motor_Init_Config_s *config)
     motor->motor_can_instance          = CANRegister(&config->can_init_config);
 
     // 避免大然电机进入保护，每次初始化都将其重启
-    static uint8_t tx_buf_DRmotor_reboot[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    CANTransmit_once(motor->motor_can_instance->can_handle,
-                        (config->can_init_config.tx_id & (0x1f << 5)) + 0x08,
-                        tx_buf_DRmotor_reboot, 2);
+    // DRMotorReset(motor);
     // DR_PDA04电机每次上电都需要手动发送数据包开启实时状态反馈
     if (motor->motor_type == DR_PDA04) {
         static uint8_t tx_buf_enable_PDA04_recall[] = {0xF1, 0x55, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00};
@@ -287,3 +284,11 @@ void DRMotorErrorDetection(DRMotorInstance *motor)
         if(motor->motor_error_detection.error_callback != NULL)
             motor->motor_error_detection.error_callback(motor);
 }   
+
+//大然电机软重启
+void DRMotorReset(DRMotorInstance* motor){
+    static uint8_t tx_buf_DRmotor_reboot[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    CANTransmit_once(motor->motor_can_instance->can_handle,
+                        (motor->motor_can_instance->tx_id & (0x1f << 5)) + 0x08,
+                        tx_buf_DRmotor_reboot, 2);
+}

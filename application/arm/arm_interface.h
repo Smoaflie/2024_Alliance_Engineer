@@ -5,6 +5,7 @@ void ArmInit_Encoder();
 void ArmInit_Motor();
 void ArmInit_Communication();
 void ArmInit_IO();
+void ArmInit_Param();
 
 void ArmSubMessage();
 void ArmParamPretreatment();

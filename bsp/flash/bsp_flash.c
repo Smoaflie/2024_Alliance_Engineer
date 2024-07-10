@@ -1,6 +1,7 @@
 #include "bsp_flash.h"
 #include "main.h"
 #include "string.h"
+#include "bsp_log.h"
 
 static uint32_t ger_sector(uint32_t address);
 
@@ -51,7 +52,7 @@ int8_t flash_write_single_address(uint32_t start_address, uint32_t *buf, uint32_
     static uint32_t end_address;
     static uint32_t *data_buf;
     static uint32_t data_len;
-
+    static uint8_t __attribute__((aligned(32))) buffer[FLASH_WRITE_SIZE];
     HAL_FLASH_Unlock();
 
     uw_address = start_address;
@@ -61,13 +62,17 @@ int8_t flash_write_single_address(uint32_t start_address, uint32_t *buf, uint32_
 
     while (uw_address <= end_address)
     {
+        memset(buffer, 0, FLASH_WRITE_SIZE);  // 清空缓冲区
+        // 将数据复制到缓冲区
+        uint32_t copy_size = len - data_len < FLASH_WRITE_SIZE ? len - data_len : FLASH_WRITE_SIZE;
+        memcpy(buffer, (uint8_t*)data_buf, copy_size);
 
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD,uw_address, (uint32_t)data_buf) == HAL_OK)
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD,uw_address, (uint32_t)buffer) == HAL_OK)
         {
-            uw_address += 1;
-            data_buf++;
-            data_len++;
-            if (data_len == len)
+            uw_address += 32;
+            data_buf += 8;
+            data_len += 32;
+            if (data_len >= len)
             {
                 break;
             }
@@ -80,6 +85,7 @@ int8_t flash_write_single_address(uint32_t start_address, uint32_t *buf, uint32_
     }
 
     HAL_FLASH_Lock();
+    LOGINFO("Flash write success.");
     return 0;
 }
 
@@ -150,7 +156,9 @@ int8_t flash_write_muli_address(uint32_t start_address, uint32_t end_address, ui
   */
 void flash_read(uint32_t address, uint32_t *buf, uint32_t len)
 {
-    memcpy((uint8_t*)buf, (uint8_t*)address, len*4);
+    __disable_irq();
+    memcpy((uint8_t*)buf, (uint8_t*)address, len);
+    __enable_irq();
 }
 
 

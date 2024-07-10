@@ -15,6 +15,7 @@
 #include "bsp_dwt.h"
 #include "bsp_log.h"
 #include "servo_motor.h"
+#include "user_lib.h"
 
 #define GetAngleBetween360(a) ((a)-(360*(int32_t)((a)/360)))
 #define GetAngleBetween180(angle) ((angle)>180)?((angle)-360):(((angle)<-180)?((angle)+360):(angle))
@@ -79,14 +80,15 @@ void GimbalInit_Motor()
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
                 .IntegralLimit = 0,
                 .MaxOut        = 30,
+                // .Output_LPF_RC = 0.5,
             },
             .speed_PID = {
-                .Kp            = 35, // 0
+                .Kp            = 70, // 0
                 .Ki            = 0,  // 0
                 .Kd            = 0,      // 0
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
                 .IntegralLimit = 100,
-                .MaxOut        = 1000, // 20000
+                .MaxOut        = 500, // 20000
             },
             .other_angle_feedback_ptr = &gimbal_imu_yaw_total_angle,
         },
@@ -113,7 +115,7 @@ void GimbalInit_Motor()
         .Servo_type       = Servo180,
     };
     gimbal_pitch_motor = ServoInit(&servo_config);
-    gimbal_pitch_angle = 35;
+    gimbal_pitch_angle = 145;
     Servo_Motor_FreeAngle_Set(gimbal_pitch_motor,(int16_t)gimbal_pitch_angle);
 
 }
@@ -139,7 +141,7 @@ void GimbalParamPretreatment()
     /* 初始化云台陀螺仪yaw角度偏移量(使之零点为车辆正方向) */
     if(!gimbal_imu_init)
     {
-        // while((gimbal_yaw_motor->measure.feed_dt == 0) || (gimbal_cmd_recv.arm_big_yaw_offset==0))    {SubGetMessage(gimbal_sub, &gimbal_cmd_recv);osDelay(1);}
+        while((gimbal_yaw_motor->measure.feed_dt == 0) || (gimbal_cmd_recv.arm_big_yaw_offset==0))    {SubGetMessage(gimbal_sub, &gimbal_cmd_recv);osDelay(1);}
         
         gimbal_imu_offset = gimbal_imu_yaw_total_angle - gimbal_cmd_recv.arm_big_yaw_offset - gimbal_yaw_motor->measure.total_angle;
         gimbal_imu_init = 1;
@@ -151,15 +153,15 @@ void GimbalParamPretreatment()
     static uint16_t cnt = 0;
     if(!LKMotorIsOnline(gimbal_yaw_motor) || gimbal_cmd_recv.gimbal_debug_flag)
     {
-        LKMotorStop(gimbal_yaw_motor);
+        // LKMotorStop(gimbal_yaw_motor);
         cnt++;
-        if(cnt > 3000)
+        if(cnt > 500)
         {
             GPIOReset(relay_contro_gpio);
             LOGWARNING("[Gimbal] Gimbal yaw motor lost, trying to restart it.");
-            osDelay(500);
+            osDelay(100);
             GPIOSet(relay_contro_gpio);
-            osDelay(3000);
+            osDelay(2000);
             gimbal_yaw_angle = gimbal_cmd_recv.arm_big_yaw_offset;
             gimbal_imu_yaw_total_round = 0;
         }
@@ -185,6 +187,7 @@ void GimbalContro()
             gimbal_yaw_angle -= gimbal_cmd_recv.yaw;
 
             Servo_Motor_FreeAngle_Set(gimbal_pitch_motor,(int16_t)gimbal_pitch_angle);
+
             LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
             // LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle-gimbal_cmd_recv.arm_big_yaw_offset);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_FOLLOW_YAW){
@@ -192,15 +195,17 @@ void GimbalContro()
             gimbal_pitch_angle += gimbal_cmd_recv.pitch;
             VAL_LIMIT(gimbal_pitch_angle, 0, 180);    /* 限幅 */
 
-            gimbal_yaw_angle = 0;
+            gimbal_yaw_angle = gimbal_cmd_recv.arm_big_yaw_offset;
 
             Servo_Motor_FreeAngle_Set(gimbal_pitch_motor,(int16_t)gimbal_pitch_angle);
-            LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle+gimbal_cmd_recv.arm_big_yaw_offset);
+
+            LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
             // LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET){
 
             // gimbal_pitch_angle = 0;
-            LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
+
+            LKMotorSetRef(gimbal_yaw_motor,0);
 
                 gimbal_yaw_motor->measure.total_round = (gimbal_yaw_motor->measure.total_round==-1) ? -1 : 0;
                 gimbal_yaw_motor->measure.total_angle = gimbal_yaw_motor->measure.angle_single_round;

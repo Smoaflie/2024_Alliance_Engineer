@@ -9,7 +9,7 @@
 
 /**
  * @brief 日志系统初始化
- *
+ * 
  */
 void BSPLogInit();
 
