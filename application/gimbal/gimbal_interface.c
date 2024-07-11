@@ -145,6 +145,12 @@ void GimbalParamPretreatment()
         
         gimbal_imu_offset = gimbal_imu_yaw_total_angle - gimbal_cmd_recv.arm_big_yaw_offset - gimbal_yaw_motor->measure.total_angle;
         gimbal_imu_init = 1;
+
+        static uint8_t reset_gimbal_zero_point[] = {0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        CANTransmit_once(gimbal_yaw_motor->motor_can_ins->can_handle,
+                        gimbal_yaw_motor->motor_can_ins->tx_id,
+                        reset_gimbal_zero_point, 2);
+
     }
 
     LKMotorEnable(gimbal_yaw_motor);

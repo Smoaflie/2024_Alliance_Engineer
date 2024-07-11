@@ -7,14 +7,22 @@
 #include "UI_ref.h"
 #include "general_def.h"
 
+#define UI_String_Refresh_freq 1
+#define UI_Graph_Refresh_freq 1
+#define UI_Graph_PRIORITY_LEVEL 4
+#define UI_String_PRIORITY_LEVEL 1
+#define UI_GrathType_NUM 8
+#pragma pack(1) 
+
 typedef enum{
     GraphType_Rect = 0,
     GraphType_Line,
     GraphType_Round,
     GraphType_Elipse,
     GraphType_Arc,
+    GraphType_Ray,
     GraphType_Number,
-    GraphType_Float
+    GraphType_Float,
 }GraphType_;
 typedef enum{
     RefreshMode_ADD = 0,
@@ -23,43 +31,66 @@ typedef enum{
 }RefreshMode_;
 typedef union{
     struct{
-        uint32_t width  : 11;
-        uint32_t height : 11;
-
+        int32_t unused_param1;
+        int32_t unused_param2;
+        int32_t width ;
+        int32_t height;
     }Rect;
     struct{
-        uint32_t length : 11;
-        double rotate_angle;
+        int32_t unused_param1;
+        int32_t unused_param2;
+        int32_t length;
+        int32_t rotate_angle;
     }Line;
     struct{
-        uint32_t radius : 10;
+        int32_t rotate_angle;
+        int32_t unused_param2;
+        int32_t line_length;
+        int32_t offcenter_lenth;
+    }Ray;
+    struct{
+        int32_t unused_param1;
+        int32_t unused_param2;
+        int32_t radius;
+        int32_t unused_param4;
     }Round;
     struct{
-        uint32_t radius_x : 11;
-        uint32_t radius_y : 11;
+        int32_t unused_param1;
+        int32_t unused_param2;
+        int32_t radius_x;
+        int32_t radius_y;
     }Ellipse;
     struct{
-        uint32_t radius_x : 11;
-        uint32_t radius_y : 11;
-        uint32_t start_angle : 9;
-        uint32_t angle_len : 9;
+        int32_t start_angle;
+        int32_t angle_len;
+        int32_t radius_x;
+        int32_t radius_y;
     }Arc;
     struct{
-        uint32_t size : 9;
+        int32_t size;
         int32_t value;
     }Number;
     struct{
-        uint32_t size : 9;
-        uint32_t digit: 3;
+        int32_t size;
+        int32_t digit;
         double value;
     }Float;
+    struct{
+        int32_t param_1;
+        int32_t param_2;
+        int32_t param_3;
+        int32_t param_4;
+    };
+    
 }UI_GRAPH_PARAM_;
 
 typedef struct{
     Graph_Data_t graph;
 
 	char graphic_name[3];
+    
     GraphType_ type : 3;
+    
     uint32_t priority : 3;
     uint32_t layer : 4;
     uint32_t pos_x : 11;
@@ -69,7 +100,9 @@ typedef struct{
     UI_GRAPH_PARAM_ param;
 
     uint8_t send_flag : 1;
+    uint8_t active_flag : 1;  
     uint8_t init_call : 1;  
+    uint8_t delete_call : 1;  
     int8_t delay : 3;  
 }UI_GRAPH_INSTANCE;
 typedef struct{
@@ -99,10 +132,15 @@ typedef struct{
     const char* char_p;
 
     uint8_t send_flag : 1;
+    uint8_t active_flag : 1;  
     uint8_t init_call : 1;  
+    uint8_t delete_call : 1;  
     int8_t delay : 3;
 }UI_STRING_INSTANCE;
 
+#pragma pack() 
+
+UI_GRAPH_INSTANCE* UI_Graph_Init_byConfig(UI_GRAPH_CONFIG_s *config);
 UI_GRAPH_INSTANCE* UI_Graph_Init(
         GraphType_ type,
         uint32_t priority,
@@ -127,4 +165,9 @@ uint8_t UI_Graph_Setting(UI_GRAPH_INSTANCE *instance, RefreshMode_ mode);
 void UI_Graph_Refresh();
 void UI_String_Refresh();
 
+void UI_StateSwitchDetect_Graph(UI_GRAPH_INSTANCE* instance, uint8_t cnt, int flag, ...);
+
+void UI_ColorSwitchDetect_Char(UI_STRING_INSTANCE *instance, uint8_t cnt, int flag, ...);
+void UI_WidthSwitchDetect_Char(UI_STRING_INSTANCE *instance, uint8_t cnt, int flag, ...);
+void UI_StringSwitchDetect_Char(UI_STRING_INSTANCE *instance, uint8_t cnt, int flag, ...);
 #endif //UI_INTERFACE_

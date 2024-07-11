@@ -5,11 +5,11 @@
 
 #define arm_encoder_data_read_from_flash 0
 #define arm_auto_mode_record_data_read_from_flash 1
-#define UI_param_data_read_from_flash 0
+#define UI_param_data_read_from_flash 1
 
 #define arm_auto_mode_record_address    ADDR_FLASH_SECTOR_7+0x00000000
-#define arm_encoder_record_address      ADDR_FLASH_SECTOR_7+0x00004fe0
-#define UI_param_record_address         ADDR_FLASH_SECTOR_7+0x00005000
+#define arm_encoder_record_address      ADDR_FLASH_SECTOR_7+0x00008000
+#define UI_param_record_address         ADDR_FLASH_SECTOR_7+0x00008020
 
 typedef struct
 {

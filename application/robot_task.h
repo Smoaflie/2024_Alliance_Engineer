@@ -130,7 +130,6 @@ void _refereeTask(void *argument)
     osDelay(1000);
     while (1) {
         MyUIRefresh();
-        osDelay(10);
     }
 }
 

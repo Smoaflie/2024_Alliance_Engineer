@@ -287,31 +287,57 @@ typedef struct{
     uint8_t arm_auto_mode_id;
     uint8_t chassis_auto_mod_id;
 }UI_reality_Data_s;
+
+typedef struct{
+    int debug_flag : 1; //debug模式
+
+    int add_ui : 1;
+    int delete_ui : 1;
+    int switch_type : 2;
+    int switch_color : 2;
+    int switch_selected_ui : 2;
+    int undo : 1;
+    int redo : 1;
+    int width : 2;
+    int param1 : 2;
+    int param2 : 2;
+    int param3 : 2;
+    int param4 : 2;
+    int copy : 1;
+    int paste : 1;
+    int cut : 1;
+    int pos_upORdown : 8;
+    int pos_leftORright : 8;
+    int reset_to_center : 1;
+}UI_debug_param;
 typedef struct
 { 
-    int rc_connection_mode_t;    //遥控器连接
-    int vision_connection_mode_t;    //图传连接
-    int custom_contro_connection_mode_t;    //自定义控制器连接
-    int pump_arm_mode_t;    //臂气泵
-    int pump_valve_mode_t;    //推杆气泵
-    int arm_mode;   //臂状态圈 0-无动作 1-进行中 2-暂停
-    int valve_mode; //推杆状态圈 0-无动作 1-进行中 2-暂停
+    int rc_connection_mode_t : 1;    //遥控器连接
+    int vision_connection_mode_t : 1;    //图传连接
+    int custom_contro_connection_mode_t : 1;    //自定义控制器连接
+    int pump_arm_mode_t : 1;    //臂气泵
+    int pump_valve_mode_t : 1;    //推杆气泵
+    int arm_mode : 3;   //臂状态圈 0-无动作 1-进行中 2-暂停
+    int valve_mode : 3; //推杆状态圈 0-无动作 1-进行中 2-暂停
 
     int Contro_mode; //控制模式
     int arm_selected_mode;
-    int arm_selected_mode_state; // 0表示当前(运行/暂停中)模式，1为选中待确认(后覆盖当前模式)
+    int arm_selected_mode_state : 1; // 0表示当前模式(运行/暂停中)，1为选中(待确认后覆盖当前模式)
     int valve_selected_mode;
-    int valve_selected_mode_state; // 0表示当前(运行/暂停中)模式，1为选中待确认(后覆盖当前模式)
+    int valve_selected_mode_state : 1; // 0表示当前模式(运行/暂停中)，1为选中(待确认后覆盖当前模式)
     
-    int arm_temp_halt_selected;
-    int valve_temp_halt_selected;
-    int relay_contr_state; //臂继电器状态
+    int arm_temp_halt_selected : 1;
+    int valve_temp_halt_selected : 1;
+
+    int relay_contr_state : 1; //臂继电器状态
 
     float gimbal_offset_angle;
     arm_controller_data_s arm_current_data;
     arm_controller_data_s arm_target_data;
 
     uint8_t UI_refresh_request;
+
+    UI_debug_param debug;
 }UI_data_t;
 
 

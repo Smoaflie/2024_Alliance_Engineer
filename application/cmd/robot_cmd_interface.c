@@ -318,6 +318,40 @@ static void RemoteControlSet()
  */
 static void MouseKeyControlSet_Debug(){
     robot_state = ROBOT_READY;  //为了避免臂受重力下垂等情况，不能直接失能
+    UI_debug_param *debug = &UI_cmd_send.debug;
+    debug->debug_flag = 1;
+    static uint8_t switch_flag[4] = {0};
+    bool switch_bool[4] = {0};
+    //移动UI
+    switch_bool[0] = rc_data->key[KEY_PRESS].e || rc_data->key[KEY_PRESS].q || rc_data->key[KEY_PRESS].x || rc_data->key[KEY_PRESS].z;
+    if(!rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift){
+        debug->pos_upORdown = 20*(rc_data->key[KEY_PRESS].w - rc_data->key[KEY_PRESS].s);
+        debug->pos_leftORright = 20*(rc_data->key[KEY_PRESS].a - rc_data->key[KEY_PRESS].d);
+        debug->param1 = rc_data->key[KEY_PRESS].g-rc_data->key[KEY_PRESS].f;
+        debug->width = rc_data->key[KEY_PRESS].v-rc_data->key[KEY_PRESS].c;
+        debug->add_ui = rc_data->key[KEY_PRESS].b;
+        debug->reset_to_center = rc_data->key[KEY_PRESS].r;
+        if(detect_edge(&switch_flag[0], switch_bool[0]) == EDGE_RISING){
+            debug->switch_selected_ui = rc_data->key[KEY_PRESS].e-rc_data->key[KEY_PRESS].q;
+            debug->switch_type = rc_data->key[KEY_PRESS].x-rc_data->key[KEY_PRESS].z;
+        }
+    }else if(rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift){
+        debug->pos_upORdown = (rc_data->key[KEY_PRESS].w - rc_data->key[KEY_PRESS].s);
+        debug->pos_leftORright = (rc_data->key[KEY_PRESS].a - rc_data->key[KEY_PRESS].d);
+        debug->param2 = rc_data->key[KEY_PRESS].g-rc_data->key[KEY_PRESS].f;
+        debug->undo = rc_data->key[KEY_PRESS].z;
+        debug->undo = rc_data->key[KEY_PRESS].x;
+        debug->paste = rc_data->key[KEY_PRESS].v;
+        debug->copy = rc_data->key[KEY_PRESS].c;
+        debug->delete_ui = rc_data->key[KEY_PRESS].b;
+        if(detect_edge(&switch_flag[1], switch_bool[0]) == EDGE_RISING){
+            debug->switch_color = rc_data->key[KEY_PRESS].e-rc_data->key[KEY_PRESS].q;
+        }
+    }else if(!rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift){
+        debug->param3 = rc_data->key[KEY_PRESS].g-rc_data->key[KEY_PRESS].f;
+    }else{
+        debug->param4 = rc_data->key[KEY_PRESS].g-rc_data->key[KEY_PRESS].f;
+    }
 }
 static void MouseKeyControlSet_Normal()
 {
@@ -333,7 +367,7 @@ static void MouseKeyControlSet_Normal()
     // wasd 控制底盘全向移动 中速/ctrl慢速/shift高速
     // 其中 云台自由模式下仅支持超低速和慢速
     const float speed[4] = {15000, 30000, 80000, 3000};
-    if(rc_data->key[KEY_PRESS].ctrl && (ControlMode==ControlMode_ConvertCube || ControlMode==ControlMode_FetchCube)) {   //超低速
+    if(rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift && (ControlMode==ControlMode_ConvertCube || ControlMode==ControlMode_FetchCube)) {   //超低速
         chassis_cmd_send.vy = (rc_data->key[KEY_PRESS].w - rc_data->key[KEY_PRESS].s) * speed[3];
         chassis_cmd_send.vx = (rc_data->key[KEY_PRESS].a - rc_data->key[KEY_PRESS].d) * speed[3];
     }else if((!rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift) && !(ControlMode==ControlMode_ConvertCube || ControlMode==ControlMode_FetchCube)) {   //wasd-中速
@@ -398,6 +432,7 @@ static void MouseKeyControlSet_Normal()
         //     gimbal_cmd_send.yaw = output[29] * 0.1;
         // }
         gimbal_cmd_send.yaw = rc_data->mouse.x * 0.01;
+        gimbal_cmd_send.pitch = -rc_data->mouse.y / 20.0;
 
             
         
@@ -608,14 +643,15 @@ static void MouseKeyControlSet(){
     Reset_Param(rc_data->key[KEY_PRESS].r && rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift);
 
     static bool debug_mode = 0;
+    static uint8_t switch_flag = 0;
+    EdgeType edge = detect_edge(&switch_flag, rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift && rc_data->key[KEY_PRESS].v && rc_data->mouse.press_l);
+    if(edge == EDGE_RISING) debug_mode = !debug_mode;
+    memset(&UI_cmd_send.debug, 0, sizeof(UI_debug_param));
+    
     if(debug_mode){
         MouseKeyControlSet_Debug();
-        if(rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift && rc_data->key[KEY_PRESS].w && rc_data->mouse.press_l)
-            debug_mode = false;
     }else{
         MouseKeyControlSet_Normal();
-        if(rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift && rc_data->key[KEY_PRESS].a && rc_data->key[KEY_PRESS].s && rc_data->key[KEY_PRESS].d && rc_data->mouse.press_l)
-            debug_mode = true;
     }
 }
 
@@ -750,7 +786,7 @@ void RobotActive()
 {
     while(zero_output_init_flag!=1)
     {
-        if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) || rc_data->key[KEY_PRESS].r)
+        if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) || rc_data->key[KEY_PRESS].r || vision_rc_data->key[KEY_PRESS].r)
             zero_output_init_flag=1;
         else
             osDelay(1);
@@ -778,19 +814,12 @@ void RobotCMDParamPretreatment()
     // 监测红外测距模块状态
     redlight_detect();
 
-    //如果遥控器离线，ctrl+shift+b 切换为图传链路
-    static uint8_t switch_to_vision_rc_flag = 0;
-    if(rc_data->rc.switch_left==0 && rc_data->rc.switch_right==0)
+    //如果遥控器离线，切换为图传链路
+    if(!RemoteControlIsOnline())
     {
-        if(vision_rc_data->key->ctrl && vision_rc_data->key->shift && vision_rc_data->key->b)
-            switch_to_vision_rc_flag |= 0x01;
-        if(switch_to_vision_rc_flag & 0X01){
             memcpy(rc_data,vision_rc_data,sizeof(RC_ctrl_t));
             rc_data->rc.switch_left = 1;
             rc_data->rc.switch_right = 2;
-        }
-    }else{
-        switch_to_vision_rc_flag &= ~0x01;
     }
 }
 void RobotCMDGenerateCommand()
@@ -851,43 +880,43 @@ void RobotCMDPubMessage()
 }
 void RobotCMDDebugInterface()
 {   
-    // static uint8_t edge_detect[2] = {0};
-    // static uint8_t switch_num = 0;
-    // arm_cmd_send.debug.auto_mode_record_start_call = 0;
-    // arm_cmd_send.debug.auto_mode_record_pause_call = 0;
+    static uint8_t edge_detect[2] = {0};
+    static uint8_t switch_num = 0;
+    arm_cmd_send.debug.auto_mode_record_start_call = 0;
+    arm_cmd_send.debug.auto_mode_record_pause_call = 0;
     
-    // EdgeType edge_1 = detect_edge(&edge_detect[0], dial_flag==1);
-    // if(edge_1 == EDGE_RISING){
-    //     if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right))){
-    //         arm_cmd_send.debug.auto_mode_record_pause_call = 1;
-    //     }else if((switch_is_mid(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right))){
-    //         switch_num = (switch_num+1)%8;
-    //         switch(switch_num){
-    //             case 1:DM_board_LEDSet(0xff0000);debug_switch_arm_auto_mode=Arm_get_goldcube_right;break;// 红色
-    //             case 2:DM_board_LEDSet(0xffa308);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_down;break;// 橙色
-    //             case 3:DM_board_LEDSet(0xffee46);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_up;break;// 黄色
-    //             case 4:DM_board_LEDSet(0x444444);debug_switch_arm_auto_mode=Arm_get_silvercube_left;break;// 白色
-    //             case 5:DM_board_LEDSet(0x43c9b0);debug_switch_arm_auto_mode=Arm_get_silvercube_mid;break;// 青色
-    //             case 6:DM_board_LEDSet(0x2b74ce);debug_switch_arm_auto_mode=Arm_get_silvercube_right;break;// 蓝色
-    //             case 7:DM_board_LEDSet(0xc586b6);debug_switch_arm_auto_mode=Recycle_arm_in;break;// 粉色
-    //             default: DM_board_LEDSet(0x000000);debug_switch_arm_auto_mode=0; //灭
-    //         }
-    //         arm_cmd_send.debug.selected_auto_mode_id = debug_switch_arm_auto_mode;
-    //     }
-    // }
+    EdgeType edge_1 = detect_edge(&edge_detect[0], dial_flag==1);
+    if(edge_1 == EDGE_RISING){
+        if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right))){
+            arm_cmd_send.debug.auto_mode_record_pause_call = 1;
+        }else if((switch_is_mid(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right))){
+            switch_num = (switch_num+1)%8;
+            switch(switch_num){
+                case 1:DM_board_LEDSet(0xff0000);debug_switch_arm_auto_mode=Arm_get_goldcube_right;break;// 红色
+                case 2:DM_board_LEDSet(0xffa308);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_down;break;// 橙色
+                case 3:DM_board_LEDSet(0xffee46);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_up;break;// 黄色
+                case 4:DM_board_LEDSet(0x444444);debug_switch_arm_auto_mode=Arm_get_silvercube_left;break;// 白色
+                case 5:DM_board_LEDSet(0x43c9b0);debug_switch_arm_auto_mode=Arm_get_silvercube_mid;break;// 青色
+                case 6:DM_board_LEDSet(0x2b74ce);debug_switch_arm_auto_mode=Arm_get_silvercube_right;break;// 蓝色
+                case 7:DM_board_LEDSet(0xc586b6);debug_switch_arm_auto_mode=Recycle_arm_in;break;// 粉色
+                default: DM_board_LEDSet(0x000000);debug_switch_arm_auto_mode=0; //灭
+            }
+            arm_cmd_send.debug.selected_auto_mode_id = debug_switch_arm_auto_mode;
+        }
+    }
 
-    // EdgeType edge_2 = detect_edge(&edge_detect[1], (switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) && dial_flag==-1);
-    // if(edge_2 == EDGE_RISING){
-    //     if(switch_num == 0){
-    //         buzzer_one_note(0x50, 0.1);
-    //         flashRefresh();
-    //         buzzer_one_note(0xf0, 0.2);
-    //     }else{
-    //         arm_cmd_send.debug.auto_mode_record_start_call = 1;
-    //     }
-    // }
+    EdgeType edge_2 = detect_edge(&edge_detect[1], (switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) && dial_flag==-1);
+    if(edge_2 == EDGE_RISING){
+        if(switch_num == 0){
+            buzzer_one_note(0x50, 0.1);
+            flashRefresh();
+            buzzer_one_note(0xf0, 0.5);
+        }else{
+            arm_cmd_send.debug.auto_mode_record_start_call = 1;
+        }
+    }
 
-    if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) && dial_flag==-1)
-        buzzer_one_note(0xff,0.1);
+    // if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) && dial_flag==-1)
+    //     buzzer_one_note(0xff,0.1);
 
 } 

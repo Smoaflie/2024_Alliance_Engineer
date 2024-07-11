@@ -711,7 +711,7 @@ static void ArmSetAutoMode(){
     }
     
     // 除伸出臂臂外一切自动模式都要在 Z轴初始化完毕 且 臂臂不在肚子内 才能用
-    if((arm_init_flag & Z_motor_init_clt) && Arm_inside_flag==0){
+    if((arm_init_flag & Z_motor_init_clt) && Arm_inside_flag==0 && arm_cmd_recv.auto_mode != 0){
         //以下为各自动模式
         //收臂臂回肚子          
         if(MonitorArmAutoRequest(&ARM_AUTO_MODE_DATA_.Recycle_arm_in_func, arm_cmd_recv.auto_mode) == 3){
@@ -1138,6 +1138,7 @@ void ArmParamPretreatment()
         //主要是复位大然电机
         DRMotorReset(big_yaw_motor);
         DRMotorReset(mid_yaw_motor);
+        
         //其余需要软复位的数据按需添加：
         //..
     }
