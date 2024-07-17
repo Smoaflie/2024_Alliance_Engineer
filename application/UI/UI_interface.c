@@ -18,9 +18,9 @@ return: 1图形更新 0图形未改变
 */
 uint8_t UI_Graph_Setting(UI_GRAPH_INSTANCE *instance, RefreshMode_ mode){
     Graph_Data_t *graph = &instance->graph;
-    Graph_Data_t *graph_t = malloc(sizeof(Graph_Data_t));
-    memset(graph_t,0,sizeof(Graph_Data_t));
+    Graph_Data_t graph_t;
     uint32_t Graph_Operate;
+    memset(&graph_t, 0, sizeof(Graph_Data_t));
     switch(mode){
         case RefreshMode_ADD:   Graph_Operate=Graphic_Operate_ADD;break;
         case RefreshMode_CHANGE:Graph_Operate=Graphic_Operate_CHANGE;break;
@@ -30,34 +30,34 @@ uint8_t UI_Graph_Setting(UI_GRAPH_INSTANCE *instance, RefreshMode_ mode){
         case GraphType_Rect:
             uint32_t Rect_end_x = instance->pos_x + instance->param.Rect.width;
             uint32_t Rect_end_y = instance->pos_y + instance->param.Rect.height;
-            UIRectangleDraw(graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->width, instance->pos_x, instance->pos_y, Rect_end_x, Rect_end_y);break;
+            UIRectangleDraw(&graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->width, instance->pos_x, instance->pos_y, Rect_end_x, Rect_end_y);break;
         case GraphType_Line:
             uint32_t Line_end_x = instance->pos_x - instance->param.Line.length*sinf(instance->param.Line.rotate_angle*DEGREE_2_RAD);
             uint32_t Line_end_y = instance->pos_y + instance->param.Line.length*cosf(instance->param.Line.rotate_angle*DEGREE_2_RAD);
-            UILineDraw(graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->width, instance->pos_x, instance->pos_y, Line_end_x, Line_end_y);break;
+            UILineDraw(&graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->width, instance->pos_x, instance->pos_y, Line_end_x, Line_end_y);break;
         case GraphType_Round:
-            UICircleDraw(graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->width, instance->pos_x, instance->pos_y, instance->param.Round.radius);break;
+            UICircleDraw(&graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->width, instance->pos_x, instance->pos_y, instance->param.Round.radius);break;
         case GraphType_Elipse:
-            UIOvalDraw(graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->width, instance->pos_x, instance->pos_y, instance->param.Ellipse.radius_x, instance->param.Ellipse.radius_y);break;
+            UIOvalDraw(&graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->width, instance->pos_x, instance->pos_y, instance->param.Ellipse.radius_x, instance->param.Ellipse.radius_y);break;
         case GraphType_Arc:
             uint32_t start_angle = instance->param.Arc.start_angle % 360;
             uint32_t end_angle = (instance->param.Arc.start_angle + instance->param.Arc.angle_len)%360;
-            UIArcDraw(graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, start_angle, end_angle, instance->width, instance->pos_x, instance->pos_y, instance->param.Arc.radius_x, instance->param.Arc.radius_y);break;
+            UIArcDraw(&graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, start_angle, end_angle, instance->width, instance->pos_x, instance->pos_y, instance->param.Arc.radius_x, instance->param.Arc.radius_y);break;
         case GraphType_Number:
-            UIIntDraw(graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->param.Number.size, instance->width, instance->pos_x, instance->pos_y, instance->param.Number.value);break;
+            UIIntDraw(&graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->param.Number.size, instance->width, instance->pos_x, instance->pos_y, instance->param.Number.value);break;
         case GraphType_Float:
-            int32_t value = (int32_t)(instance->param.Float.value * 1000) / (10*instance->param.Float.digit) * (10*instance->param.Float.digit);
-            UIFloatDraw(graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->param.Float.size, instance->param.Float.digit, instance->width, instance->pos_x, instance->pos_y, value);break;
+            int32_t value = (int32_t)(instance->param.Float.value * 1000) / (10*instance->param.Float.digit==0?1:10*instance->param.Float.digit) * (10*instance->param.Float.digit);
+            UIFloatDraw(&graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->param.Float.size, instance->param.Float.digit, instance->width, instance->pos_x, instance->pos_y, value);break;
         case GraphType_Ray:
             uint32_t Ray_start_x = instance->pos_x - instance->param.Ray.offcenter_lenth*sinf(instance->param.Ray.rotate_angle*DEGREE_2_RAD);
             uint32_t Ray_start_y = instance->pos_y - instance->param.Ray.offcenter_lenth*cosf(instance->param.Ray.rotate_angle*DEGREE_2_RAD);
             uint32_t Ray_end_x = instance->pos_x - (instance->param.Ray.offcenter_lenth+instance->param.Ray.line_length)*sinf(instance->param.Ray.rotate_angle*DEGREE_2_RAD);
             uint32_t Ray_end_y = instance->pos_y + (instance->param.Ray.offcenter_lenth+instance->param.Ray.line_length)*cosf(instance->param.Ray.rotate_angle*DEGREE_2_RAD);
-            UILineDraw(graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->width, Ray_start_x, Ray_start_y, Ray_end_x, Ray_end_y);break;
+            UILineDraw(&graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->width, Ray_start_x, Ray_start_y, Ray_end_x, Ray_end_y);break;
     }
 
-    if(memcmp(graph_t, graph, sizeof(Graph_Data_t)) != 0){
-        memcpy(graph, graph_t, sizeof(Graph_Data_t));
+    if(memcmp(&graph_t, graph, sizeof(Graph_Data_t)) != 0){
+        memcpy(graph, &graph_t, sizeof(Graph_Data_t));
         return 1;
     }
     return 0;
@@ -68,9 +68,9 @@ return: 1字符更新 0字符未改变
 */
 uint8_t UI_String_Setting(UI_STRING_INSTANCE *instance, RefreshMode_ mode){
     String_Data_t *string_ = &instance->string;
-    String_Data_t *string_t = malloc(sizeof(String_Data_t));
-    memset(string_t,0,sizeof(String_Data_t));
+    String_Data_t string_t;
     uint32_t Graph_Operate;
+    memset(&string_t, 0, sizeof(String_Data_t));
 
     switch(mode){
         case RefreshMode_ADD:   Graph_Operate=Graphic_Operate_ADD;break;
@@ -78,10 +78,10 @@ uint8_t UI_String_Setting(UI_STRING_INSTANCE *instance, RefreshMode_ mode){
         case RefreshMode_DELETE:Graph_Operate=Graphic_Operate_DEL;break;
     }
 
-    UICharDraw(string_t,instance->graphic_name,Graph_Operate,instance->layer,instance->color,instance->size,instance->width,instance->pos_x,instance->pos_y,instance->char_p);
+    UICharDraw(&string_t,instance->graphic_name,Graph_Operate,instance->layer,instance->color,instance->size,instance->width,instance->pos_x,instance->pos_y,instance->char_p);
 
-    if(memcmp(string_t, string_, sizeof(String_Data_t)) != 0){
-        memcpy(string_, string_t, sizeof(String_Data_t));
+    if(memcmp(&string_t, string_, sizeof(String_Data_t)) != 0){
+        memcpy(string_, &string_t, sizeof(String_Data_t));
         return 1;
     }
     return 0;
@@ -214,12 +214,12 @@ void UI_Graph_Refresh(){
     for(int i = UI_Graph_PRIORITY_LEVEL-1; i >= 0; i--){
         for(int j = 0; j < graph_idx_priority[i]; j++){
 
-            if(graph_instance_group[i][j]->init_call){
+            if(graph_instance_group[i][j]->init_call && !graph_instance_group[i][j]->active_flag){
                 graph_instance_group[i][j]->init_call = 0;
                 UI_Graph_Setting(graph_instance_group[i][j], RefreshMode_ADD);
                 graph_instance_group[i][j]->active_flag = 1;
                 graph_instance_group[i][j]->send_flag = 1;
-            }else if(graph_instance_group[i][j]->delete_call){
+            }else if(graph_instance_group[i][j]->delete_call && graph_instance_group[i][j]->active_flag){
                 graph_instance_group[i][j]->delete_call = 0;
                 UI_Graph_Setting(graph_instance_group[i][j], RefreshMode_DELETE);
                 graph_instance_group[i][j]->active_flag = 0;
@@ -257,12 +257,12 @@ void UI_String_Refresh(){
     for(int i = UI_String_PRIORITY_LEVEL-1; i >= 0; i--){
         for(int j = 0; j < string_idx_priority[i]; j++){
 
-            if(string_instance_group[i][j]->init_call){
+            if(string_instance_group[i][j]->init_call && !string_instance_group[i][j]->active_flag){
                 string_instance_group[i][j]->init_call = 0;
                 UI_String_Setting(string_instance_group[i][j], RefreshMode_ADD);
                 string_instance_group[i][j]->active_flag = 1;
                 string_instance_group[i][j]->send_flag = 1;
-            }else if(string_instance_group[i][j]->delete_call){
+            }else if(string_instance_group[i][j]->delete_call && string_instance_group[i][j]->active_flag){
                 string_instance_group[i][j]->delete_call = 0;
                 UI_String_Setting(string_instance_group[i][j], RefreshMode_DELETE);
                 string_instance_group[i][j]->active_flag = 0;

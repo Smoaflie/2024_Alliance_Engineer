@@ -52,6 +52,7 @@ void RobotInit()
 #ifdef ROBOT_TEST
     selfTestInit();
 #endif
+    // buzzer_one_note(0xf0, 0.5);
 
     // 初始化完成,开启中断
     __enable_irq();

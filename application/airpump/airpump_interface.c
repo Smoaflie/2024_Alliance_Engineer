@@ -46,6 +46,9 @@ uint8_t airpump_linear_state=0;
 
 static Publisher_t *air_data_pub;        // 气阀气泵消息发布者
 static Airpump_Data_s air_data_send;    // 气阀气泵消息
+
+static uint8_t in_debug_mode_flag;
+
 void AirpumpInit_IO()
 {
     GPIO_Init_Config_s gpio_conf_airpump_arm = {
@@ -88,7 +91,7 @@ void AirpumpInit_Motor()
                 .Kd            = 0.001, // 0
                 .IntegralLimit = 3000,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .MaxOut        = 8000,
+                .MaxOut        = 10000,
             },
         },
         .controller_setting_init_config = {
@@ -231,7 +234,8 @@ void AirpumpContro_Valve()
             airvalve_state |= AIRVALVE_MIDDLE_CUBE_DONE; //置位完成标志
             air_data_send.air_auto_mode_selecting = 0;
         }
-    }else if(airpump_cmd_rec.arm_to_airvalve){
+    }
+    if(airpump_cmd_rec.arm_to_airvalve){
         //由臂臂控制夹爪，优先级低
         //todo：任务执行顺次需再缕一缕
         switch(airpump_cmd_rec.arm_to_airvalve){
@@ -258,14 +262,19 @@ void AirpumpContro_Valve()
 }
 void AirpumpContro_Pump()
 {
-    if(airpump_arm_state == 1)
-        GPIOReset(airpump_arm);
-    else
+    if(airpump_cmd_rec.airpump_mode & AIRPUMP_STOP && !in_debug_mode_flag){
         GPIOSet(airpump_arm);
-    if(airpump_linear_state == 1)
-        GPIOReset(airpump_linear);
-    else    
         GPIOSet(airpump_linear);
+    }else{
+        if(airpump_arm_state == 1)
+            GPIOReset(airpump_arm);
+        else
+            GPIOSet(airpump_arm);
+        if(airpump_linear_state == 1)
+            GPIOReset(airpump_linear);
+        else    
+            GPIOSet(airpump_linear);
+    }
 }
 void AirpumpContro_Sucker()
 {
@@ -289,7 +298,7 @@ void AirpumpContro_Sucker()
     if(sucker_motor_mode == 2 || airpump_cmd_rec.tmp_flag==1){ //forward
         DJIMotorEnable(air_sucker_motor);
         DJIMotorOuterLoop(air_sucker_motor,ANGLE_LOOP);
-        DJIMotorSetRef(air_sucker_motor,sucker_zero_angle+3408+airpump_cmd_rec.sucker_offset_angle);
+        DJIMotorSetRef(air_sucker_motor,sucker_zero_angle+3537+airpump_cmd_rec.sucker_offset_angle);
     }else if(sucker_motor_mode == 3 && !(airpump_cmd_rec.airvalve_mode & AIRVALVE_STOP)){ //init
         DJIMotorEnable(air_sucker_motor);
         if(sucker_motor_init_cnt > 300){
@@ -298,11 +307,12 @@ void AirpumpContro_Sucker()
                 air_sucker_motor->measure.total_round = 0;
                 air_sucker_motor->measure.last_ecd = air_sucker_motor->measure.ecd;
                 air_sucker_motor->measure.total_angle = air_sucker_motor->measure.angle_single_round;
-                sucker_zero_angle = air_sucker_motor->measure.total_angle+20;
+                sucker_zero_angle = air_sucker_motor->measure.total_angle+300;
             }
             DJIMotorOuterLoop(air_sucker_motor,ANGLE_LOOP);
             DJIMotorSetRef(air_sucker_motor,sucker_zero_angle);
             sucker_motor_mode = 1;
+            sucker_motor_init_cnt = 0;
         }else{
             DJIMotorOuterLoop(air_sucker_motor,SPEED_LOOP);
             DJIMotorSetRef(air_sucker_motor,-3000);
@@ -311,10 +321,6 @@ void AirpumpContro_Sucker()
         }
     }
 
-    if(airpump_cmd_rec.airpump_mode & AIRPUMP_STOP){
-        GPIOSet(airpump_arm);
-        GPIOSet(airpump_linear);
-    }
     if(airpump_cmd_rec.airvalve_mode & AIRVALVE_STOP){
         DJIMotorStop(air_sucker_motor);
     }
@@ -352,5 +358,8 @@ void AirpumpPubMessage()
 }
 void AirpumpDebugInterface()
 {
-    ;
+    if(airpump_cmd_rec.in_debug_call)
+        in_debug_mode_flag = 1;
+    if(airpump_cmd_rec.out_debug_call)
+        in_debug_mode_flag = 0;
 }

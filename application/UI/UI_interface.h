@@ -68,11 +68,16 @@ typedef union{
     }Arc;
     struct{
         int32_t size;
+        int32_t unused_param2;
+        int32_t unused_param3;
+        int32_t unused_param4;
         int32_t value;
     }Number;
     struct{
         int32_t size;
         int32_t digit;
+        int32_t unused_param3;
+        int32_t unused_param4;
         double value;
     }Float;
     struct{

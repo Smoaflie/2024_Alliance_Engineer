@@ -149,6 +149,7 @@ typedef struct
     float total_angle;   // 总角度,注意方向
     int32_t total_round; // 总圈数,注意方向
     
+    uint16_t offset_ecd;
 } Motor_Measure_s;
 
 

@@ -22,5 +22,4 @@ void RobotCMDTask()
     RobotCMDDebugInterface();
     RobotCMDPubMessage();
 
-    // RobotCMDDebugInterface();
 }

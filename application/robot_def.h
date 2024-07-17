@@ -267,6 +267,16 @@ typedef struct{
         uint8_t selected_auto_mode_id       : 4;
         uint8_t auto_mode_record_pause_call : 1;
         uint8_t auto_mode_record_start_call : 1;
+        
+        uint8_t arm_pump_on_call : 1;
+        uint8_t arm_pump_off_call : 1; 
+        uint8_t valve_pump_on_call : 1; 
+        uint8_t valve_pump_off_call : 1; 
+        uint8_t jaw_loose_call : 1; 
+        uint8_t jaw_tighten_call : 1; 
+        uint8_t assorted_joint_enable_call : 1; 
+        uint8_t assorted_joint_disable_call : 1; 
+        uint8_t apply_delay_call : 1;
     }debug;
 }Arm_Cmd_Data_s;
 
@@ -281,6 +291,9 @@ typedef struct{
     uint8_t halt_temp_call;  // 临时停止命令
     float sucker_offset_angle; //偏移角度
     uint8_t tmp_flag;
+
+    uint8_t in_debug_call;
+    uint8_t out_debug_call;
 }Airpump_Cmd_Data_s;
 
 typedef struct{
@@ -289,27 +302,29 @@ typedef struct{
 }UI_reality_Data_s;
 
 typedef struct{
-    int debug_flag : 1; //debug模式
+    int8_t debug_flag : 1; //debug模式
 
-    int add_ui : 1;
-    int delete_ui : 1;
-    int switch_type : 2;
-    int switch_color : 2;
-    int switch_selected_ui : 2;
-    int undo : 1;
-    int redo : 1;
-    int width : 2;
-    int param1 : 2;
-    int param2 : 2;
-    int param3 : 2;
-    int param4 : 2;
-    int copy : 1;
-    int paste : 1;
-    int cut : 1;
-    int pos_upORdown : 8;
-    int pos_leftORright : 8;
-    int reset_to_center : 1;
+    int8_t add_ui : 1;
+    int8_t delete_ui : 1;
+    int8_t switch_type : 2;
+    int8_t switch_color : 2;
+    int8_t switch_selected_ui : 2;
+    int8_t undo : 1;
+    int8_t redo : 1;
+    int8_t width : 2;
+    int8_t param1 : 2;
+    int8_t param2 : 2;
+    int8_t param3 : 2;
+    int8_t param4 : 2;
+    int8_t copy : 1;
+    int8_t paste : 1;
+    int8_t cut : 1;
+    int8_t pos_upORdown : 8;
+    int8_t pos_leftORright : 8;
+    int8_t reset_to_center : 1;
+    int8_t save_flag : 1;
 }UI_debug_param;
+
 typedef struct
 { 
     int rc_connection_mode_t : 1;    //遥控器连接

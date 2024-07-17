@@ -16,12 +16,12 @@ void DJIMotorErrorDetection(DJIMotorInstance *motor);
  * @note  因为只用于发送,所以不需要在bsp_can中注册
  *
  * C610(m2006)/C620(m3508):0x1ff,0x200;
- * GM6020:0x1ff,0x2ff
+ * GM6020:0x1ff,0x2ff *0x1fe,0x2fe(新固件)
  * 反馈(rx_id): GM6020: 0x204+id ; C610/C620: 0x200+id
  * can1: [0]:0x1FF,[1]:0x200,[2]:0x2FF
  * can2: [3]:0x1FF,[4]:0x200,[5]:0x2FF
  */
-static CANInstance sender_assignment[9] = {
+static CANInstance sender_assignment[15] = {
     [0] = {.can_handle = &hfdcan1, .txconf.Identifier = 0x1ff, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
     [1] = {.can_handle = &hfdcan1, .txconf.Identifier = 0x200, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
     [2] = {.can_handle = &hfdcan1, .txconf.Identifier = 0x2ff, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
@@ -31,13 +31,19 @@ static CANInstance sender_assignment[9] = {
     [6] = {.can_handle = &hfdcan3, .txconf.Identifier = 0x1ff, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
     [7] = {.can_handle = &hfdcan3, .txconf.Identifier = 0x200, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
     [8] = {.can_handle = &hfdcan3, .txconf.Identifier = 0x2ff, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
+    [9] = {.can_handle = &hfdcan1, .txconf.Identifier = 0x1fe, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
+    [10] = {.can_handle = &hfdcan2, .txconf.Identifier = 0x1fe, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
+    [11] = {.can_handle = &hfdcan3, .txconf.Identifier = 0x1fe, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
+    [12] = {.can_handle = &hfdcan1, .txconf.Identifier = 0x2fe, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
+    [13] = {.can_handle = &hfdcan2, .txconf.Identifier = 0x2fe, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
+    [14] = {.can_handle = &hfdcan3, .txconf.Identifier = 0x2fe, .txconf.IdType = FDCAN_STANDARD_ID, .txconf.DataLength = FDCAN_DLC_BYTES_8, .tx_buff = {0}},
 };
 
 /**
  * @brief 9个用于确认是否有电机注册到sender_assignment中的标志位,防止发送空帧,此变量将在DJIMotorControl()使用
  *        flag的初始化在 MotorSenderGrouping()中进行
  */
-static uint8_t sender_enable_flag[9] = {0};
+static uint8_t sender_enable_flag[15] = {0};
 
 /**
  * @brief 根据电调/拨码开关上的ID,根据说明书的默认id分配方式计算发送ID和接收ID,
@@ -77,14 +83,14 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
                 }
             }
             break;
-
+        
         case GM6020:
             if (motor_id < 4) {
                 motor_send_num = motor_id;
-                motor_grouping = config->can_handle == &hfdcan1 ? 0 : (config->can_handle == &hfdcan2 ? 3 : 6);
+                motor_grouping = config->can_handle == &hfdcan1 ? 9 : (config->can_handle == &hfdcan2 ? 10 : 11);
             } else {
                 motor_send_num = motor_id - 4;
-                motor_grouping = config->can_handle == &hfdcan1 ? 2 : (config->can_handle == &hfdcan2 ? 5 : 8);
+                motor_grouping = config->can_handle == &hfdcan1 ? 12 : (config->can_handle == &hfdcan2 ? 13 : 14);
             }
 
             config->rx_id                      = 0x204 + motor_id + 1; // 把ID+1,进行分组设置
@@ -129,6 +135,7 @@ static void DecodeDJIMotor(CANInstance *_instance)
     // 解析数据并对电流和速度进行滤波,电机的反馈报文具体格式见电机说明手册
     measure->last_ecd           = measure->ecd;
     measure->ecd                = ((uint16_t)rxbuff[0]) << 8 | rxbuff[1];
+    measure->ecd                = ((measure->ecd >= measure->offset_ecd) ? (measure->ecd - measure->offset_ecd) : (measure->ecd + 8191 - measure->offset_ecd));
     measure->angle_single_round = ECD_ANGLE_COEF_DJI * (float)measure->ecd;
     measure->last_speed_aps     = measure->speed_aps;
     measure->speed_aps          = (1.0f - SPEED_SMOOTH_COEF) * measure->speed_aps +
@@ -256,7 +263,7 @@ void DJIMotorErrorDetection(DJIMotorInstance *motor)
             while(1);
         }else
         {
-            if(!(motor->motor_error_detection.ErrorCode & MOTOR_ERROR_CRASH) && (abs(*motor->motor_error_detection.last_speed) - abs(*motor->motor_error_detection.speed) > abs(*motor->motor_error_detection.last_speed / (float)motor->motor_error_detection.crash_detective_sensitivity)) && (abs(*motor->motor_error_detection.last_speed) > motor->motor_error_detection.stuck_speed) )
+            if(!(motor->motor_error_detection.ErrorCode & MOTOR_ERROR_CRASH) && (fabsf(*motor->motor_error_detection.last_speed) - fabsf(*motor->motor_error_detection.speed) > fabsf(*motor->motor_error_detection.last_speed / (float)motor->motor_error_detection.crash_detective_sensitivity)) && (fabsf(*motor->motor_error_detection.last_speed) > motor->motor_error_detection.stuck_speed)  && (fabsf(*motor->motor_error_detection.current) > fabsf(*motor->motor_error_detection.stuck_current_ptr)) && motor->stop_flag)
             {
                 motor->motor_error_detection.ErrorCode |= MOTOR_ERROR_DETECTION_CRASH;
 
@@ -277,7 +284,7 @@ void DJIMotorErrorDetection(DJIMotorInstance *motor)
             while(1);
         }else
         {
-            if(!(motor->motor_error_detection.ErrorCode & MOTOR_ERROR_DETECTION_STUCK) && (abs(*(motor->motor_error_detection.speed)) < motor->motor_error_detection.stuck_speed) && (abs(*(motor->motor_error_detection.current)) > *(motor->motor_error_detection.stuck_current_ptr)))
+            if(!(motor->motor_error_detection.ErrorCode & MOTOR_ERROR_DETECTION_STUCK) && (fabsf(*(motor->motor_error_detection.speed)) < motor->motor_error_detection.stuck_speed) && (fabsf(*(motor->motor_error_detection.current)) > *(motor->motor_error_detection.stuck_current_ptr)) && motor->stop_flag)
             {
                 motor->motor_error_detection.stuck_cnt++;
                 if(motor->motor_error_detection.stuck_cnt > 10)
@@ -371,22 +378,22 @@ void DJIMotorControl()
         }
 
         // 获取最终输出
-        motor_controller->output_current = pid_ref;
         set = (int16_t)pid_ref;
-
+        // 若该电机处于停止状态,直接将buff置零
+        if (motor->stop_flag == MOTOR_STOP)
+            set = 0;
+        motor_controller->output_current = set;
         // 分组填入发送数据
         group                                         = motor->sender_group;
         num                                           = motor->message_num;
         sender_assignment[group].tx_buff[2 * num]     = (uint8_t)(set >> 8);     // 低八位
         sender_assignment[group].tx_buff[2 * num + 1] = (uint8_t)(set & 0x00ff); // 高八位
 
-        // 若该电机处于停止状态,直接将buff置零
-        if (motor->stop_flag == MOTOR_STOP)
-            memset(sender_assignment[group].tx_buff + 2 * num, 0, 16u);
+            // memset(sender_assignment[group].tx_buff + 2 * num, 0, 16u);
     }
 
     // 遍历flag,检查是否要发送这一帧报文
-    for (size_t i = 0; i < 9; ++i) {
+    for (size_t i = 0; i < 15; ++i) {
         if (sender_enable_flag[i]) {
             // TODO:测试调试
             CANTransmit(&sender_assignment[i], 1);

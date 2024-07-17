@@ -85,6 +85,21 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
     }
 
     memcpy(&rc_ctrl[LAST], &rc_ctrl[TEMP], sizeof(RC_ctrl_t)); // 保存上一次的数据,用于按键持续按下和切换的判断
+
+    static int16_t cnt = 0,sum = 0, init_flag = 0;
+    static int16_t input[10];
+    if(cnt < 10 && !init_flag){
+        input[cnt++] = rc_ctrl[TEMP].mouse.x;
+        sum += rc_ctrl[TEMP].mouse.x;
+        init_flag = 1;
+    }else{
+        int i = (cnt++)%10;
+        if(cnt > 30)    cnt = 0;
+        sum -= input[i];
+        sum += rc_ctrl[TEMP].mouse.x;
+        input[i] = rc_ctrl[TEMP].mouse.x;
+        rc_ctrl[TEMP].mouse.x_average = sum / 10;
+    }
 }
 
 /**

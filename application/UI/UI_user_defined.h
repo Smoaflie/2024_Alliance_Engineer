@@ -9,12 +9,26 @@ static const char UI_DEBUG_STRING_PARAM1[] = "PARAM1:";
 static const char UI_DEBUG_STRING_PARAM2[] = "PARAM2:";
 static const char UI_DEBUG_STRING_PARAM3[] = "PARAM3:";
 static const char UI_DEBUG_STRING_PARAM4[] = "PARAM4:";
+static const char UI_DEBUG_STRING_HEIGHT[] = "HEIGHT:";
+static const char UI_DEBUG_STRING_RX[] = "RX:";
+static const char UI_DEBUG_STRING_RY[] = "RY:";
+static const char UI_DEBUG_STRING_STARTANGLE[] = "STARTANGLE:";
+static const char UI_DEBUG_STRING_ANGLELEN[] = "ANGLE_LEN:";
+static const char UI_DEBUG_STRING_ANGLE[] = "ANGLE:";
+static const char UI_DEBUG_STRING_LINELENGTH[] = "LINELEN:";
+static const char UI_DEBUG_STRING_OFFSETLEN[] = "OFFSETLEN:";
+static const char UI_DEBUG_STRING_RADIUS[] = "RADIUS:";
+static const char UI_DEBUG_STRING_VALUE[] = "VALUE:";
+static const char UI_DEBUG_STRING_SIZE[] = "SIZE:";
 
 static const char UI_DEBUG_STRING_TYPE_Rect[] = "GraphType_Rect";
 static const char UI_DEBUG_STRING_TYPE_Line[] = "GraphType_Line";
 static const char UI_DEBUG_STRING_TYPE_Round[] = "GraphType_Round";
 static const char UI_DEBUG_STRING_TYPE_Elipse[] = "GraphType_Elipse";
 static const char UI_DEBUG_STRING_TYPE_Arc[] = "GraphType_Arc";
+static const char UI_DEBUG_STRING_TYPE_Ray[] = "GraphType_Ray";
+static const char UI_DEBUG_STRING_TYPE_NUMBER[] = "GraphType_Number";
+static const char UI_DEBUG_STRING_TYPE_FLOAT[] = "GraphType_FLOAT";
 
 //自定义UI
 #define USER_DEFINED_UI_MAXNUM 30
@@ -42,7 +56,7 @@ static struct{
         };
     }string;
     union{
-        UI_GRAPH_INSTANCE *graph_group[8];
+        UI_GRAPH_INSTANCE *graph_group[9];
         struct{
             UI_GRAPH_INSTANCE *graph_id;
             UI_GRAPH_INSTANCE *graph_width;
@@ -52,6 +66,7 @@ static struct{
             UI_GRAPH_INSTANCE *graph_param2;
             UI_GRAPH_INSTANCE *graph_param3;
             UI_GRAPH_INSTANCE *graph_param4;
+            UI_GRAPH_INSTANCE *graph_saveSign;
         };
     }graph;
 }debug_ui_union;
@@ -115,21 +130,120 @@ void UserDefinedUI_init(){
     debug_ui_union.graph.graph_param2 = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1030, 105, 15, user_defined_ui[user_defined_ui_idx_pointer]->param.param_2);
     debug_ui_union.graph.graph_param3 = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1030, 75, 15, user_defined_ui[user_defined_ui_idx_pointer]->param.param_3);
     debug_ui_union.graph.graph_param4 = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1030, 45, 15, user_defined_ui[user_defined_ui_idx_pointer]->param.param_4);
+    debug_ui_union.graph.graph_saveSign = UI_Graph_Init(GraphType_Round, 0, 0, Graphic_Color_White, 3, 1030, 315, 5);
 
     UserDefinedUI_UNDISPLAY();
 }
 static void UserDefinedUIRefresh(){
-    UI_StringSwitchDetect_Char(debug_ui_union.string.string_type, 5, user_defined_ui[user_defined_ui_idx_pointer]->type, UI_DEBUG_STRING_TYPE_Rect, UI_DEBUG_STRING_TYPE_Line,UI_DEBUG_STRING_TYPE_Round,UI_DEBUG_STRING_TYPE_Elipse,UI_DEBUG_STRING_TYPE_Arc);
+    UI_StringSwitchDetect_Char(debug_ui_union.string.string_type, 8, user_defined_ui[user_defined_ui_idx_pointer]->type, UI_DEBUG_STRING_TYPE_Rect, UI_DEBUG_STRING_TYPE_Line,UI_DEBUG_STRING_TYPE_Round,UI_DEBUG_STRING_TYPE_Elipse,UI_DEBUG_STRING_TYPE_Arc,UI_DEBUG_STRING_TYPE_Ray,UI_DEBUG_STRING_TYPE_NUMBER,UI_DEBUG_STRING_TYPE_FLOAT);
     debug_ui_union.string.string_type->color = user_defined_ui[user_defined_ui_idx_pointer]->color;
 
     debug_ui_union.graph.graph_id->param.Number.value = user_defined_ui_idx_pointer;
     debug_ui_union.graph.graph_width->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->width;
     debug_ui_union.graph.graph_pos_x->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->pos_x;
     debug_ui_union.graph.graph_pos_y->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->pos_y;
-    debug_ui_union.graph.graph_param1->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.param_1;
-    debug_ui_union.graph.graph_param2->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.param_2;
-    debug_ui_union.graph.graph_param3->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.param_3;
-    debug_ui_union.graph.graph_param4->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.param_4;
+    switch(user_defined_ui[user_defined_ui_idx_pointer]->type){
+        case GraphType_Rect:
+            debug_ui_union.string.string_param1->char_p = UI_DEBUG_STRING_WIDTH;
+            debug_ui_union.string.string_param2->char_p = UI_DEBUG_STRING_HEIGHT;
+            debug_ui_union.string.string_param2->init_call = 1;
+            debug_ui_union.string.string_param3->delete_call = 1;
+            debug_ui_union.string.string_param4->delete_call = 1;
+            debug_ui_union.graph.graph_param1->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Rect.width;
+            debug_ui_union.graph.graph_param2->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Rect.height;
+            debug_ui_union.graph.graph_param2->init_call = 1;
+            debug_ui_union.graph.graph_param3->delete_call = 1;
+            debug_ui_union.graph.graph_param4->delete_call = 1;
+            break;
+        case GraphType_Line:
+            debug_ui_union.string.string_param1->char_p = UI_DEBUG_STRING_LINELENGTH;
+            debug_ui_union.string.string_param2->char_p = UI_DEBUG_STRING_ANGLE;
+            debug_ui_union.string.string_param2->init_call = 1;
+            debug_ui_union.string.string_param3->delete_call = 1;
+            debug_ui_union.string.string_param4->delete_call = 1;
+            debug_ui_union.graph.graph_param1->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Line.length;
+            debug_ui_union.graph.graph_param2->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Line.rotate_angle;
+            debug_ui_union.graph.graph_param2->init_call = 1;
+            debug_ui_union.graph.graph_param3->delete_call = 1;
+            debug_ui_union.graph.graph_param4->delete_call = 1;
+            break;
+        case GraphType_Round:
+            debug_ui_union.string.string_param1->char_p = UI_DEBUG_STRING_RADIUS;
+            debug_ui_union.string.string_param2->delete_call = 1;
+            debug_ui_union.string.string_param3->delete_call = 1;
+            debug_ui_union.string.string_param4->delete_call = 1;
+            debug_ui_union.graph.graph_param1->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Round.radius;
+            debug_ui_union.graph.graph_param2->delete_call = 1;
+            debug_ui_union.graph.graph_param3->delete_call = 1;
+            debug_ui_union.graph.graph_param4->delete_call = 1;
+            break;
+        case GraphType_Elipse:
+            debug_ui_union.string.string_param1->char_p = UI_DEBUG_STRING_RX;
+            debug_ui_union.string.string_param2->char_p = UI_DEBUG_STRING_RY;
+            debug_ui_union.string.string_param2->init_call = 1;
+            debug_ui_union.string.string_param3->delete_call = 1;
+            debug_ui_union.string.string_param4->delete_call = 1;
+            debug_ui_union.graph.graph_param1->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Ellipse.radius_x;
+            debug_ui_union.graph.graph_param2->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Ellipse.radius_y;
+            debug_ui_union.graph.graph_param2->init_call = 1;
+            debug_ui_union.graph.graph_param3->delete_call = 1;
+            debug_ui_union.graph.graph_param4->delete_call = 1;
+            break;
+        case GraphType_Arc:
+            debug_ui_union.string.string_param1->char_p = UI_DEBUG_STRING_STARTANGLE;
+            debug_ui_union.string.string_param2->char_p = UI_DEBUG_STRING_ANGLELEN;
+            debug_ui_union.string.string_param3->char_p = UI_DEBUG_STRING_RX;
+            debug_ui_union.string.string_param4->char_p = UI_DEBUG_STRING_RY;
+            debug_ui_union.string.string_param2->init_call = 1;
+            debug_ui_union.string.string_param3->init_call = 1;
+            debug_ui_union.string.string_param4->init_call = 1;
+            debug_ui_union.graph.graph_param1->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.start_angle;
+            debug_ui_union.graph.graph_param2->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.angle_len;
+            debug_ui_union.graph.graph_param3->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.radius_x;
+            debug_ui_union.graph.graph_param4->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.radius_y;
+            debug_ui_union.graph.graph_param2->init_call = 1;
+            debug_ui_union.graph.graph_param3->init_call = 1;
+            debug_ui_union.graph.graph_param4->init_call = 1;
+            break;
+        case GraphType_Ray:
+            debug_ui_union.string.string_param1->char_p = UI_DEBUG_STRING_LINELENGTH;
+            debug_ui_union.string.string_param2->char_p = UI_DEBUG_STRING_ANGLE;
+            debug_ui_union.string.string_param3->char_p = UI_DEBUG_STRING_OFFSETLEN;
+            debug_ui_union.string.string_param2->init_call = 1;
+            debug_ui_union.string.string_param3->init_call = 1;
+            debug_ui_union.string.string_param4->delete_call = 1;
+            debug_ui_union.graph.graph_param1->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Ray.line_length;
+            debug_ui_union.graph.graph_param2->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Ray.rotate_angle;
+            debug_ui_union.graph.graph_param3->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Ray.offcenter_lenth;
+            debug_ui_union.graph.graph_param2->init_call = 1;
+            debug_ui_union.graph.graph_param3->init_call = 1;
+            debug_ui_union.graph.graph_param4->delete_call = 1;
+            break;
+        case GraphType_Number:
+            debug_ui_union.string.string_param1->char_p = UI_DEBUG_STRING_SIZE;
+            debug_ui_union.string.string_param2->char_p = UI_DEBUG_STRING_VALUE;
+            debug_ui_union.string.string_param2->init_call = 1;
+            debug_ui_union.string.string_param3->delete_call = 1;
+            debug_ui_union.string.string_param4->delete_call = 1;
+            debug_ui_union.graph.graph_param1->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Number.size;
+            debug_ui_union.graph.graph_param2->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Number.value;
+            debug_ui_union.graph.graph_param2->init_call = 1;
+            debug_ui_union.graph.graph_param3->delete_call = 1;
+            debug_ui_union.graph.graph_param4->delete_call = 1;
+            break;
+        case GraphType_Float:
+            debug_ui_union.string.string_param1->char_p = UI_DEBUG_STRING_SIZE;
+            debug_ui_union.string.string_param2->char_p = UI_DEBUG_STRING_VALUE;
+            debug_ui_union.string.string_param2->init_call = 1;
+            debug_ui_union.string.string_param3->delete_call = 1;
+            debug_ui_union.string.string_param4->delete_call = 1;
+            debug_ui_union.graph.graph_param1->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Float.size;
+            debug_ui_union.graph.graph_param2->param.Number.value = user_defined_ui[user_defined_ui_idx_pointer]->param.Float.value;
+            debug_ui_union.graph.graph_param2->init_call = 1;
+            debug_ui_union.graph.graph_param3->delete_call = 1;
+            debug_ui_union.graph.graph_param4->delete_call = 1;
+            break;
+    }
 }
 static void addUI(){
     user_defined_ui[user_defined_ui_idx_pointer]->init_call = 1;
@@ -178,23 +292,29 @@ static void changeUI_copyORpaste(uint8_t mode){
 }
 static void changeUI_param1(int value){
     switch(user_defined_ui[user_defined_ui_idx_pointer]->type){
-        case GraphType_Line:
-            user_defined_ui[user_defined_ui_idx_pointer]->param.Line.length = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Line.length+value, 2000, 0);
-            break;
-        case GraphType_Arc: 
-            user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.start_angle = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.start_angle+value, 360, 0);
-            break;
-        case GraphType_Elipse:
-            user_defined_ui[user_defined_ui_idx_pointer]->param.Ellipse.radius_x = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Ellipse.radius_x+value, 300, 0);
-            break;
         case GraphType_Rect:
             user_defined_ui[user_defined_ui_idx_pointer]->param.Rect.width = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Rect.width+value, 1900, 0);
+            break;
+        case GraphType_Line:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Line.length = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Line.length+value, 2000, 0);
             break;
         case GraphType_Round:
             user_defined_ui[user_defined_ui_idx_pointer]->param.Round.radius = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Round.radius+value, 300, 0);
             break;
+        case GraphType_Elipse:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Ellipse.radius_x = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Ellipse.radius_x+value, 300, 0);
+            break;
+        case GraphType_Arc: 
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.start_angle = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.start_angle+value, 360, 0);
+            break;
         case GraphType_Ray:
             user_defined_ui[user_defined_ui_idx_pointer]->param.Ray.line_length = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Ray.line_length+value, 2000, 0);
+            break;
+        case GraphType_Number:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Number.size = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Number.size+value, 100, 0);
+            break;
+        case GraphType_Float:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Float.size = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Float.size+value, 100, 0);
             break;
         default:
             break;
@@ -202,20 +322,26 @@ static void changeUI_param1(int value){
 }
 static void changeUI_param2(int value){
     switch(user_defined_ui[user_defined_ui_idx_pointer]->type){
+        case GraphType_Rect:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Rect.height = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Rect.height+value, 1000, 0);
+            break;
         case GraphType_Line:
             user_defined_ui[user_defined_ui_idx_pointer]->param.Line.rotate_angle = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Line.rotate_angle+value, 360, 0);
-            break;
-        case GraphType_Arc:
-            user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.angle_len = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.angle_len+value, 360, 0);
             break;
         case GraphType_Elipse:
             user_defined_ui[user_defined_ui_idx_pointer]->param.Ellipse.radius_y = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Ellipse.radius_y+value, 300, 0);
             break;
-        case GraphType_Rect:
-            user_defined_ui[user_defined_ui_idx_pointer]->param.Rect.height = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Rect.height+value, 1000, 0);
+        case GraphType_Arc:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.angle_len = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.angle_len+value, 360, 0);
             break;
         case GraphType_Ray:
             user_defined_ui[user_defined_ui_idx_pointer]->param.Ray.rotate_angle = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Ray.rotate_angle+value, 360, 0);
+            break;
+        case GraphType_Number:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Number.value += value;
+            break;
+        case GraphType_Float:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Float.value += value;
             break;
         default:
             break;
@@ -229,6 +355,12 @@ static void changeUI_param3(int value){
         case GraphType_Ray:
             user_defined_ui[user_defined_ui_idx_pointer]->param.Ray.offcenter_lenth = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Ray.offcenter_lenth+value, 2000, 0);
             break;
+        case GraphType_Number:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Number.value += 10*value;
+            break;
+        case GraphType_Float:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Float.value += 10*value;
+            break;
         default:
             break;
     }
@@ -237,6 +369,12 @@ static void changeUI_param4(int value){
     switch(user_defined_ui[user_defined_ui_idx_pointer]->type){
         case GraphType_Arc:
             user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.radius_y = VALUE_BOUND(user_defined_ui[user_defined_ui_idx_pointer]->param.Arc.radius_y+value, 300, 0);
+            break;
+        case GraphType_Number:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Number.value += 100*value;
+            break;
+        case GraphType_Float:
+            user_defined_ui[user_defined_ui_idx_pointer]->param.Float.value += 100*value;
             break;
         default:
             break;
@@ -268,6 +406,8 @@ void UserDefinedUI_operate(UI_debug_param *message){
         changeUI_copyORpaste(1);
     if(message->cut)
         changeUI_copyORpaste(2);
-        
+    
+    UI_StateSwitchDetect_Graph(debug_ui_union.graph.graph_saveSign, 2, message->save_flag, Graphic_Color_White, Graphic_Color_Green);
+
     UserDefinedUIRefresh();
 }

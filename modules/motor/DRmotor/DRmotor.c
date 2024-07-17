@@ -81,8 +81,8 @@ DRMotorInstance *DRMotorInit(Motor_Init_Config_s *config)
     motor->motor_controller.speed_feedforward_ptr    = config->controller_param_init_config.speed_feedforward_ptr;
 
     motor->motor_error_detection.current = (config->motor_error_detection_config.current!=NULL ? config->motor_error_detection_config.current : &motor->motor_controller.output_current);
-    motor->motor_error_detection.last_speed = (config->motor_error_detection_config.last_speed!=NULL ? config->motor_error_detection_config.last_speed : &motor->measure.last_speed_aps);
-    motor->motor_error_detection.speed = (config->motor_error_detection_config.speed!=NULL ? config->motor_error_detection_config.speed : &motor->measure.speed_aps);
+    motor->motor_error_detection.last_speed = (config->motor_error_detection_config.last_speed!=NULL ? config->motor_error_detection_config.last_speed : &motor->motor_controller.speed_PID.Last_Measure);
+    motor->motor_error_detection.speed = (config->motor_error_detection_config.speed!=NULL ? config->motor_error_detection_config.speed : &motor->motor_controller.speed_PID.Measure);
     motor->motor_error_detection.stuck_speed = config->motor_error_detection_config.stuck_speed==0 ? 1.0f : config->motor_error_detection_config.stuck_speed;
     motor->motor_error_detection.crash_detective_sensitivity = config->motor_error_detection_config.crash_detective_sensitivity==0 ? 5 : config->motor_error_detection_config.crash_detective_sensitivity;
     motor->motor_error_detection.max_current = config->motor_error_detection_config.max_current==0 ? motor->motor_controller.speed_PID.MaxOut : config->motor_error_detection_config.max_current;
@@ -186,15 +186,13 @@ void DRMotorControl()
 
         motor_controller->output_current = pid_ref;
 
-        memset(motor->motor_can_instance->tx_buff, 0, sizeof(motor->motor_can_instance->tx_buff));
-
-        memcpy(motor->motor_can_instance->tx_buff, &motor_controller->output_current, sizeof(float));
-
         if (motor->stop_flag == MOTOR_STOP) { // 若该电机处于停止状态,直接将发送buff置零
-            memset(motor->motor_can_instance->tx_buff, 0, sizeof(float));
+            memset(&motor_controller->output_current, 0, sizeof(float));
         }
 
         // 发送
+        memset(motor->motor_can_instance->tx_buff, 0, sizeof(motor->motor_can_instance->tx_buff));
+        memcpy(motor->motor_can_instance->tx_buff, &motor_controller->output_current, sizeof(float));
         motor->motor_can_instance->tx_buff[6] = 0x01;
         CANTransmit(motor->motor_can_instance, 0.1);
     }
@@ -235,17 +233,30 @@ void DRMotorErrorDetection(DRMotorInstance *motor)
         {
             uint16_t can_bus;
             can_bus                 = motor->motor_can_instance->can_handle == &hfdcan1 ? 1 : (motor->motor_can_instance->can_handle == &hfdcan2 ? 2 : 3);
-            LOGWARNING("[dji_motor] You should set the stuck current, can bus [%d] , id [%d]", can_bus, motor->motor_can_instance->tx_id);
+            LOGWARNING("[DRmotor] You should set the stuck current, can bus [%d] , id [%d]", can_bus, (motor->motor_can_instance->tx_id & (0x1f<<5)) >> 5);
             while(1);
         }else
         {
-            if(!(motor->motor_error_detection.ErrorCode & MOTOR_ERROR_CRASH) && (abs(*motor->motor_error_detection.last_speed) - abs(*motor->motor_error_detection.speed) > abs(*motor->motor_error_detection.last_speed / (float)motor->motor_error_detection.crash_detective_sensitivity)) && (abs(*motor->motor_error_detection.last_speed) > motor->motor_error_detection.stuck_speed) )
+            static uint8_t debug_bool__[5];
+            static float debug_value[2];
+            debug_value[0] = fabsf(*motor->motor_error_detection.last_speed) - fabsf(*motor->motor_error_detection.speed);
+            debug_value[1] = fabsf(*motor->motor_error_detection.last_speed / (float)motor->motor_error_detection.crash_detective_sensitivity);
+            debug_bool__[4] = debug_value[0] > debug_value[1];
+            debug_bool__[0] = !(motor->motor_error_detection.ErrorCode & MOTOR_ERROR_CRASH);
+            debug_bool__[1] = (fabsf(*motor->motor_error_detection.last_speed) - fabsf(*motor->motor_error_detection.speed) > fabsf(*motor->motor_error_detection.last_speed / (float)motor->motor_error_detection.crash_detective_sensitivity));
+            debug_bool__[2] = (fabsf(*motor->motor_error_detection.last_speed) > motor->motor_error_detection.stuck_speed) ;
+            debug_bool__[3] = (fabsf(*motor->motor_error_detection.current) > fabsf(*motor->motor_error_detection.stuck_current_ptr));
+            if(!(motor->motor_error_detection.ErrorCode & MOTOR_ERROR_CRASH) && 
+                (fabsf(*motor->motor_error_detection.last_speed) - fabsf(*motor->motor_error_detection.speed) > fabsf(*motor->motor_error_detection.last_speed / (float)motor->motor_error_detection.crash_detective_sensitivity)) && 
+                (fabsf(*motor->motor_error_detection.last_speed) > motor->motor_error_detection.stuck_speed) && 
+                (fabsf(*motor->motor_error_detection.current) > fabsf(*motor->motor_error_detection.stuck_current_ptr)) && 
+                motor->stop_flag)
             {
                 motor->motor_error_detection.ErrorCode |= MOTOR_ERROR_DETECTION_CRASH;
 
                 uint16_t can_bus;
                 can_bus                 = motor->motor_can_instance->can_handle == &hfdcan1 ? 1 : (motor->motor_can_instance->can_handle == &hfdcan2 ? 2 : 3);
-                LOGWARNING("[dji_motor] Motor crashed! can bus [%d] , id [%d]", can_bus, motor->motor_can_instance->tx_id);
+                LOGWARNING("[DRmotor] Motor crashed! can bus [%d] , id [%d]", can_bus, (motor->motor_can_instance->tx_id & (0x1f<<5)) >> 5);
             }
         }
     }
@@ -256,11 +267,11 @@ void DRMotorErrorDetection(DRMotorInstance *motor)
         {
             uint16_t can_bus;
             can_bus                 = motor->motor_can_instance->can_handle == &hfdcan1 ? 1 : (motor->motor_can_instance->can_handle == &hfdcan2 ? 2 : 3);
-            LOGWARNING("[DRmotor] You must set the stuck current, can bus [%d] , id [%d]", can_bus, motor->motor_can_instance->tx_id);
+            LOGWARNING("[DRmotor] You must set the stuck current, can bus [%d] , id [%d]", can_bus, (motor->motor_can_instance->tx_id & (0x1f<<5)) >> 5);
             while(1);
         }else
         {
-            if(!(motor->motor_error_detection.ErrorCode & MOTOR_ERROR_DETECTION_STUCK) && (abs(*(motor->motor_error_detection.speed)) < motor->motor_error_detection.stuck_speed) && (abs(*(motor->motor_error_detection.current)) > *(motor->motor_error_detection.stuck_current_ptr)))
+            if(!(motor->motor_error_detection.ErrorCode & MOTOR_ERROR_DETECTION_STUCK) && (fabsf(*(motor->motor_error_detection.speed)) < motor->motor_error_detection.stuck_speed) && (fabsf(*(motor->motor_error_detection.current)) > *(motor->motor_error_detection.stuck_current_ptr)) && motor->stop_flag)
             {
                 motor->motor_error_detection.stuck_cnt++;
                 if(motor->motor_error_detection.stuck_cnt > 10)
@@ -269,7 +280,7 @@ void DRMotorErrorDetection(DRMotorInstance *motor)
 
                     uint16_t can_bus;
                     can_bus                 = motor->motor_can_instance->can_handle == &hfdcan1 ? 1 : (motor->motor_can_instance->can_handle == &hfdcan2 ? 2 : 3);
-                    LOGWARNING("[DRmotor] Motor stucked! can bus [%d] , id [%d]", can_bus, motor->motor_can_instance->tx_id);
+                    LOGWARNING("[DRmotor] Motor stucked! can bus [%d] , id [%d]", can_bus, (motor->motor_can_instance->tx_id & (0x1f<<5)) >> 5);
                 }
             }
             else

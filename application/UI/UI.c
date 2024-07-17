@@ -277,11 +277,16 @@ void MyUIRefresh(void)
 {
     SubGetMessage(UI_cmd_sub, &UI_data_recv);
     
-    if(UI_data_recv.debug.debug_flag){
+    static uint8_t debug_flag_switch = 0;
+    EdgeType debug_flag_edge = detect_edge(&debug_flag_switch, UI_data_recv.debug.debug_flag);
+    if(debug_flag_edge == EDGE_RISING)
         UserDefinedUI_DISPLAY();
+    else if(debug_flag_edge == EDGE_FALLING)
+        UserDefinedUI_UNDISPLAY();
+
+    if(UI_data_recv.debug.debug_flag){
         UserDefinedUI_operate(&UI_data_recv.debug);
     }else{
-        UserDefinedUI_UNDISPLAY();
         UI_operate();
     }
     

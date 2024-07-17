@@ -87,6 +87,22 @@ void BuzzerPlay(char *sound)
     osThreadResume(BuzzerHandle); // 恢复线程
 }
 /**
+ * @brief :  蜂鸣器停止唱歌
+ * @param none
+ * @return  void
+ */
+void BuzzerStop()
+{
+    // 如果蜂鸣器未注册，则注册
+    if (buzzer == NULL) {
+        BuzzerRegister();
+    }
+    buzzer->sound      = NULL;
+    buzzer->_next_tune = NULL;
+    buzzer->busy       = 0;
+    osThreadResume(BuzzerHandle); // 恢复线程
+}
+/**
  * @brief :  音符播放
  * @return   void
  */

@@ -104,6 +104,7 @@ typedef struct
     struct
     {
         int16_t x;
+        int16_t x_average;
         int16_t y;
         uint8_t press_l;
         uint8_t press_r;

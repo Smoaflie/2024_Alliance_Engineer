@@ -6,7 +6,7 @@
 #include "master_process.h"
 #include "message_center.h"
 #include "general_def.h"
-#include "LKmotor.h"
+#include "dji_motor.h"
 #include "servo_motor.h"
 #include "led.h"
 #include "crc16.h"
@@ -20,7 +20,7 @@
 #define GetAngleBetween360(a) ((a)-(360*(int32_t)((a)/360)))
 #define GetAngleBetween180(angle) ((angle)>180)?((angle)-360):(((angle)<-180)?((angle)+360):(angle))
 
-static LKMotorInstance* gimbal_yaw_motor;
+DJIMotorInstance* gimbal_yaw_motor;
 static ServoInstance* gimbal_pitch_motor;
 
 static Subscriber_t *gimbal_sub;                   // 用于订阅云台的控制命令
@@ -67,28 +67,27 @@ void GimbalInit_Communication()
     gimbal_pub = PubRegister("gimbal_data", sizeof(gimbal_data_send));
 }
 void GimbalInit_Motor()
-{
-    Motor_Init_Config_s config ={
+{    Motor_Init_Config_s gimbal_motor_config = {
         .can_init_config = {
-            .can_handle = &hfdcan2,
+            .can_handle   = &hfdcan2,
+            .tx_id = 7,
         },
         .controller_param_init_config = {
-            .angle_PID = {
-                .Kp            = 0.4, // 1
-                .Ki            = 0,    // 0
-                .Kd            = 0,    // 0
-                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
-                .IntegralLimit = 0,
-                .MaxOut        = 30,
-                // .Output_LPF_RC = 0.5,
-            },
             .speed_PID = {
-                .Kp            = 70, // 0
+                .Kp            = 1.5, // 3.5
                 .Ki            = 0,  // 0
-                .Kd            = 0,      // 0
-                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
-                .IntegralLimit = 100,
-                .MaxOut        = 500, // 20000
+                .Kd            = 0.001,  // 0
+                .IntegralLimit = 3000,
+                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                .MaxOut        = 16384,
+                },
+            .angle_PID = {
+                .Kp            = 30,
+                .Ki            = 0,
+                .Kd            = 0,
+                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                .IntegralLimit = 20000,
+                .MaxOut        = 1500,
             },
             .other_angle_feedback_ptr = &gimbal_imu_yaw_total_angle,
         },
@@ -97,13 +96,11 @@ void GimbalInit_Motor()
             .speed_feedback_source = MOTOR_FEED,
             .outer_loop_type       = ANGLE_LOOP,
             .close_loop_type       = SPEED_LOOP | ANGLE_LOOP,
-            .motor_reverse_flag    = MOTOR_DIRECTION_NORMAL,
         },
-        .motor_type            = LK_MS5005,
-        .can_init_config.tx_id = 1,
-        .motor_contro_type = TORQUE_LOOP_CONTRO,
-        };
-    gimbal_yaw_motor = LKMotorInit(&config);
+        .motor_type = GM6020,
+    };
+    gimbal_yaw_motor                                                               = DJIMotorInit(&gimbal_motor_config);
+    gimbal_yaw_motor->measure.offset_ecd = 6922;
 
     Servo_Init_Config_s servo_config = {
         // 舵机安装选择的定时器及通道
@@ -141,37 +138,37 @@ void GimbalParamPretreatment()
     /* 初始化云台陀螺仪yaw角度偏移量(使之零点为车辆正方向) */
     if(!gimbal_imu_init)
     {
-        while((gimbal_yaw_motor->measure.feed_dt == 0) || (gimbal_cmd_recv.arm_big_yaw_offset==0))    {SubGetMessage(gimbal_sub, &gimbal_cmd_recv);osDelay(1);}
+        // while((gimbal_yaw_motor->dt == 0) || (gimbal_cmd_recv.arm_big_yaw_offset==0))    {SubGetMessage(gimbal_sub, &gimbal_cmd_recv);osDelay(1);}
         
         gimbal_imu_offset = gimbal_imu_yaw_total_angle - gimbal_cmd_recv.arm_big_yaw_offset - gimbal_yaw_motor->measure.total_angle;
         gimbal_imu_init = 1;
 
-        static uint8_t reset_gimbal_zero_point[] = {0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-        CANTransmit_once(gimbal_yaw_motor->motor_can_ins->can_handle,
-                        gimbal_yaw_motor->motor_can_ins->tx_id,
-                        reset_gimbal_zero_point, 2);
+        // static uint8_t reset_gimbal_zero_point[] = {0x19, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        // CANTransmit_once(gimbal_yaw_motor->motor_can_ins->can_handle,
+        //                 gimbal_yaw_motor->motor_can_ins->tx_id,
+        //                 reset_gimbal_zero_point, 2);
 
     }
 
-    LKMotorEnable(gimbal_yaw_motor);
+    DJIMotorEnable(gimbal_yaw_motor);
 
     /* 云台电机掉线监测 */
-    static uint16_t cnt = 0;
-    if(!LKMotorIsOnline(gimbal_yaw_motor) || gimbal_cmd_recv.gimbal_debug_flag)
-    {
-        // LKMotorStop(gimbal_yaw_motor);
-        cnt++;
-        if(cnt > 500)
-        {
-            GPIOReset(relay_contro_gpio);
-            LOGWARNING("[Gimbal] Gimbal yaw motor lost, trying to restart it.");
-            osDelay(100);
-            GPIOSet(relay_contro_gpio);
-            osDelay(2000);
-            gimbal_yaw_angle = gimbal_cmd_recv.arm_big_yaw_offset;
-            gimbal_imu_yaw_total_round = 0;
-        }
-    }else cnt = 0;
+    // static uint16_t cnt = 0;
+    // if(!LKMotorIsOnline(gimbal_yaw_motor) || gimbal_cmd_recv.gimbal_debug_flag)
+    // {
+    //     DJIMotorStop(gimbal_yaw_motor);
+    //     cnt++;
+    //     if(cnt > 500)
+    //     {
+    //         GPIOReset(relay_contro_gpio);
+    //         LOGWARNING("[Gimbal] Gimbal yaw motor lost, trying to restart it.");
+    //         osDelay(100);
+    //         GPIOSet(relay_contro_gpio);
+    //         osDelay(2000);
+    //         gimbal_yaw_angle = gimbal_cmd_recv.arm_big_yaw_offset;
+    //         gimbal_imu_yaw_total_round = 0;
+    //     }
+    // }else cnt = 0;
 }
 void GimbalContro()
 {
@@ -183,19 +180,20 @@ void GimbalContro()
         /* 云台控制 */
         if(gimbal_cmd_recv.gimbal_mode == GIMBAL_ZERO_FORCE)    
         {
-            LKMotorStop(gimbal_yaw_motor);
+            DJIMotorStop(gimbal_yaw_motor);
             // Servo_Motor_Stop(gimbal_pitch_motor);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_GYRO_MODE)
         {
+            VAL_LIMIT(gimbal_cmd_recv.pitch, -5, 5);
             gimbal_pitch_angle += gimbal_cmd_recv.pitch;
-            VAL_LIMIT(gimbal_pitch_angle, 0, 180);    /* 限幅 */
+            VAL_LIMIT(gimbal_pitch_angle, 0, 150);    /* 限幅 */
 
             gimbal_yaw_angle -= gimbal_cmd_recv.yaw;
 
             Servo_Motor_FreeAngle_Set(gimbal_pitch_motor,(int16_t)gimbal_pitch_angle);
 
-            LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
-            // LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle-gimbal_cmd_recv.arm_big_yaw_offset);
+            DJIMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
+            // DJIMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle-gimbal_cmd_recv.arm_big_yaw_offset);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_FOLLOW_YAW){
 
             gimbal_pitch_angle += gimbal_cmd_recv.pitch;
@@ -205,13 +203,13 @@ void GimbalContro()
 
             Servo_Motor_FreeAngle_Set(gimbal_pitch_motor,(int16_t)gimbal_pitch_angle);
 
-            LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
-            // LKMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
+            DJIMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
+            // DJIMotorSetRef(gimbal_yaw_motor,gimbal_yaw_angle);
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_RESET){
 
             // gimbal_pitch_angle = 0;
 
-            LKMotorSetRef(gimbal_yaw_motor,0);
+            DJIMotorSetRef(gimbal_yaw_motor,0);
 
                 gimbal_yaw_motor->measure.total_round = (gimbal_yaw_motor->measure.total_round==-1) ? -1 : 0;
                 gimbal_yaw_motor->measure.total_angle = gimbal_yaw_motor->measure.angle_single_round;
@@ -233,7 +231,7 @@ void GimbalContro()
             gimbal_imu_yaw_total_angle = gimbal_imu_yaw_single_angle;
             gimbal_yaw_angle = 0;
 
-            LKMotorSetRef(gimbal_yaw_motor,0);
+            DJIMotorSetRef(gimbal_yaw_motor,0);
         }
     }
 }

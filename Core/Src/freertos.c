@@ -108,7 +108,7 @@ osThreadId_t motorHandle;
 const osThreadAttr_t motor_attributes = {
   .name = "motor",
   .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityBelowNormal7,
+  .priority = (osPriority_t) osPriorityAboveNormal1,
 };
 /* Definitions for airpump */
 osThreadId_t airpumpHandle;

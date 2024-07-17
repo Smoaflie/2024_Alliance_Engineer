@@ -135,8 +135,8 @@ void MecanumCalculate()
     static float limit_add_speed_y_stop = 3000;
     if(chassis_cmd_recv.chassis_mode != CHASSIS_ROTATE){
         if(chassis_cmd_recv.arm_height <= -240){
-            limit_add_speed_x = 3500;
-            limit_add_speed_y = 3500;
+            limit_add_speed_x = 5000;
+            limit_add_speed_y = 5000;
             limit_add_speed_x_stop = 3000;
             limit_add_speed_y_stop = 3000;
         }else{
@@ -269,16 +269,16 @@ void ChassisModeSelect()
             break;
         case CHASSIS_NO_FOLLOW_CONVERTMODE:
             chassis_cmd_recv.wz = chassis_cmd_recv.wz;
-            chassis_cmd_recv.offset_angle = -90;
+            // chassis_cmd_recv.offset_angle = -90;
             break;
         case CHASSIS_FOLLOW_GIMBAL_YAW: // 跟随云台,不单独设置pid,以误差角度平方为速度输出
-            chassis_cmd_recv.wz = -1.5f * chassis_cmd_recv.offset_angle * abs(chassis_cmd_recv.offset_angle);
+            chassis_cmd_recv.wz = -1.5f * chassis_cmd_recv.offset_angle * fabsf(chassis_cmd_recv.offset_angle);
             VAL_LIMIT(chassis_cmd_recv.wz,-3000,3000);
             break;
         case CHASSIS_FOLLOW_GIMBAL_YAW_REVERSE:
             static float de;
             de = ((chassis_cmd_recv.offset_angle+180) > 180 ? chassis_cmd_recv.offset_angle+180-360 : chassis_cmd_recv.offset_angle+180);
-            chassis_cmd_recv.wz = -1.5f * de * abs(de);
+            chassis_cmd_recv.wz = -1.5f * de * fabsf(de);
             VAL_LIMIT(chassis_cmd_recv.wz,-3000,3000);
             break;
         case CHASSIS_ROTATE: // 自旋,同时保持全向机动；
