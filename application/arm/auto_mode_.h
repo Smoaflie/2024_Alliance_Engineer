@@ -138,7 +138,7 @@ typedef struct{
     ARM_AUTO_MODE_ Arm_fetch_cube_from_warehouse_down_func;
     AUTO_MODE_STEP_ Arm_get_silvercube_left_step[100];
     ARM_AUTO_MODE_ Arm_get_silvercube_left_func;
-    AUTO_MODE_STEP_ Recycle_arm_in_step[100];
+    AUTO_MODE_STEP_ Recycle_arm_in_step[70];
     ARM_AUTO_MODE_ Recycle_arm_in_func;
     AUTO_MODE_STEP_ Arm_get_silvercube_mid_step[100];
     ARM_AUTO_MODE_ Arm_get_silvercube_mid_func;

@@ -21,7 +21,7 @@
 #define CLAW_LOOSE() {airvalve_tx_coder&=~(0x00000001<<15);airvalve_tx_coder|=0x00000001<<19;}
 #define CLAW_FORWARD() {airvalve_tx_coder&=~(0x00000001<<14);airvalve_tx_coder|=0x00000001<<18;}
 
-static CANInstance *airvalve_can_instance;
+static CANInstance *airvalve_can_instance,*pump_air_data;
 static GPIOInstance *airpump_linear,*airpump_arm;
 static DJIMotorInstance *air_sucker_motor;
 static Subscriber_t *airpump_cmd_data_sub;// 气阀/气泵控制信息收
@@ -34,7 +34,6 @@ static uint8_t  sucker_motor_mode = 3;
 
 static uint8_t airvalve_tx_buf[8] = {0x11,0x88,0x99,0x00,0x00,0x00,0x00,0x00};
 static uint32_t airvalve_tx_coder = 0;
-static uint16_t airpump_state = 0;
 static uint16_t airvalve_state = 0;
 static uint8_t airvalve_mode_cnt = 0;
 static int16_t airvalve_delay_time = 0;
@@ -43,6 +42,7 @@ static uint8_t airvalve_state_in_auto_mode = 0;
 //气泵状态 - 全局变量
 uint8_t airpump_arm_state=0;
 uint8_t airpump_linear_state=0;
+uint16_t pumpair[2];    //气泵气压值
 
 static Publisher_t *air_data_pub;        // 气阀气泵消息发布者
 static Airpump_Data_s air_data_send;    // 气阀气泵消息
@@ -86,7 +86,7 @@ void AirpumpInit_Motor()
                 .MaxOut        = 8000,
             },
             .speed_PID = {
-                .Kp            = 1, // 4.5
+                .Kp            = 1.5, // 4.5
                 .Ki            = 0, // 0
                 .Kd            = 0.001, // 0
                 .IntegralLimit = 3000,
@@ -106,6 +106,11 @@ void AirpumpInit_Motor()
 
     air_sucker_motor = DJIMotorInit(&air_sucker_motor_config);
 }
+void CanGetPumpAir(CANInstance *instance){
+    uint8_t *buf = instance->rx_buff;
+    memcpy(&pumpair[0],buf,2);
+    memcpy(&pumpair[1],buf+4,2);
+}
 void AirpumpInit_Communication()
 {
     CAN_Init_Config_s can_conf_airvalve = {
@@ -113,7 +118,13 @@ void AirpumpInit_Communication()
         .tx_id = 0x121
     };
     airvalve_can_instance = CANRegister(&can_conf_airvalve);
-
+    CAN_Init_Config_s can_conf_pumpair = {
+        .can_handle = &hfdcan2,
+        .rx_id = 0x1cb,
+        .can_module_callback = CanGetPumpAir,
+    };
+    pump_air_data = CANRegister(&can_conf_pumpair);
+    
     airpump_cmd_data_sub = SubRegister("airpump_cmd", sizeof(Airpump_Cmd_Data_s));
 
     air_data_pub = PubRegister("air_data", sizeof(Airpump_Data_s));
@@ -178,7 +189,7 @@ void AirpumpContro_Valve()
                     case 1: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_forward();airvalve_state_in_auto_mode=0;break;//初始状态
                     case 2: airvalve_tx_coder = 0b0000001101100101010110;airvalve_delay_time = 300;break;//下降+第一段前伸
                     case 3: airvalve_tx_coder = 0b0000001101100110010110;airvalve_delay_time = 300;break;//旋转
-                    case 4: airvalve_tx_coder = 0b1000001100011010010110;airvalve_delay_time = 1200;airpump_state|=0x02;airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出
+                    case 4: airvalve_tx_coder = 0b1000001100011010010110;airvalve_delay_time = 1200;airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出
                     case 5: airvalve_tx_coder = 0b0000001101011010010110;airvalve_delay_time = 300;break;//小回
                     case 6: airvalve_tx_coder = 0b0000001101011010010101;airvalve_delay_time = 300;
                             // airvalve_state&=~AIRVALVE_LEFT_CUBE_DOING;
@@ -212,16 +223,16 @@ void AirpumpContro_Valve()
                 switch(airvalve_mode_cnt){
                     //                          0b2X098765X3210987654321
                     case 1: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_forward();airvalve_state_in_auto_mode=0;break;//初始状态
-                    case 2: airvalve_tx_coder = 0b1000001100011001100110;airvalve_delay_time = 1500;airpump_state|=0x02;airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出+下降
+                    case 2: airvalve_tx_coder = 0b1000001100011001100110;airvalve_delay_time = 1500;airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出+下降
                     case 3: airvalve_tx_coder = 0b0000001101011001100110;airvalve_delay_time = 300;break;//小回
                     case 4: airvalve_tx_coder = 0b0000001101011001100101;airvalve_delay_time = 1200;
                             // airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DOING;
                             break;//抬升
-                    case 5: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;break;//缩回
-                    case 6: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 1200;break;//初始状态
-                    case 7: airvalve_tx_coder = 0b0011000001100101101001;airvalve_delay_time = 600;airsucker_up();break;//夹爪前伸
-                    case 8: airvalve_delay_time = 4000;break;//上抬
-                    case 9: airvalve_tx_coder = 0b0001001001100101101001;airvalve_delay_time = 1000;airpump_state&=~0x02;airvalve_state_in_auto_mode=0;airpump_linear_state=0;break;//夹爪夹
+                    case 5: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 800;break;//缩回
+                    case 6: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 500;break;//初始状态
+                    case 7: airvalve_delay_time = 600;airsucker_up();break;//夹爪前伸
+                    case 8: airvalve_tx_coder = 0b0011000001100101101001;airvalve_delay_time = 4000;break;//上抬
+                    case 9: airvalve_tx_coder = 0b0001001001100101101001;airvalve_delay_time = 1000;airvalve_state_in_auto_mode=0;airpump_linear_state=0;break;//夹爪夹
                     case 10: airvalve_tx_coder =0b0000001101100101101001;airvalve_delay_time = 300;break;//夹爪后移
                     case 11: airvalve_tx_coder =0b0000001101100101101001;airvalve_delay_time = 300;break;//初始状态
                 }
@@ -298,7 +309,7 @@ void AirpumpContro_Sucker()
     if(sucker_motor_mode == 2 || airpump_cmd_rec.tmp_flag==1){ //forward
         DJIMotorEnable(air_sucker_motor);
         DJIMotorOuterLoop(air_sucker_motor,ANGLE_LOOP);
-        DJIMotorSetRef(air_sucker_motor,sucker_zero_angle+3537+airpump_cmd_rec.sucker_offset_angle);
+        DJIMotorSetRef(air_sucker_motor,sucker_zero_angle+3337+airpump_cmd_rec.sucker_offset_angle);
     }else if(sucker_motor_mode == 3 && !(airpump_cmd_rec.airvalve_mode & AIRVALVE_STOP)){ //init
         DJIMotorEnable(air_sucker_motor);
         if(sucker_motor_init_cnt > 300){
@@ -354,6 +365,10 @@ void AirpumpPubMessage()
     if(airvalve_mode_cnt){
         air_data_send.airvalve_mode = 1 + !(airvalve_state&(AIRVALVE_MIDDLE_CUBE_DOING|AIRVALVE_LEFT_CUBE_DOING));
     }
+
+    air_data_send.pump_air_arm = pumpair[0];
+    air_data_send.pump_air_valve = pumpair[1];
+
     PubPushMessage(air_data_pub,&air_data_send);
 }
 void AirpumpDebugInterface()

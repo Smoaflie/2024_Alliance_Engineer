@@ -1,17 +1,25 @@
 
 
-Breakpoint=d:/Documents/github/2024_Engineer/modules/algorithm/controller.c:202, State=BP_STATE_ON
-OpenDocument="robot_task.h", FilePath="d:/Documents/github/2024_Engineer/application/robot_task.h", Line=69
-OpenDocument="controller.c", FilePath="d:/Documents/github/2024_Engineer/modules/algorithm/controller.c", Line=192
-OpenDocument="remote_control.c", FilePath="d:/Documents/github/2024_Engineer/modules/remote/remote_control.c", Line=84
+Breakpoint=d:/Documents/github/2024_Engineer/modules/message_center/message_center.c:110:12, State=BP_STATE_DISABLED
+Breakpoint=d:/Documents/github/2024_Engineer/application/cmd/robot_cmd_interface.c:928:1, State=BP_STATE_DISABLED
 OpenDocument="main.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/main.c", Line=68
-OpenDocument="bsp_can.c", FilePath="d:/Documents/github/2024_Engineer/bsp/can/bsp_can.c", Line=194
+OpenDocument="robot_cmd_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/cmd/robot_cmd_interface.c", Line=910
+OpenDocument="gimbal_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/gimbal/gimbal_interface.c", Line=0
+OpenDocument="stm32h7xx_hal_gpio.c", FilePath="d:/Documents/github/2024_Engineer/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.c", Line=319
 OpenDocument="startup_stm32h723vgtx.s", FilePath="d:/Documents/github/2024_Engineer/Core/Startup/startup_stm32h723vgtx.s", Line=51
+OpenDocument="stm32h7xx_it.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/stm32h7xx_it.c", Line=103
+OpenDocument="robot_task.h", FilePath="d:/Documents/github/2024_Engineer/application/robot_task.h", Line=69
+OpenDocument="message_center.c", FilePath="d:/Documents/github/2024_Engineer/modules/message_center/message_center.c", Line=76
+OpenDocument="controller.c", FilePath="d:/Documents/github/2024_Engineer/modules/algorithm/controller.c", Line=184
+OpenDocument="remote_control.c", FilePath="d:/Documents/github/2024_Engineer/modules/remote/remote_control.c", Line=84
+OpenDocument="arm_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/arm/arm_interface.c", Line=1497
+OpenDocument="bsp_can.c", FilePath="d:/Documents/github/2024_Engineer/bsp/can/bsp_can.c", Line=194
+OpenDocument="bsp_usart.c", FilePath="d:/Documents/github/2024_Engineer/bsp/usart/bsp_usart.c", Line=118
 OpenDocument="DRmotor.c", FilePath="d:/Documents/github/2024_Engineer/modules/motor/DRmotor/DRmotor.c", Line=143
 OpenDocument="tasks.c", FilePath="d:/Documents/github/2024_Engineer/Middlewares/Third_Party/FreeRTOS/Source/tasks.c", Line=2751
-OpenDocument="arm_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/arm/arm_interface.c", Line=43
-OpenDocument="robot_cmd_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/cmd/robot_cmd_interface.c", Line=940
-OpenDocument="airpump_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/airpump/airpump_interface.c", Line=0
+OpenDocument="bsp_flash.c", FilePath="d:/Documents/github/2024_Engineer/bsp/flash/bsp_flash.c", Line=149
+OpenDocument="airpump_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/airpump/airpump_interface.c", Line=330
+OpenDocument="chassis_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/chassis/chassis_interface.c", Line=39
 OpenDocument="dji_motor.c", FilePath="d:/Documents/github/2024_Engineer/modules/motor/DJImotor/dji_motor.c", Line=307
 OpenDocument="bsp_dwt.c", FilePath="d:/Documents/github/2024_Engineer/bsp/dwt/bsp_dwt.c", Line=28
 OpenDocument="message_center.h", FilePath="d:/Documents/github/2024_Engineer/modules/message_center/message_center.h", Line=50
@@ -21,31 +29,32 @@ OpenDocument="daemon.c", FilePath="d:/Documents/github/2024_Engineer/modules/dae
 OpenDocument="LKmotor.c", FilePath="d:/Documents/github/2024_Engineer/modules/motor/LKmotor/LKmotor.c", Line=172
 OpenDocument="stm32h7xx_hal_fdcan.c", FilePath="d:/Documents/github/2024_Engineer/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.c", Line=5271
 OpenDocument="daemon.h", FilePath="d:/Documents/github/2024_Engineer/modules/daemon/daemon.h", Line=27
-OpenDocument="gimbal_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/gimbal/gimbal_interface.c", Line=162
+OpenDocument="UI_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/UI/UI_interface.c", Line=329
 OpenToolbar="File", Floating=0, x=1, y=0
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=1, w=430, h=302, TabPos=1, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Source Files", DockArea=LEFT, x=0, y=1, w=310, h=416, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=2, w=430, h=135, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=0, w=310, h=206, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
-OpenWindow="Memory 1", DockArea=RIGHT, x=0, y=0, w=430, h=168, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x24020B10
-OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=1, w=430, h=302, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=1, w=430, h=293, TabPos=1, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Source Files", DockArea=LEFT, x=0, y=1, w=310, h=410, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=2, w=430, h=141, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=0, w=310, h=212, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
+OpenWindow="Memory 1", DockArea=RIGHT, x=0, y=0, w=430, h=171, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x2401916C
+OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=1, w=430, h=293, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Memory Usage", DockArea=FLOATING, x=643, y=676, w=1130, h=436, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Terminal", DockArea=BOTTOM, x=2, y=0, w=152, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Data Sampling", DockArea=BOTTOM, x=0, y=0, w=315, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
-OpenWindow="Timeline", DockArea=BOTTOM, x=1, y=0, w=1301, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="2 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="35;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="1141;1", CodeGraphLegendShown=0, CodeGraphLegendPosition="1155;0"
+OpenWindow="Timeline", DockArea=BOTTOM, x=1, y=0, w=1301, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="2 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="35;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="966;-6", CodeGraphLegendShown=0, CodeGraphLegendPosition="980;0"
 OpenWindow="Console", DockArea=BOTTOM, x=3, y=0, w=149, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
 TableHeader="Call Stack", SortCol="Function", SortOrder="ASCENDING", VisibleCols=["Function";"Stack Frame";"Source";"PC";"Return Address";"Stack Used"], ColWidths=[100;100;100;100;112;100]
+TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;500]
+TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;100;154]
 TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status";"Size";"#Insts";"Path"], ColWidths=[239;100;100;100;854]
 TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time"], ColWidths=[100;100]
 TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="DESCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[100;100;100;100;100;100;100;107;107]
 TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
-TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Refresh"], ColWidths=[196;257;100]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Refresh"], ColWidths=[325;257;100]
 TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[200;100;100;351]
-TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;500]
-TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;100;1204]
-WatchedExpression="gimbal_yaw_motor", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="0x0802C2BC", Window=Watched Data 1
 WatchedExpression="gimbal_cmd_send.yaw", Window=Watched Data 1
 WatchedExpression="rc_ctrl->mouse.x_average", Window=Watched Data 1
 WatchedExpression="sum", Window=Watched Data 1
@@ -57,7 +66,6 @@ WatchedExpression="record_doing", Window=Watched Data 1
 WatchedExpression="assorted_yaw", Window=Watched Data 1
 WatchedExpression="big_yaw_encoder", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="big_yaw_motor", RefreshRate=5, Window=Watched Data 1
-WatchedExpression="debug_bool__", Window=Watched Data 1
 WatchedExpression="*big_yaw_motor->motor_error_detection.current", Window=Watched Data 1
 WatchedExpression="debug_value", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="big_yaw_motor->motor_error_detection.current", Window=Watched Data 1
@@ -73,3 +81,9 @@ WatchedExpression="debug_output", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="gimbal_yaw_motor->motor_controller.speed_PID.Output", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="assorted_motor_up", Window=Watched Data 1
 WatchedExpression="pid", Window=Watched Data 1
+WatchedExpression="ARM_AUTO_MODE_DATA_", Window=Watched Data 1
+WatchedExpression="arm_auto_mode_record_address", Window=Watched Data 1
+WatchedExpression="iter", Window=Watched Data 1
+WatchedExpression="iter", Window=Watched Data 1
+WatchedExpression="pub", Window=Watched Data 1
+WatchedExpression="pub", Window=Watched Data 1

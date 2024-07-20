@@ -77,7 +77,7 @@ void _gimbalTASK(void *argument)
 void _chassisTASK(void *argument)
 {
     UNUSED(argument);
-    osDelay(6000);
+    osDelay(1500);
     while (1) {
         ChassisTask();
 

@@ -12,6 +12,8 @@
 #include "UI_interface.h"
 #include "UI_user_defined.h"
 
+float UI_debug_value[7];
+
 referee_info_t *referee_data;
 
 UI_data_t UI_data_recv;
@@ -86,6 +88,8 @@ static UI_GRAPH_INSTANCE* float_target_midyaw;
 static UI_GRAPH_INSTANCE* float_target_asyaw;
 static UI_GRAPH_INSTANCE* float_target_asroll;
 static UI_GRAPH_INSTANCE* float_target_tail;
+static UI_GRAPH_INSTANCE* number_pump_air_arm;
+static UI_GRAPH_INSTANCE* number_pump_air_valve;
 
 static UI_STRING_INSTANCE* string_controMode;
 static UI_STRING_INSTANCE* string_armAutoMode;
@@ -127,7 +131,7 @@ void get_referee_data(referee_info_t *referee_data)
 
 static void ui_reload(){
     /*自定义UI*/
-    UserDefinedUI_init();
+    // UserDefinedUI_init();
     /*UI注册-正常*/
     //圆
     circle_pumpArm = UI_Graph_Init(GraphType_Round, 2, 1, Graphic_Color_White,15,150,750,15);
@@ -149,6 +153,7 @@ static void ui_reload(){
     string_ASYAW = UI_String_Init(0,2,Graphic_Color_Main,15,3,540,225,"AS_YAW");
     string_ASROLL = UI_String_Init(0,2,Graphic_Color_Main,15,3,540,195,"ASROLL");
     string_TAIL = UI_String_Init(0,2,Graphic_Color_Main,15,3,540,165,"TAIL");
+    UI_BatchDisable_String(5,string_BIGYAW,string_MIDYAW,string_ASYAW,string_ASROLL,string_TAIL);
     //动态字符串    
     string_controMode_ = UI_String_Init(0,3,Graphic_Color_Orange,25,3,1565,840,S_ControMode_None);
     string_armAutoMode_ = UI_String_Init(0,3,Graphic_Color_Orange,25,3,1565,765,S_ArmMode_NONE);
@@ -169,13 +174,21 @@ static void ui_reload(){
     float_target_asyaw = UI_Graph_Init(GraphType_Float, 0, 5, Graphic_Color_Purplish_red, 3, 780, 225, 15, 1, 0);
     float_target_asroll = UI_Graph_Init(GraphType_Float, 0, 5, Graphic_Color_Purplish_red, 3, 780, 195, 15, 1, 0);
     float_target_tail = UI_Graph_Init(GraphType_Float, 0, 5, Graphic_Color_Purplish_red, 3, 780, 165, 15, 1, 0);
+    UI_BatchDisable_Graph(5, float_current_bigyaw,float_current_midyaw,float_current_asyaw,float_current_asroll,float_current_tail);
+    UI_BatchDisable_Graph(5, float_target_bigyaw,float_target_midyaw,float_target_asyaw,float_target_asroll,float_target_tail);
+        // UI_BatchEnable_Graph(7,float_current_bigyaw,float_current_midyaw,float_current_asyaw,float_target_bigyaw,float_target_midyaw,float_target_asyaw,float_target_asroll);
     //臂动作
     //todo:
+    //气泵状态
+    number_pump_air_arm = UI_Graph_Init(GraphType_Number, 0, 5, Graphic_Color_White, 3, 426, 750, 15, 0);
+    number_pump_air_valve = UI_Graph_Init(GraphType_Number, 0, 5, Graphic_Color_White, 3, 426, 700, 15, 0);
+
     //装甲板
     Arc_armour_1 = UI_Graph_Init(GraphType_Arc, 3, 1, Graphic_Color_Main, armour_maker.width, armour_maker.pos_x, armour_maker.pos_y, 335, 50, armour_maker.dx, armour_maker.dy);
     Arc_armour_2 = UI_Graph_Init(GraphType_Arc, 3, 1, Graphic_Color_Cyan, armour_maker.width, armour_maker.pos_x, armour_maker.pos_y, 65, 50, armour_maker.dx, armour_maker.dy);
     Arc_armour_3 = UI_Graph_Init(GraphType_Arc, 3, 1, Graphic_Color_Cyan, armour_maker.width, armour_maker.pos_x, armour_maker.pos_y, 155, 50, armour_maker.dx, armour_maker.dy);
     Arc_armour_4 = UI_Graph_Init(GraphType_Arc, 3, 1, Graphic_Color_Cyan, armour_maker.width, armour_maker.pos_x, armour_maker.pos_y, 245, 50, armour_maker.dx, armour_maker.dy);
+    UI_BatchDisable_Graph(3, Arc_armour_2, Arc_armour_3,Arc_armour_4);
     /*UI注册-调试模式*/
 
     //清除所有UI
@@ -203,7 +216,6 @@ void MyUIInit(void)
 }
 
 static void UI_operate(){
-    /* 动态圆圈 */
     {   
         // 遥控器连接
         UI_StateSwitchDetect_Graph(circle_remoteConnection, 2, UI_data_recv.rc_connection_mode_t, Graphic_Color_White, Graphic_Color_Green);
@@ -219,8 +231,10 @@ static void UI_operate(){
         UI_StateSwitchDetect_Graph(circle_armAutoMode, 3, UI_data_recv.arm_mode, Graphic_Color_White, Graphic_Color_Green, Graphic_Color_Yellow);
         // 推杆模式
         UI_StateSwitchDetect_Graph(circle_valveAutoMode, 3, UI_data_recv.valve_mode, Graphic_Color_White, Graphic_Color_Green, Graphic_Color_Yellow);
+        // 气路气压值
+        number_pump_air_arm->param.Number.value = UI_data_recv.pump_air_arm;
+        number_pump_air_valve->param.Number.value = UI_data_recv.pump_air_valve;
     }
-    /* 动态字符串 */
     {
         // 控制模式
         UI_StringSwitchDetect_Char(string_controMode_, 6, UI_data_recv.Contro_mode, S_ControMode_None, S_ControMode_FetchCube, S_ControlMode_ConvertCube, S_ControlMode_Move, S_ControlMode_ReverseMove, S_ControlMode_RotateMove);
@@ -260,16 +274,27 @@ static void UI_operate(){
         }
         // 臂关节数据
         {
-            float_current_bigyaw->param.Float.value = UI_data_recv.arm_current_data.big_yaw_angle;
-            float_current_midyaw->param.Float.value = UI_data_recv.arm_current_data.mid_yaw_angle;
-            float_current_asyaw->param.Float.value = UI_data_recv.arm_current_data.assorted_yaw_angle;
-            float_current_asroll->param.Float.value = UI_data_recv.arm_current_data.assorted_roll_angle;
-            float_current_tail->param.Float.value = UI_data_recv.arm_current_data.tail_motor_angle;
-            float_target_bigyaw->param.Float.value = UI_data_recv.arm_target_data.big_yaw_angle;
-            float_target_midyaw->param.Float.value = UI_data_recv.arm_target_data.mid_yaw_angle;
-            float_target_asyaw->param.Float.value = UI_data_recv.arm_target_data.assorted_yaw_angle;
-            float_target_asroll->param.Float.value = UI_data_recv.arm_target_data.assorted_roll_angle;
-            float_target_tail->param.Float.value = UI_data_recv.arm_target_data.tail_motor_angle;        
+            // float_current_bigyaw->param.Float.value = UI_data_recv.arm_current_data.big_yaw_angle;
+            // float_current_midyaw->param.Float.value = UI_data_recv.arm_current_data.mid_yaw_angle;
+            // float_current_asyaw->param.Float.value = UI_data_recv.arm_current_data.assorted_yaw_angle;
+            // float_current_asroll->param.Float.value = UI_data_recv.arm_current_data.assorted_roll_angle;
+            // float_current_tail->param.Float.value = UI_data_recv.arm_current_data.tail_motor_angle;
+            // float_target_bigyaw->param.Float.value = UI_data_recv.arm_target_data.big_yaw_angle;
+            // float_target_midyaw->param.Float.value = UI_data_recv.arm_target_data.mid_yaw_angle;
+            // float_target_asyaw->param.Float.value = UI_data_recv.arm_target_data.assorted_yaw_angle;
+            // float_target_asroll->param.Float.value = UI_data_recv.arm_target_data.assorted_roll_angle;
+            // float_target_tail->param.Float.value = UI_data_recv.arm_target_data.tail_motor_angle;        
+        }
+        // DEBUG
+        {
+            float_current_bigyaw->param.Float.value = UI_debug_value[0];
+            float_current_midyaw->param.Float.value = UI_debug_value[1];
+            float_current_asyaw->param.Float.value = UI_debug_value[2];
+
+            float_target_bigyaw->param.Float.value = UI_debug_value[3];
+            float_target_midyaw->param.Float.value = UI_debug_value[4];
+            float_target_asyaw->param.Float.value = UI_debug_value[5];
+            float_target_asroll->param.Float.value = UI_debug_value[6];
         }
     }
 }

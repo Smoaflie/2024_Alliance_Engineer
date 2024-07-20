@@ -185,6 +185,8 @@ typedef struct
 { // 云台角度控制
     int airvalve_mode;
     int air_auto_mode_selecting;
+    uint16_t pump_air_arm;
+    uint16_t pump_air_valve;
 } Airpump_Data_s;
 
 /* ----------------gimbal/shoot/chassis发布的反馈数据----------------*/
@@ -350,6 +352,9 @@ typedef struct
     arm_controller_data_s arm_current_data;
     arm_controller_data_s arm_target_data;
 
+    uint16_t pump_air_arm;
+    uint16_t pump_air_valve;
+    
     uint8_t UI_refresh_request;
 
     UI_debug_param debug;

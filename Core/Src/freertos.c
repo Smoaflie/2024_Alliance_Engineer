@@ -93,14 +93,14 @@ const osThreadAttr_t chassis_attributes = {
 osThreadId_t armHandle;
 const osThreadAttr_t arm_attributes = {
   .name = "arm",
-  .stack_size = 1024 * 4,
+  .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for cmd */
 osThreadId_t cmdHandle;
 const osThreadAttr_t cmd_attributes = {
   .name = "cmd",
-  .stack_size = 512 * 4,
+  .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
 /* Definitions for motor */
@@ -108,7 +108,7 @@ osThreadId_t motorHandle;
 const osThreadAttr_t motor_attributes = {
   .name = "motor",
   .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityAboveNormal1,
+  .priority = (osPriority_t) osPriorityBelowNormal7,
 };
 /* Definitions for airpump */
 osThreadId_t airpumpHandle;

@@ -171,8 +171,11 @@ void UI_Graph_Refresh();
 void UI_String_Refresh();
 
 void UI_StateSwitchDetect_Graph(UI_GRAPH_INSTANCE* instance, uint8_t cnt, int flag, ...);
+void UI_BatchEnable_Graph(uint8_t cnt, ...);
+void UI_BatchDisable_Graph(uint8_t cnt, ...);
 
 void UI_ColorSwitchDetect_Char(UI_STRING_INSTANCE *instance, uint8_t cnt, int flag, ...);
 void UI_WidthSwitchDetect_Char(UI_STRING_INSTANCE *instance, uint8_t cnt, int flag, ...);
 void UI_StringSwitchDetect_Char(UI_STRING_INSTANCE *instance, uint8_t cnt, int flag, ...);
+void UI_BatchDisable_String(uint8_t cnt, ...);
 #endif //UI_INTERFACE_

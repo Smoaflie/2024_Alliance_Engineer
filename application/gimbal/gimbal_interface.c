@@ -74,15 +74,15 @@ void GimbalInit_Motor()
         },
         .controller_param_init_config = {
             .speed_PID = {
-                .Kp            = 1.5, // 3.5
+                .Kp            = 5.8, // 3.5
                 .Ki            = 0,  // 0
-                .Kd            = 0.001,  // 0
+                .Kd            = 0.003,  // 0
                 .IntegralLimit = 3000,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .MaxOut        = 16384,
                 },
             .angle_PID = {
-                .Kp            = 30,
+                .Kp            = 25,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
@@ -100,7 +100,7 @@ void GimbalInit_Motor()
         .motor_type = GM6020,
     };
     gimbal_yaw_motor                                                               = DJIMotorInit(&gimbal_motor_config);
-    gimbal_yaw_motor->measure.offset_ecd = 6922;
+    gimbal_yaw_motor->measure.offset_ecd = 2735;
 
     Servo_Init_Config_s servo_config = {
         // 舵机安装选择的定时器及通道
@@ -138,7 +138,7 @@ void GimbalParamPretreatment()
     /* 初始化云台陀螺仪yaw角度偏移量(使之零点为车辆正方向) */
     if(!gimbal_imu_init)
     {
-        // while((gimbal_yaw_motor->dt == 0) || (gimbal_cmd_recv.arm_big_yaw_offset==0))    {SubGetMessage(gimbal_sub, &gimbal_cmd_recv);osDelay(1);}
+        while((gimbal_yaw_motor->dt == 0) || (gimbal_cmd_recv.arm_big_yaw_offset==0))    {SubGetMessage(gimbal_sub, &gimbal_cmd_recv);osDelay(1);}
         
         gimbal_imu_offset = gimbal_imu_yaw_total_angle - gimbal_cmd_recv.arm_big_yaw_offset - gimbal_yaw_motor->measure.total_angle;
         gimbal_imu_init = 1;
@@ -186,7 +186,7 @@ void GimbalContro()
         {
             VAL_LIMIT(gimbal_cmd_recv.pitch, -5, 5);
             gimbal_pitch_angle += gimbal_cmd_recv.pitch;
-            VAL_LIMIT(gimbal_pitch_angle, 0, 150);    /* 限幅 */
+            VAL_LIMIT(gimbal_pitch_angle, 70, 180);    /* 限幅 */
 
             gimbal_yaw_angle -= gimbal_cmd_recv.yaw;
 
@@ -197,7 +197,7 @@ void GimbalContro()
         }else if(gimbal_cmd_recv.gimbal_mode == GIMBAL_FOLLOW_YAW){
 
             gimbal_pitch_angle += gimbal_cmd_recv.pitch;
-            VAL_LIMIT(gimbal_pitch_angle, 0, 180);    /* 限幅 */
+            VAL_LIMIT(gimbal_pitch_angle, 70, 180);    /* 限幅 */
 
             gimbal_yaw_angle = gimbal_cmd_recv.arm_big_yaw_offset;
 

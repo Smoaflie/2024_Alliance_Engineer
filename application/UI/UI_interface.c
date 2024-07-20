@@ -328,3 +328,36 @@ void UI_StringSwitchDetect_Char(UI_STRING_INSTANCE *instance, uint8_t cnt, int f
         instance->char_p = idx[flag];
     }
 }
+void UI_BatchEnable_Graph(uint8_t cnt, ...){
+    UI_GRAPH_INSTANCE* graph;
+    va_list ap;		   // 创建一个 va_list 类型变量
+	va_start(ap, cnt); // 初始化 va_list 变量为一个参数列表
+    for(int i = 0; i < cnt; i++){
+        graph = va_arg(ap,UI_GRAPH_INSTANCE*);
+        graph->init_call = 1;
+        graph->delete_call = 0;
+    }
+    va_end(ap);
+}
+void UI_BatchDisable_Graph(uint8_t cnt, ...){
+    UI_GRAPH_INSTANCE* graph;
+    va_list ap;		   // 创建一个 va_list 类型变量
+	va_start(ap, cnt); // 初始化 va_list 变量为一个参数列表
+    for(int i = 0; i < cnt; i++){
+        graph = va_arg(ap,UI_GRAPH_INSTANCE*);
+        graph->init_call = 0;
+        graph->delete_call = 1;
+    }
+    va_end(ap);
+}
+void UI_BatchDisable_String(uint8_t cnt, ...){
+    UI_STRING_INSTANCE* string_;
+    va_list ap;		   // 创建一个 va_list 类型变量
+	va_start(ap, cnt); // 初始化 va_list 变量为一个参数列表
+    for(int i = 0; i < cnt; i++){
+        string_ = va_arg(ap,UI_STRING_INSTANCE*);
+        string_->init_call = 0;
+        string_->delete_call = 1;
+    }
+    va_end(ap);
+}

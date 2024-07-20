@@ -235,9 +235,12 @@ static uint8_t Reset_Param(uint8_t bool_){
     static uint16_t reset_press_cnt = 0;
     if(bool_){
         reset_press_cnt++;
-        if(bool_==1){
+        if(reset_press_cnt==1){
             arm_cmd_send.call.reset_init_flag = 1;
             airpump_cmd_send.init_call = 1;
+        }else{
+            arm_cmd_send.call.reset_init_flag = 0;
+            airpump_cmd_send.init_call = 0;
         }
             
         if(reset_press_cnt > 1000){
@@ -255,8 +258,8 @@ static void RemoteControlSet_SwitchLeftDown()
     // 左摇杆控制底盘移动，右摇杆控制云台
     gimbal_cmd_send.yaw = rc_data->rc.rocker_r_/660.0*0.5; // 云台电机旋转
     gimbal_cmd_send.pitch = rc_data->rc.rocker_r1/660.0*0.2; // 云台pitch
-    chassis_cmd_send.vx = 60.0f * rc_data->rc.rocker_l_; // 底盘水平方向
-    chassis_cmd_send.vy = 60.0f * rc_data->rc.rocker_l1; // 底盘竖值方向
+    chassis_cmd_send.vx = 80.0f * rc_data->rc.rocker_l_; // 底盘水平方向
+    chassis_cmd_send.vy = 80.0f * rc_data->rc.rocker_l1; // 底盘竖值方向
     
     // 右侧开关为[中]，拨轮控制底盘旋转
     if(switch_is_mid(rc_data->rc.switch_right))
@@ -372,12 +375,13 @@ static void MouseKeyControlSet_Debug(){
     if(rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift && rc_data->key[KEY_PRESS].b && rc_data->mouse.press_l){
         save_press_cnt++;
         robot_state = ROBOT_STOP;
+        UI_cmd_send.debug.save_flag = 1;
             
         if(save_press_cnt > 2000){
             buzzer_one_note(0x50, 0.1);
             flashRefresh();
-            buzzer_one_note(0xf0, 0.5);
-            UI_cmd_send.debug.save_flag = 1;
+            __set_FAULTMASK(1);
+            NVIC_SystemReset();
         }
     }else save_press_cnt=0;
 }
@@ -394,7 +398,7 @@ static void MouseKeyControlSet_Normal()
 
     // wasd 控制底盘全向移动 中速/ctrl慢速/shift高速
     // 其中 云台自由模式下仅支持超低速和慢速
-    const float speed[4] = {15000, 30000, 80000, 3000};
+    const float speed[4] = {15000, 30000, 50000, 6000};
     if(rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift && (ControlMode==ControlMode_ConvertCube || ControlMode==ControlMode_FetchCube)) {   //超低速
         chassis_cmd_send.vy = (rc_data->key[KEY_PRESS].w - rc_data->key[KEY_PRESS].s) * speed[3];
         chassis_cmd_send.vx = (rc_data->key[KEY_PRESS].a - rc_data->key[KEY_PRESS].d) * speed[3];
@@ -412,11 +416,11 @@ static void MouseKeyControlSet_Normal()
     /* q&e */
         // q'e / shift+q'e控制底盘旋转
         if(!rc_data->key[KEY_PRESS].ctrl){
-            chassis_cmd_send.wz = -(rc_data->key[KEY_PRESS].q - rc_data->key[KEY_PRESS].e)  * 2500.0f; // 底盘旋转
+            chassis_cmd_send.wz = -(rc_data->key[KEY_PRESS].q - rc_data->key[KEY_PRESS].e)  * 10000.0f; // 底盘旋转
         }
         // ctrl+q'e低速旋转
         if(rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)
-            chassis_cmd_send.wz = -(rc_data->key[KEY_PRESS].q - rc_data->key[KEY_PRESS].e)  * 1000.0f; // 底盘旋转
+            chassis_cmd_send.wz = -(rc_data->key[KEY_PRESS].q - rc_data->key[KEY_PRESS].e)  * 3000.0f; // 底盘旋转
         // ctrl+shift+q'e控制臂臂旋转    
         if(rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift)   
             arm_cmd_send.Rotation_yaw = (rc_data->key[KEY_PRESS_WITH_SHIFT].e - rc_data->key[KEY_PRESS_WITH_SHIFT].q) * 0.045;
@@ -908,12 +912,11 @@ void RobotCMDGenerateCommand()
 }
 void RobotCMDPubMessage()
 {
-
     PubPushMessage(arm_cmd_pub, (void *)&arm_cmd_send);
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(gimbal_cmd_pub, (void *)&gimbal_cmd_send);
     PubPushMessage(airpump_cmd_pub, (void *)&airpump_cmd_send);
-    PubPushMessage(UI_reality_pub, (void *)&UI_reality_send);
+    // PubPushMessage(UI_reality_pub, (void *)&UI_reality_send);
 
     if(UI_cmd_pub->first_subs->temp_size==0){
         PubPushMessage(UI_cmd_pub, (void *)&UI_cmd_send);
@@ -932,6 +935,8 @@ void RobotCMDDebugInterface()
     arm_cmd_send.debug.assorted_joint_enable_call = 0;
     arm_cmd_send.debug.assorted_joint_disable_call = 0;
     arm_cmd_send.debug.apply_delay_call = 0;
+    arm_cmd_send.debug.jaw_loose_call = 0;
+    arm_cmd_send.debug.jaw_tighten_call = 0;
     EdgeType edge_1 = detect_edge(&edge_detect[0], dial_flag==1);
     if(edge_1 == EDGE_RISING){
         if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right))){
@@ -953,12 +958,16 @@ void RobotCMDDebugInterface()
         }
     }
 
+    static uint8_t flash_write_success_flag = 0;
     EdgeType edge_2 = detect_edge(&edge_detect[1], (switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) && dial_flag==-1);
     if(edge_2 == EDGE_RISING){
         if(switch_num == 8){
             buzzer_one_note(0x50, 0.1);
             flashRefresh();
-            buzzer_one_note(0xf0, 0.5);
+            flash_write_success_flag = 1;
+            buzzer_one_note(0xf0, 0.1);
+            // __set_FAULTMASK(1);
+            // NVIC_SystemReset();
         }else{
             arm_cmd_send.debug.auto_mode_record_start_call = 1;
             airpump_cmd_send.in_debug_call = 1;
@@ -973,7 +982,7 @@ void RobotCMDDebugInterface()
     edge_key[4] = detect_edge(&edge_detect[6], switch_is_down(rc_data->rc.switch_right) && rc_data->rc.rocker_r_ > 650);
     edge_key[5] = detect_edge(&edge_detect[7], switch_is_down(rc_data->rc.switch_right) && rc_data->rc.rocker_r1 < -650);
     // edge_key[6] = detect_edge(&edge_detect[8], switch_is_down(rc_data->rc.switch_right) && rc_data->rc.rocker_r_ > 650);
-    edge_key[7] = detect_edge(&edge_detect[9], switch_is_down(rc_data->rc.switch_right) && rc_data->rc.rocker_r1 > 650);
+    // edge_key[7] = detect_edge(&edge_detect[9], switch_is_down(rc_data->rc.switch_right) && rc_data->rc.rocker_r1 > 650);
     edge_key[8] = detect_edge(&edge_detect[10], switch_is_down(rc_data->rc.switch_right) && rc_data->rc.rocker_r_ < -650);
     edge_key[9] = detect_edge(&edge_detect[11], switch_is_mid(rc_data->rc.switch_right));
     arm_cmd_send.debug.arm_pump_off_call = edge_key[0] == EDGE_RISING;
@@ -982,16 +991,20 @@ void RobotCMDDebugInterface()
     arm_cmd_send.debug.valve_pump_off_call = edge_key[3] == EDGE_RISING;
     arm_cmd_send.debug.jaw_loose_call = edge_key[4] == EDGE_RISING;
     arm_cmd_send.debug.jaw_tighten_call = edge_key[5] == EDGE_RISING;
-    arm_cmd_send.debug.assorted_joint_enable_call = edge_key[7] == EDGE_RISING;
-    arm_cmd_send.debug.assorted_joint_disable_call = edge_key[8] == EDGE_RISING;
+    // arm_cmd_send.debug.assorted_joint_enable_call = edge_key[7] == EDGE_RISING;
+    // arm_cmd_send.debug.assorted_joint_disable_call = edge_key[8] == EDGE_RISING;
     arm_cmd_send.debug.apply_delay_call = edge_key[9] == EDGE_RISING;
 
     // if(edge_key[6] == EDGE_RISING)  airpump_cmd_send.out_debug_call = 1;
 
     if(switch_num ==0){
-        if(Reset_Param((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right) && dial_flag==1))){
+        if(switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right) && dial_flag==1){
+            Reset_Param(1);
             robot_state = ROBOT_STOP;
             EmergencyHandler(); // 处理模块离线和遥控器急停等紧急情况
         }
     }
+
+    if(flash_write_success_flag)
+        Reset_Param(1);
 } 
