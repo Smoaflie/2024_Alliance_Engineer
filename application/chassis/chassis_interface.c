@@ -29,7 +29,7 @@
 #define HALF_WHEEL_BASE  (WHEEL_BASE / 2.0f)     // 半轴距
 #define HALF_TRACK_WIDTH (TRACK_WIDTH / 2.0f)    // 半轮距
 #define PERIMETER_WHEEL  (RADIUS_WHEEL * 2 * PI) // 轮子周长
-#define chassis_max_speed 50000
+#define chassis_max_speed 45000
 
 static Chassis_Ctrl_Cmd_s chassis_cmd_recv;         // 底盘接收到的控制命令
 static Subscriber_t *chassis_sub;                   // 用于订阅底盘的控制命令
@@ -108,9 +108,9 @@ void ChassisInit_Motor()
     motor_rf                                                               = DJIMotorInit(&chassis_motor_config);
 
     PID_Init_Config_s chassis_follow_pid_config = {
-                          .Kp            = 800, // 1500
+                          .Kp            = 500, // 1500
                           .Ki            = 0,    // 0
-                          .Kd            = 1,    // 0
+                          .Kd            = 10,    // 0
                           .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
                           .IntegralLimit = 0,
                           .MaxOut        = 40000,
@@ -134,6 +134,22 @@ void ChassisInit_IO()
 #define RF_CENTER ((HALF_TRACK_WIDTH - CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE - CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
 #define LB_CENTER ((HALF_TRACK_WIDTH + CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE + CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
 #define RB_CENTER ((HALF_TRACK_WIDTH - CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE + CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
+
+static void update_chassis_velocity(float* chassis_v, float current_chassis_v, float limit_add_speed, float limit_add_speed_stop) {
+    if (current_chassis_v > 0) {
+        if (*chassis_v - current_chassis_v > limit_add_speed) {
+            *chassis_v = current_chassis_v + limit_add_speed;
+        } else if (*chassis_v - current_chassis_v < -limit_add_speed_stop) {
+            *chassis_v = current_chassis_v - limit_add_speed_stop;
+        }
+    } else {
+        if (*chassis_v - current_chassis_v > limit_add_speed_stop) {
+            *chassis_v = current_chassis_v + limit_add_speed_stop;
+        } else if (*chassis_v - current_chassis_v < -limit_add_speed) {
+            *chassis_v = current_chassis_v - limit_add_speed;
+        }
+    }
+}
 /**
  * @brief 计算每个轮毂电机的输出,正运动学解算
  *        用宏进行预替换减小开销,运动解算具体过程参考教程
@@ -157,20 +173,9 @@ void MecanumCalculate()
             limit_add_speed_x_stop = 1100;
             limit_add_speed_y_stop = 1100;
         }
-        if(current_chassis_vx > 0){
-            if(chassis_vx - current_chassis_vx > limit_add_speed_x) chassis_vx = current_chassis_vx + limit_add_speed_x;
-            else if(chassis_vx - current_chassis_vx < -limit_add_speed_x_stop) chassis_vx = current_chassis_vx - limit_add_speed_x_stop;
-        }else{
-            if(chassis_vx - current_chassis_vx > limit_add_speed_x_stop) chassis_vx = current_chassis_vx + limit_add_speed_x_stop;
-            else if(chassis_vx - current_chassis_vx < -limit_add_speed_x) chassis_vx = current_chassis_vx - limit_add_speed_x;
-        }
-        if(current_chassis_vy > 0){
-            if(chassis_vy - current_chassis_vy > limit_add_speed_y) chassis_vy = current_chassis_vy + limit_add_speed_y;
-            else if(chassis_vy - current_chassis_vy < -limit_add_speed_y_stop) chassis_vy = current_chassis_vy - limit_add_speed_y_stop;
-        }else{
-            if(chassis_vy - current_chassis_vy > limit_add_speed_y_stop) chassis_vy = current_chassis_vy + limit_add_speed_y_stop;
-            else if(chassis_vy - current_chassis_vy < -limit_add_speed_y) chassis_vy = current_chassis_vy - limit_add_speed_y;
-        }
+        update_chassis_velocity(&chassis_vx,current_chassis_vx,limit_add_speed_x,limit_add_speed_x_stop);
+        update_chassis_velocity(&chassis_vy,current_chassis_vy,limit_add_speed_y,limit_add_speed_y_stop);
+
         float chassis_speed_max = (chassis_max_speed-fabsf(chassis_cmd_recv.wz))/2*sqrtf(2.0f);
         float chassis_speed = sqrtf(powf(chassis_vx,2) + powf(chassis_vy,2));
         float chassis_speed_rad = asinf(chassis_speed/fabsf(chassis_vx));
@@ -178,7 +183,7 @@ void MecanumCalculate()
         VAL_LIMIT(chassis_vx, -chassis_speed*sinf(chassis_speed_rad), chassis_speed*sinf(chassis_speed_rad));
         VAL_LIMIT(chassis_vy, -chassis_speed*cosf(chassis_speed_rad), chassis_speed*cosf(chassis_speed_rad));
 
-        static float kp = 1;
+        static float kp = 1.5;
         static uint8_t current_feedforward_chassis = 0x01;
         current_feedforward_lb = current_feedforward_chassis&0x01 ? (chassis_vx - chassis_vy) * kp : 0; 
         // current_feedforward_lb = current_feedforward_chassis&0x01 ? current_chassis_vy * kp : 0; 
@@ -324,7 +329,7 @@ void ChassisModeSelect()
     if(chassis_cmd_recv.arm_height <= -240)
         chassis_follow_pid->MaxOut = 40000;
     else
-        chassis_follow_pid->MaxOut = 25000;
+        chassis_follow_pid->MaxOut = 20000;
 
     // 根据控制模式设定旋转速度
     switch (chassis_cmd_recv.chassis_mode) {

@@ -23,9 +23,8 @@
 #include "gimbal.h"
 #include "motor_task.h"
 #include "test.h"
-#include "UI_reality.h"
 #include "UI.h"
-
+#include "iwdg.h"
 #ifdef ROBOT_TEST
 void TestTask(void *argument)
 {
@@ -47,10 +46,12 @@ void TestTask(void *argument)
 void _cmdTASK(void *argument)
 {
     UNUSED(argument);
-    osDelay(1000);
+    osDelay(300);
+    HAL_IWDG_Init(&hiwdg1);
     while (1) {
         RobotCMDTask();
 
+        HAL_IWDG_Refresh(&hiwdg1);
         osDelay(1);
     }
 }
@@ -58,7 +59,7 @@ void _cmdTASK(void *argument)
 void _airpumpTASK(void *argument)
 {
     UNUSED(argument);
-    osDelay(1000);
+    osDelay(300);
     while (1) {
         AIRPUMPTask();
         osDelay(1);
@@ -68,7 +69,7 @@ void _airpumpTASK(void *argument)
 void _gimbalTASK(void *argument)
 {
     UNUSED(argument);
-    osDelay(1000);
+    osDelay(300);
     while (1) {
         GIMBALTask();
         osDelay(1);
@@ -88,7 +89,7 @@ void _chassisTASK(void *argument)
 void _armTASK(void *argument)
 {
     UNUSED(argument);
-    osDelay(1000);
+    osDelay(300);
     while (1) {
         ArmTask();
         osDelay(1);
@@ -98,7 +99,7 @@ void _armTASK(void *argument)
 void _motorTASK(void *argument)
 {
     UNUSED(argument);
-    osDelay(1000);
+    osDelay(300);
     while (1) {
         MotorControlTask();
         osDelay(1);
@@ -108,7 +109,7 @@ void _motorTASK(void *argument)
 void _DaemonTask(void *argument)
 {
     UNUSED(argument);
-    osDelay(1000);
+    osDelay(300);
     while (1) {
         DaemonTask();
     }
@@ -117,7 +118,7 @@ void _DaemonTask(void *argument)
 void _BuzzerTask(void *argument)
 {
     UNUSED(argument);
-    osDelay(1000);
+    osDelay(300);
     while (1) {
         BuzzerTask(argument);
     }
@@ -127,7 +128,7 @@ void _refereeTask(void *argument)
 {
     UNUSED(argument);
     MyUIInit();
-    osDelay(1000);
+    osDelay(300);
     while (1) {
         MyUIRefresh();
     }

@@ -3,9 +3,9 @@
 
 #include "bsp_flash.h"
 
-#define arm_encoder_data_read_from_flash 0
+#define arm_encoder_data_read_from_flash 1
 #define arm_auto_mode_record_data_read_from_flash 1
-#define UI_param_data_read_from_flash 0
+#define UI_param_data_read_from_flash 1
 
 #define arm_auto_mode_record_address    ADDR_FLASH_SECTOR_7+0x00000000
 #define arm_encoder_record_address      ADDR_FLASH_SECTOR_7+0x00010000

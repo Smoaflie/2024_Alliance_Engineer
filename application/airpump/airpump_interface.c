@@ -42,7 +42,7 @@ static uint8_t airvalve_state_in_auto_mode = 0;
 //气泵状态 - 全局变量
 uint8_t airpump_arm_state=0;
 uint8_t airpump_linear_state=0;
-uint16_t pumpair[2];    //气泵气压值
+int16_t pumpair[2];    //气泵气压值
 
 static Publisher_t *air_data_pub;        // 气阀气泵消息发布者
 static Airpump_Data_s air_data_send;    // 气阀气泵消息
@@ -119,7 +119,7 @@ void AirpumpInit_Communication()
     };
     airvalve_can_instance = CANRegister(&can_conf_airvalve);
     CAN_Init_Config_s can_conf_pumpair = {
-        .can_handle = &hfdcan2,
+        .can_handle = &hfdcan1,
         .rx_id = 0x1cb,
         .can_module_callback = CanGetPumpAir,
     };
@@ -366,8 +366,8 @@ void AirpumpPubMessage()
         air_data_send.airvalve_mode = 1 + !(airvalve_state&(AIRVALVE_MIDDLE_CUBE_DOING|AIRVALVE_LEFT_CUBE_DOING));
     }
 
-    air_data_send.pump_air_arm = pumpair[0];
-    air_data_send.pump_air_valve = pumpair[1];
+    air_data_send.pump_air_valve = pumpair[0];
+    air_data_send.pump_air_arm = pumpair[1];
 
     PubPushMessage(air_data_pub,&air_data_send);
 }

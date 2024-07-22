@@ -28,9 +28,10 @@
 #include "DRmotor.h"
 #include "gimbal.h"
 #include "airpump.h"
-#include "UI_reality.h"
 #include "UI.h"
 #include "flashtask.h"
+#include "iwdg.h"
+
 void RobotInit()
 {
     // 关闭中断,防止在初始化过程中发生中断
@@ -39,6 +40,7 @@ void RobotInit()
     __disable_irq();
 
     BSPInit();
+
 #ifndef ROBOT_TEST
     DM_board_LEDSet(0x000000);
     RobotCMDInit();

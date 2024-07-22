@@ -185,8 +185,8 @@ typedef struct
 { // 云台角度控制
     int airvalve_mode;
     int air_auto_mode_selecting;
-    uint16_t pump_air_arm;
-    uint16_t pump_air_valve;
+    int16_t pump_air_arm;
+    int16_t pump_air_valve;
 } Airpump_Data_s;
 
 /* ----------------gimbal/shoot/chassis发布的反馈数据----------------*/
@@ -265,7 +265,7 @@ typedef struct{
     struct{
         uint8_t reset_encoder_offset_value  : 1;
         uint8_t selected_encoder_id         : 3;
-        int8_t modify_encoder_offset_value  : 8;
+        int8_t modify_encoder_offset_value[4];
         uint8_t selected_auto_mode_id       : 4;
         uint8_t auto_mode_record_pause_call : 1;
         uint8_t auto_mode_record_start_call : 1;
@@ -297,12 +297,6 @@ typedef struct{
     uint8_t in_debug_call;
     uint8_t out_debug_call;
 }Airpump_Cmd_Data_s;
-
-typedef struct{
-    uint8_t arm_auto_mode_id;
-    uint8_t chassis_auto_mod_id;
-}UI_reality_Data_s;
-
 typedef struct{
     int8_t debug_flag : 1; //debug模式
 
@@ -352,9 +346,9 @@ typedef struct
     arm_controller_data_s arm_current_data;
     arm_controller_data_s arm_target_data;
 
-    uint16_t pump_air_arm;
-    uint16_t pump_air_valve;
-    
+    int16_t pump_air_arm;
+    int16_t pump_air_valve;
+
     uint8_t UI_refresh_request;
 
     UI_debug_param debug;
@@ -377,7 +371,7 @@ typedef struct
 #define Arm_get_silvercube_right 9// 取小资源岛右侧矿
 #define Arm_fetch_gronded_cube 10 // 取地矿姿势
 #define Arm_ConvertCube 11 // 兑矿模式
-#define Arm_recordbase 11 // 自动记录模式
+#define Arm_straighten 12 // 自动记录模式
 #define Arm_record1_auto_mode 12 // 自动记录模式
 #define Arm_record2_auto_mode 13 // 自动记录模式
 #define Arm_record3_auto_mode 14 // 自动记录模式

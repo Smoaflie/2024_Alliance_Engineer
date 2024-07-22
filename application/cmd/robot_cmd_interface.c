@@ -24,7 +24,6 @@ static Publisher_t *chassis_cmd_pub;        // 底盘控制消息发布者
 static Publisher_t *gimbal_cmd_pub;        // 云台控制消息发布者
 static Publisher_t *arm_cmd_pub;    // 机械臂控制信息发布者
 static Publisher_t *airpump_cmd_pub;// 气阀/气泵控制信息发布者
-static Publisher_t *UI_reality_pub;// 物理UI信息发布者
 static Publisher_t *UI_cmd_pub;// 选手端UI命令发布者
 
 static Subscriber_t *gimbal_data_sub;                   // 用于接收云台的数据信息
@@ -35,7 +34,6 @@ static Chassis_Ctrl_Cmd_s chassis_cmd_send; // 发送给底盘应用的信息,�
 static Gimbal_Ctrl_Cmd_s gimbal_cmd_send; // 发送给云台应用的信息
 static Arm_Cmd_Data_s arm_cmd_send; // 发送给机械臂应用的信息
 static Airpump_Cmd_Data_s airpump_cmd_send; // 发送给气阀/气泵控制应用的信息
-static UI_reality_Data_s UI_reality_send;  // 发送给物理UI的信息
 static UI_data_t UI_cmd_send;               // 发送给选手端UI的信息
 
 static Gimbal_Data_s     gimbal_data_recv;// 云台发布的信息
@@ -98,7 +96,6 @@ void RobotCMDInit_Communication()
     gimbal_cmd_pub = PubRegister("gimbal_cmd", sizeof(Gimbal_Ctrl_Cmd_s));
     arm_cmd_pub     = PubRegister("arm_cmd", sizeof(Arm_Cmd_Data_s));
     airpump_cmd_pub = PubRegister("airpump_cmd",sizeof(Airpump_Cmd_Data_s));
-    UI_reality_pub = PubRegister("UI_reality",sizeof(UI_reality_Data_s));
     UI_cmd_pub     = PubRegister("UI", sizeof(UI_data_t));
 
     gimbal_data_sub = SubRegister("gimbal_data", sizeof(Gimbal_Data_s));
@@ -416,11 +413,11 @@ static void MouseKeyControlSet_Normal()
     /* q&e */
         // q'e / shift+q'e控制底盘旋转
         if(!rc_data->key[KEY_PRESS].ctrl){
-            chassis_cmd_send.wz = -(rc_data->key[KEY_PRESS].q - rc_data->key[KEY_PRESS].e)  * 10000.0f; // 底盘旋转
+            chassis_cmd_send.wz = -(rc_data->key[KEY_PRESS].q - rc_data->key[KEY_PRESS].e)  * 12500.0f; // 底盘旋转
         }
         // ctrl+q'e低速旋转
         if(rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)
-            chassis_cmd_send.wz = -(rc_data->key[KEY_PRESS].q - rc_data->key[KEY_PRESS].e)  * 3000.0f; // 底盘旋转
+            chassis_cmd_send.wz = -(rc_data->key[KEY_PRESS].q - rc_data->key[KEY_PRESS].e)  * 6000.0f; // 底盘旋转
         // ctrl+shift+q'e控制臂臂旋转    
         if(rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift)   
             arm_cmd_send.Rotation_yaw = (rc_data->key[KEY_PRESS_WITH_SHIFT].e - rc_data->key[KEY_PRESS_WITH_SHIFT].q) * 0.045;
@@ -657,8 +654,17 @@ static void MouseKeyControlSet_Normal()
         if((rc_data->key[KEY_PRESS].f && !rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)){
             UI_cmd_send.arm_selected_mode = Arm_fetch_gronded_cube;
             if(rc_data->mouse.press_l){
-                ControlMode = ControlMode_FetchCube;
+                ControlMode = ControlMode_Move;
                 arm_cmd_send.auto_mode = Arm_fetch_gronded_cube;
+                arm_cmd_send.contro_mode = ARM_AUTO_MODE;
+            }
+        }   
+        // ctrl+shift+g+鼠标左键 伸直臂
+        if((rc_data->key[KEY_PRESS].g && rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift)){
+            UI_cmd_send.arm_selected_mode = Arm_fetch_gronded_cube;
+            if(rc_data->mouse.press_l){
+                ControlMode = ControlMode_FetchCube;
+                arm_cmd_send.auto_mode = Arm_straighten;
                 arm_cmd_send.contro_mode = ARM_AUTO_MODE;
             }
         }
@@ -778,6 +784,9 @@ static void MessageCenterDispose(){
     UI_cmd_send.gimbal_offset_angle = (chassis_cmd_send.offset_angle>0?chassis_cmd_send.offset_angle:chassis_cmd_send.offset_angle+360);
     UI_cmd_send.pump_arm_mode_t = airpump_arm_state;
     UI_cmd_send.pump_valve_mode_t = airpump_linear_state;
+
+    UI_cmd_send.pump_air_arm = air_data_recv.pump_air_arm;
+    UI_cmd_send.pump_air_valve = air_data_recv.pump_air_valve;
 }
 // 额外操作，因遥控器键位不足，使用左拨杆为[上]时的拨轮状态进行额外的状态控制
 static void extra_Control(){
@@ -930,31 +939,26 @@ void RobotCMDDebugInterface()
     static uint8_t switch_num = 0;
     airpump_cmd_send.in_debug_call = 0;
     airpump_cmd_send.out_debug_call = 0;
-    arm_cmd_send.debug.auto_mode_record_pause_call = 0;
-    arm_cmd_send.debug.auto_mode_record_start_call = 0;
-    arm_cmd_send.debug.assorted_joint_enable_call = 0;
-    arm_cmd_send.debug.assorted_joint_disable_call = 0;
-    arm_cmd_send.debug.apply_delay_call = 0;
-    arm_cmd_send.debug.jaw_loose_call = 0;
-    arm_cmd_send.debug.jaw_tighten_call = 0;
+    memset(&arm_cmd_send.debug,0,sizeof(arm_cmd_send.debug));
+    
     EdgeType edge_1 = detect_edge(&edge_detect[0], dial_flag==1);
     if(edge_1 == EDGE_RISING){
         if((switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right))){
             arm_cmd_send.debug.auto_mode_record_pause_call = 1;
         }else if((switch_is_mid(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right))){
-            switch_num = (switch_num+1)%9;
+            switch_num = (switch_num+1)%10;
             switch(switch_num){
                 case 1:DM_board_LEDSet(0xff0000);debug_switch_arm_auto_mode=Arm_get_goldcube_right;break;// 红色
-                case 2:DM_board_LEDSet(0xffa308);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_down;break;// 橙色
-                case 3:DM_board_LEDSet(0xffee46);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_up;break;// 黄色
+                case 2:DM_board_LEDSet(0xffa308);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_up;break;// 橙色
+                case 3:DM_board_LEDSet(0xffee46);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_down;break;// 黄色
                 case 4:DM_board_LEDSet(0x444444);debug_switch_arm_auto_mode=Arm_get_silvercube_left;break;// 白色
                 case 5:DM_board_LEDSet(0x43c9b0);debug_switch_arm_auto_mode=Arm_get_silvercube_mid;break;// 青色
                 case 6:DM_board_LEDSet(0x2b74ce);debug_switch_arm_auto_mode=Arm_get_silvercube_right;break;// 蓝色
                 case 7:DM_board_LEDSet(0xc586b6);debug_switch_arm_auto_mode=Recycle_arm_in;break;// 粉色
-                case 8:DM_board_LEDSet(0x111111);debug_switch_arm_auto_mode=0;break;//
+                case 8:DM_board_LEDSet(0x40e476);debug_switch_arm_auto_mode=0;break;// 鲜绿
+                case 9:DM_board_LEDSet(0x111111);debug_switch_arm_auto_mode=0;break;//
                 default: DM_board_LEDSet(0x000000);debug_switch_arm_auto_mode=0; //灭
             }
-            arm_cmd_send.debug.selected_auto_mode_id = debug_switch_arm_auto_mode;
         }
     }
 
@@ -962,13 +966,14 @@ void RobotCMDDebugInterface()
     EdgeType edge_2 = detect_edge(&edge_detect[1], (switch_is_down(rc_data->rc.switch_left) && switch_is_down(rc_data->rc.switch_right)) && dial_flag==-1);
     if(edge_2 == EDGE_RISING){
         if(switch_num == 8){
+            arm_cmd_send.debug.reset_encoder_offset_value = 1;
+        }else if(switch_num == 9){
             buzzer_one_note(0x50, 0.1);
             flashRefresh();
-            flash_write_success_flag = 1;
+            flash_write_success_flag = 1; 
             buzzer_one_note(0xf0, 0.1);
-            // __set_FAULTMASK(1);
-            // NVIC_SystemReset();
         }else{
+            arm_cmd_send.debug.selected_auto_mode_id = debug_switch_arm_auto_mode;
             arm_cmd_send.debug.auto_mode_record_start_call = 1;
             airpump_cmd_send.in_debug_call = 1;
         }

@@ -64,8 +64,8 @@ static const char S_ValveMode_goldcube_mid[] = "gold_mid ";
 static const char S_ValveMode_goldcube_left[] = "gold_left";
 
 /*正常模式下UI*/
-static UI_GRAPH_INSTANCE* circle_pumpArm;
-static UI_GRAPH_INSTANCE* circle_pumpValve;
+static UI_GRAPH_INSTANCE* SIGN_pumpArm;
+static UI_GRAPH_INSTANCE* SIGN_pumpValve;
 static UI_GRAPH_INSTANCE* circle_armAutoMode;
 static UI_GRAPH_INSTANCE* circle_valveAutoMode;
 static UI_GRAPH_INSTANCE* circle_customControConnection;
@@ -134,8 +134,6 @@ static void ui_reload(){
     // UserDefinedUI_init();
     /*UI注册-正常*/
     //圆
-    circle_pumpArm = UI_Graph_Init(GraphType_Round, 2, 1, Graphic_Color_White,15,150,750,15);
-    circle_pumpValve = UI_Graph_Init(GraphType_Round, 2, 1, Graphic_Color_White,15,150,700,15);
     circle_armAutoMode = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,1250,750,5);
     circle_valveAutoMode = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,1250,680,5);
     circle_customControConnection = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,310,850,15);
@@ -145,8 +143,8 @@ static void ui_reload(){
     string_controMode = UI_String_Init(0,2,Graphic_Color_Purplish_red,25,3,1290,840,"Control:");
     string_armAutoMode = UI_String_Init(0,2,Graphic_Color_Purplish_red,25,3,1290,765,"ARM_AUTO:");
     string_valveAutoMode = UI_String_Init(0,2,Graphic_Color_Purplish_red,25,3,1290,700,"VALVE_AUTO:");
-    string_armPump = UI_String_Init(0,2,Graphic_Color_Purplish_red,25,3,195,770,"ARM_PUMP");
-    string_valvePump = UI_String_Init(0,2,Graphic_Color_Purplish_red,25,3,195,715,"VALVE_PUMP");
+    string_armPump = UI_String_Init(0,2,Graphic_Color_White,25,3,1090,465,"A");
+    string_valvePump = UI_String_Init(0,2,Graphic_Color_White,25,3,830,465,"V");
     
     string_BIGYAW = UI_String_Init(0,2,Graphic_Color_Main,15,3,540,285,"BIGYAW");
     string_MIDYAW = UI_String_Init(0,2,Graphic_Color_Main,15,3,540,255,"MIDYAW");
@@ -180,8 +178,10 @@ static void ui_reload(){
     //臂动作
     //todo:
     //气泵状态
-    number_pump_air_arm = UI_Graph_Init(GraphType_Number, 0, 5, Graphic_Color_White, 3, 426, 750, 15, 0);
-    number_pump_air_valve = UI_Graph_Init(GraphType_Number, 0, 5, Graphic_Color_White, 3, 426, 700, 15, 0);
+    SIGN_pumpArm = UI_Graph_Init(GraphType_Arc, 2, 1, Graphic_Color_White,10,870,540,220,100,50,80);
+    SIGN_pumpValve = UI_Graph_Init(GraphType_Arc, 2, 1, Graphic_Color_White,10,1050,540,40,100,50,80);
+    number_pump_air_arm = UI_Graph_Init(GraphType_Number, 0, 5, Graphic_Color_White, 3, 1190, 540, 25, 0);
+    number_pump_air_valve = UI_Graph_Init(GraphType_Number, 0, 5, Graphic_Color_White, 3, 730, 540, 25, 0);
 
     //装甲板
     Arc_armour_1 = UI_Graph_Init(GraphType_Arc, 3, 1, Graphic_Color_Main, armour_maker.width, armour_maker.pos_x, armour_maker.pos_y, 335, 50, armour_maker.dx, armour_maker.dy);
@@ -223,10 +223,6 @@ static void UI_operate(){
         UI_StateSwitchDetect_Graph(circle_visitonConnection, 2, UI_data_recv.vision_connection_mode_t, Graphic_Color_White, Graphic_Color_Green);
         // 自定义控制器连接 
         UI_StateSwitchDetect_Graph(circle_customControConnection, 2, UI_data_recv.custom_contro_connection_mode_t, Graphic_Color_White, Graphic_Color_Green);
-        // 臂气泵
-        UI_StateSwitchDetect_Graph(circle_pumpArm, 2, UI_data_recv.pump_arm_mode_t, Graphic_Color_White, Graphic_Color_Green);
-        // 推杆气泵
-        UI_StateSwitchDetect_Graph(circle_pumpValve, 2, UI_data_recv.pump_valve_mode_t, Graphic_Color_White, Graphic_Color_Green);
         // 臂模式
         UI_StateSwitchDetect_Graph(circle_armAutoMode, 3, UI_data_recv.arm_mode, Graphic_Color_White, Graphic_Color_Green, Graphic_Color_Yellow);
         // 推杆模式
@@ -234,6 +230,11 @@ static void UI_operate(){
         // 气路气压值
         number_pump_air_arm->param.Number.value = UI_data_recv.pump_air_arm;
         number_pump_air_valve->param.Number.value = UI_data_recv.pump_air_valve;
+        UI_StateSwitchDetect_Graph(number_pump_air_arm, 2, UI_data_recv.pump_air_arm<-300, Graphic_Color_White, Graphic_Color_Green);
+        UI_StateSwitchDetect_Graph(number_pump_air_valve, 2, UI_data_recv.pump_air_valve<-300, Graphic_Color_White, Graphic_Color_Green);
+        // 气泵
+        UI_StateSwitchDetect_Graph(SIGN_pumpArm, 3, UI_data_recv.pump_arm_mode_t+UI_data_recv.pump_air_arm<-300, Graphic_Color_White, Graphic_Color_Green, Graphic_Color_Purplish_red);
+        UI_StateSwitchDetect_Graph(SIGN_pumpValve, 3, UI_data_recv.pump_valve_mode_t+UI_data_recv.pump_air_valve<-300, Graphic_Color_White, Graphic_Color_Green, Graphic_Color_Purplish_red);
     }
     {
         // 控制模式

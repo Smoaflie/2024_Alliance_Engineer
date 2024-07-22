@@ -91,7 +91,16 @@ uint8_t MonitorArmAutoRequest(const ARM_AUTO_MODE_* auto_mode, uint16_t selected
         memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
         auto_mode_step_id[mode_id] = current_auto_mode_step_id;
         step = &auto_mode->auto_mode_step[auto_mode_step_id[mode_id]];
-        {
+        {   
+
+            //在进行第一步时，先达到指定高度(±30cm)再移动臂
+            if(auto_mode_step_id[mode_id] == 0 && fabsf(step->height-arm_current_data_p->height) >= 30 && !(step->setting.setting_total&(height_offset_+height_range_))){
+                arm_auto_mode_data.height        = step->setting.height_offset ? arm_current_data_p->height+step->height :   step->height;
+                arm_height_outtime = step->delay_time;
+                (*Arm_goto_target_position_flag_p) |= Arm_height_ramp_flag;
+                return 1;
+            }
+
             arm_auto_mode_data.big_yaw_angle = step->setting.bigyaw_offset ? arm_current_data_p->big_yaw_angle+step->bigyaw : step->bigyaw;
             arm_auto_mode_data.mid_yaw_angle = step->setting.midyaw_offset ? arm_current_data_p->mid_yaw_angle+step->midyaw : step->midyaw;
             arm_auto_mode_data.assorted_yaw_angle = step->setting.assortedyaw_offset ? arm_current_data_p->assorted_yaw_angle+step->assortedyaw : step->assortedyaw;
@@ -114,7 +123,7 @@ uint8_t MonitorArmAutoRequest(const ARM_AUTO_MODE_* auto_mode, uint16_t selected
             else if(step->setting.valve_pump & 0x02) airpump_linear_state = 0;
             if(step->setting.airvalve_state & 0x03) arm_data_send_p->arm_to_airvalve = AIRVALVE_CLAW_LOOSE;
             else if(step->setting.airvalve_state & 0x04) arm_data_send_p->arm_to_airvalve = AIRVALVE_CLAW_TIGHTEN;
-            // if(step->setting.roll_rotate)    ArmTailRollOffset(step->delay_time, step->reserved);
+            if(step->setting.roll_rotate)    ArmTailRollOffset(step->delay_time, step->reserved);
         }
         auto_mode_step_id[mode_id]++;
         if(auto_mode_step_id[mode_id] == 1 && auto_mode->step != 1)    return 1;
@@ -223,7 +232,7 @@ const ARM_AUTO_MODE_ Arm_get_goldcube_right_func = {
 // };
 
 const AUTO_MODE_STEP_ Arm_ConvertCube_step[] = {
-    {{.setting_total = height_offset_ | arm_offset_},  2000, -60,      0,      0,      0,      0,    0},
+    {{.setting_total = height_offset_ },  2000, -80,      0,      0,      0,      0,    0},
 };
 const ARM_AUTO_MODE_ Arm_ConvertCube_func = {
     .auto_mode_step = Arm_ConvertCube_step,
@@ -240,10 +249,32 @@ const ARM_AUTO_MODE_ Arm_fetch_gronded_cube_func = {
     .step = 1
 };
 
+const AUTO_MODE_STEP_ Arm_straighten_step[] = {
+    {{.setting_total = height_offset_},  1500,0,0,0,0,0,0},
+};
+const ARM_AUTO_MODE_ Arm_straighten_func = {
+    .auto_mode_step = Arm_straighten_step,
+    .id =  Arm_straighten,
+    .step = 1
+};
+
+const AUTO_MODE_STEP_ Recycle_arm_out_step[] = {
+    {{.setting_total = arm_offset_ | height_offset_},  1000,0,0,0,0,0,30},
+    {{.setting_total = arm_offset_ | height_offset_},  2000,-19,0,0,0,0,0},
+    {{.setting_total = arm_offset_ | height_offset_},  1000,0,0,0,0,0,50},
+    {{.setting_total = arm_offset_ | height_offset_},  2000,-20,-60,3,0,0,0},
+    {{.setting_total = arm_offset_ | height_offset_},  1000,0,0,0,0,0,300},
+};
+const ARM_AUTO_MODE_ Recycle_arm_out_func = {
+    .auto_mode_step = Recycle_arm_out_step,
+    .id =  Recycle_arm_out,
+    .step = 5
+};
+
 const AUTO_MODE_STEP_ Arm_walk_state_step[] = {
     {{.setting_total = arm_offset_ | height_setting},  2000,0,0,0,0, 0, 0},
-    {{.setting_total = height_offset_},  2000,78.4501648,-88.2345581,-78.833313,0, 90.5, 0},
-    {{.setting_total = 0},  2000,78.4501648,-88.2345581,-78.833313,0, 90.5, -97},
+    {{.setting_total = height_offset_},  2000,0,-100.68,-58.29,9.847, 90.5, 0},
+    {{.setting_total = 0},  2000,0,-84,-80,13, 90.5, -481.277954},
 };
 const ARM_AUTO_MODE_ Arm_walk_state_func = {
     .auto_mode_step = Arm_walk_state_step,
