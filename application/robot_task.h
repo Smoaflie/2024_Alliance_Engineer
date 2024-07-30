@@ -51,7 +51,6 @@ void _cmdTASK(void *argument)
     while (1) {
         RobotCMDTask();
 
-        HAL_IWDG_Refresh(&hiwdg1);
         osDelay(1);
     }
 }
@@ -101,6 +100,7 @@ void _motorTASK(void *argument)
     UNUSED(argument);
     osDelay(300);
     while (1) {
+        HAL_IWDG_Refresh(&hiwdg1);
         MotorControlTask();
         osDelay(1);
     }

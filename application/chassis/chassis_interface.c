@@ -77,7 +77,7 @@ void ChassisInit_Motor()
             },
         },
         .controller_setting_init_config = {
-            // .feedforward_flag      = CURRENT_FEEDFORWARD,
+            .feedforward_flag      = CURRENT_FEEDFORWARD,
             .angle_feedback_source = MOTOR_FEED,
             .speed_feedback_source = MOTOR_FEED,
             .outer_loop_type       = SPEED_LOOP,
@@ -113,7 +113,7 @@ void ChassisInit_Motor()
                           .Kd            = 10,    // 0
                           .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
                           .IntegralLimit = 0,
-                          .MaxOut        = 40000,
+                          .MaxOut        = 20000,
                       };
     chassis_follow_pid  = PIDRegister(&chassis_follow_pid_config);
 }
@@ -157,21 +157,23 @@ static void update_chassis_velocity(float* chassis_v, float current_chassis_v, f
 void MecanumCalculate()
 {
     //根据当前速度对目标速度进行限制
-    static float limit_add_speed_x = 10000;
-    static float limit_add_speed_x_stop = 3000;
-    static float limit_add_speed_y = 10000;
-    static float limit_add_speed_y_stop = 3000;
+    static float limit_add_speed_x,limit_add_speed_x_stop,limit_add_speed_y,limit_add_speed_y_stop;
+    static float limit_add_speed_x_v[2] = {4000,2200};
+    static float limit_add_speed_y_v[2] = {15000, 2200};
+    static float limit_add_speed_x_stop_v[2] = {2000,900};
+    static float limit_add_speed_y_stop_v[2] = {3000,900};
+
     if(chassis_cmd_recv.chassis_mode != CHASSIS_ROTATE){
-        if(chassis_cmd_recv.arm_height <= -240){
-            limit_add_speed_x = 20000;
-            limit_add_speed_y = 20000;
-            limit_add_speed_x_stop = 3000;
-            limit_add_speed_y_stop = 3000;
+        if(chassis_cmd_recv.arm_height <= -490){
+            limit_add_speed_x = limit_add_speed_x_v[0];
+            limit_add_speed_y = limit_add_speed_y_v[0];
+            limit_add_speed_x_stop = limit_add_speed_x_stop_v[0];
+            limit_add_speed_y_stop = limit_add_speed_y_stop_v[0];
         }else{
-            limit_add_speed_x = 3000;
-            limit_add_speed_y = 5000;
-            limit_add_speed_x_stop = 1100;
-            limit_add_speed_y_stop = 1100;
+            limit_add_speed_x = limit_add_speed_x_v[1];
+            limit_add_speed_y = limit_add_speed_y_v[1];
+            limit_add_speed_x_stop = limit_add_speed_x_stop_v[1];
+            limit_add_speed_y_stop = limit_add_speed_y_stop_v[1];
         }
         update_chassis_velocity(&chassis_vx,current_chassis_vx,limit_add_speed_x,limit_add_speed_x_stop);
         update_chassis_velocity(&chassis_vy,current_chassis_vy,limit_add_speed_y,limit_add_speed_y_stop);
@@ -183,16 +185,18 @@ void MecanumCalculate()
         VAL_LIMIT(chassis_vx, -chassis_speed*sinf(chassis_speed_rad), chassis_speed*sinf(chassis_speed_rad));
         VAL_LIMIT(chassis_vy, -chassis_speed*cosf(chassis_speed_rad), chassis_speed*cosf(chassis_speed_rad));
 
-        static float kp = 1.5;
-        static uint8_t current_feedforward_chassis = 0x01;
-        current_feedforward_lb = current_feedforward_chassis&0x01 ? (chassis_vx - chassis_vy) * kp : 0; 
-        // current_feedforward_lb = current_feedforward_chassis&0x01 ? current_chassis_vy * kp : 0; 
-        current_feedforward_lf = current_feedforward_chassis&0x02 ? -current_chassis_vy * kp : 0; 
-        current_feedforward_rb = current_feedforward_chassis&0x04 ? current_chassis_vy * kp : 0; 
-        current_feedforward_rf = current_feedforward_chassis&0x08 ? -current_chassis_vy * kp : 0;
+        static float kp = -2;
+        static uint8_t current_feedforward_chassis = 0x0f;
+        if(fabsf(current_chassis_vx)<3000)  current_feedforward_chassis = 0x0f;
+        else current_feedforward_chassis = 0x00;
+
+        current_feedforward_lb = current_feedforward_chassis&0x01 ? chassis_vx * kp : 0; 
+        current_feedforward_lf = current_feedforward_chassis&0x02 ? -chassis_vx * kp : 0; 
+        current_feedforward_rb = current_feedforward_chassis&0x04 ? chassis_vx * kp : 0; 
+        current_feedforward_rf = current_feedforward_chassis&0x08 ? -chassis_vx * kp : 0;
     }else{
         float chassis_rotate_speed_max = 20000;
-        float chassis_speed_max = (chassis_max_speed-chassis_rotate_speed_max)/2*sqrtf(2.0f);
+        float chassis_speed_max = (chassis_max_speed-chassis_rotate_speed_max*1.5)/2*sqrtf(2.0f);
         float chassis_speed = sqrtf(powf(chassis_vx,2) + powf(chassis_vy,2));
         float chassis_speed_rad = asinf(chassis_speed/chassis_vx);
         VAL_LIMIT(chassis_speed, -chassis_speed_max, chassis_speed_max);
@@ -203,7 +207,7 @@ void MecanumCalculate()
         else
             VAL_LIMIT(chassis_cmd_recv.wz,chassis_rotate_speed_max, chassis_max_speed-(fabsf(chassis_vx)+fabsf(chassis_vy)));
         
-        static float kp = 1.5;
+        static float kp = -1.5;
         static uint8_t current_feedforward_chassis = 0x00;
         current_feedforward_lb = current_feedforward_chassis&0x01 ? (chassis_vx - chassis_vy) * kp : 0; 
         current_feedforward_lf = current_feedforward_chassis&0x02 ? (-chassis_vx - chassis_vy) * kp : 0; 
@@ -224,14 +228,14 @@ void MecanumCalculate()
     UI_debug_value[0] = chassis_vx;
     UI_debug_value[1] = chassis_vy;
     UI_debug_value[2] = chassis_cmd_recv.wz;
-    UI_debug_value[3] =  vt_lf;
-    UI_debug_value[4] = vt_rf;
-    UI_debug_value[5] = vt_rb;
-    UI_debug_value[6] = vt_lb;
-    // UI_debug_value[3] =  motor_lf->measure.speed_aps;
-    // UI_debug_value[4] = motor_rf->measure.speed_aps;
-    // UI_debug_value[5] = motor_rb->measure.speed_aps;
-    // UI_debug_value[6] = motor_lb->measure.speed_aps;
+    // UI_debug_value[3] =  vt_lf;
+    // UI_debug_value[4] = vt_rf;
+    // UI_debug_value[5] = vt_rb;
+    // UI_debug_value[6] = vt_lb;
+    UI_debug_value[3] =  motor_lf->measure.speed_aps;
+    UI_debug_value[4] = motor_rf->measure.speed_aps;
+    UI_debug_value[5] = motor_rb->measure.speed_aps;
+    UI_debug_value[6] = motor_lb->measure.speed_aps;
 }
 
 /**
@@ -295,7 +299,12 @@ void SpecialFuncApply(){
 
 void ChassisSubMessage()
 {
-    while(!SubGetMessage(chassis_sub, &chassis_cmd_recv));
+    while(!SubGetMessage(chassis_sub, &chassis_cmd_recv)){
+        DJIMotorStop(motor_lf);
+        DJIMotorStop(motor_rf);
+        DJIMotorStop(motor_lb);
+        DJIMotorStop(motor_rb);
+    }
 }
 void ChassisGetCurrentSpeed()
 {
@@ -326,7 +335,7 @@ void ChassisModeSelect()
         DJIMotorEnable(motor_rb);
     }
 
-    if(chassis_cmd_recv.arm_height <= -240)
+    if(chassis_cmd_recv.arm_height <= -490)
         chassis_follow_pid->MaxOut = 40000;
     else
         chassis_follow_pid->MaxOut = 20000;
@@ -355,13 +364,17 @@ void ChassisModeSelect()
             // VAL_LIMIT(chassis_cmd_recv.wz,-8000,8000);
             break;
         case CHASSIS_ROTATE: // 自旋,同时保持全向机动；
-            static uint16_t mode_selected_cnt=0,mode_selected = 0;
-            if(mode_selected_cnt++ > 600)  {mode_selected = rand()%2;mode_selected_cnt=0;}
+            if(chassis_cmd_recv.vx > 40000 || chassis_cmd_recv.vy > 40000)
+                chassis_cmd_recv.wz = PIDCalculate(chassis_follow_pid,0,-chassis_cmd_recv.offset_angle);
+            else{
+                static uint16_t mode_selected_cnt=0,mode_selected = 0;
+                if(mode_selected_cnt++ > 600)  {mode_selected = rand()%2;mode_selected_cnt=0;}
 
-            if(chassis_cmd_recv.arm_height <= -240)
-                chassis_cmd_recv.wz = 40000 + 10000*mode_selected;
-            else
-                chassis_cmd_recv.wz = 20000 + 5000*mode_selected;
+                if(chassis_cmd_recv.arm_height <= -240)
+                    chassis_cmd_recv.wz = 40000 + 10000*mode_selected;
+                else
+                    chassis_cmd_recv.wz = 20000 + 5000*mode_selected;
+            }                
             break;
         default:
             break;

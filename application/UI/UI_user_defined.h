@@ -126,10 +126,10 @@ void UserDefinedUI_init(){
     debug_ui_union.graph.graph_width = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1030, 225, 15, user_defined_ui[user_defined_ui_idx_pointer]->width);
     debug_ui_union.graph.graph_pos_x = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1030, 195, 15, user_defined_ui[user_defined_ui_idx_pointer]->pos_x);
     debug_ui_union.graph.graph_pos_y = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1030, 165, 15, user_defined_ui[user_defined_ui_idx_pointer]->pos_y);
-    debug_ui_union.graph.graph_param1 = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1030, 135, 15, user_defined_ui[user_defined_ui_idx_pointer]->param.param_1);
-    debug_ui_union.graph.graph_param2 = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1030, 105, 15, user_defined_ui[user_defined_ui_idx_pointer]->param.param_2);
-    debug_ui_union.graph.graph_param3 = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1030, 75, 15, user_defined_ui[user_defined_ui_idx_pointer]->param.param_3);
-    debug_ui_union.graph.graph_param4 = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1030, 45, 15, user_defined_ui[user_defined_ui_idx_pointer]->param.param_4);
+    debug_ui_union.graph.graph_param1 = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1075, 135, 15, user_defined_ui[user_defined_ui_idx_pointer]->param.param_1);
+    debug_ui_union.graph.graph_param2 = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1075, 105, 15, user_defined_ui[user_defined_ui_idx_pointer]->param.param_2);
+    debug_ui_union.graph.graph_param3 = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1075, 75, 15, user_defined_ui[user_defined_ui_idx_pointer]->param.param_3);
+    debug_ui_union.graph.graph_param4 = UI_Graph_Init(GraphType_Number, 0, 0, Graphic_Color_Pink, 3, 1075, 45, 15, user_defined_ui[user_defined_ui_idx_pointer]->param.param_4);
     debug_ui_union.graph.graph_saveSign = UI_Graph_Init(GraphType_Round, 0, 0, Graphic_Color_White, 3, 1030, 315, 5);
 
     UserDefinedUI_UNDISPLAY();

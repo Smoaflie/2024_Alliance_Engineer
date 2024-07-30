@@ -131,7 +131,9 @@ void GimbalInit_Param()
 
 void GimbalSubMessage()
 {
-    while(!SubGetMessage(gimbal_sub, &gimbal_cmd_recv));
+    while(!SubGetMessage(gimbal_sub, &gimbal_cmd_recv)){
+        DJIMotorStop(gimbal_yaw_motor);
+    }
 }
 void GimbalParamPretreatment()
 {

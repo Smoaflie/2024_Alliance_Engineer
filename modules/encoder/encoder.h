@@ -66,5 +66,6 @@ typedef struct
 
 // 编码器初始化,返回一个编码器实例
 EncoderInstance_s *EncoderInit(Encoder_Init_Config_s *config);
-
+// 检测编码器在线状态
+uint8_t isEncoderOnline(EncoderInstance_s *encoder);
 #endif

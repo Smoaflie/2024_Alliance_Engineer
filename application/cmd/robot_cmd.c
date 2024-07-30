@@ -12,7 +12,7 @@ void RobotCMDInit()
 /* 机器人核心控制任务,200Hz频率运行(必须高于视觉发送频率) */
 void RobotCMDTask()
 {
-    // RobotActive();
+    RobotActive();
     RobotCMDSubMessage();
 
     RobotCMDParamPretreatment();

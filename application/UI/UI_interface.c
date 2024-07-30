@@ -50,7 +50,7 @@ uint8_t UI_Graph_Setting(UI_GRAPH_INSTANCE *instance, RefreshMode_ mode){
             UIFloatDraw(&graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->param.Float.size, instance->param.Float.digit, instance->width, instance->pos_x, instance->pos_y, value);break;
         case GraphType_Ray:
             uint32_t Ray_start_x = instance->pos_x - instance->param.Ray.offcenter_lenth*sinf(instance->param.Ray.rotate_angle*DEGREE_2_RAD);
-            uint32_t Ray_start_y = instance->pos_y - instance->param.Ray.offcenter_lenth*cosf(instance->param.Ray.rotate_angle*DEGREE_2_RAD);
+            uint32_t Ray_start_y = instance->pos_y + instance->param.Ray.offcenter_lenth*cosf(instance->param.Ray.rotate_angle*DEGREE_2_RAD);
             uint32_t Ray_end_x = instance->pos_x - (instance->param.Ray.offcenter_lenth+instance->param.Ray.line_length)*sinf(instance->param.Ray.rotate_angle*DEGREE_2_RAD);
             uint32_t Ray_end_y = instance->pos_y + (instance->param.Ray.offcenter_lenth+instance->param.Ray.line_length)*cosf(instance->param.Ray.rotate_angle*DEGREE_2_RAD);
             UILineDraw(&graph_t, instance->graphic_name, Graph_Operate, instance->layer, instance->color, instance->width, Ray_start_x, Ray_start_y, Ray_end_x, Ray_end_y);break;
@@ -205,8 +205,13 @@ UI_STRING_INSTANCE* UI_String_Init(
 }
 
 
-
 void UI_Graph_Refresh(){
+    //遍历所有UI字符串实例
+    for(int i = 0; i<graph_idx_total; i++){
+        graph_instance[i]->refresh_call = 1;
+    }
+}
+void UI_Graph_Update(){
     //按优先级遍历所有UI图形实例，填入发送缓冲区
     Graph_Data_t UI_Graph_send_buf[7] = {0};
     static uint8_t UI_Graph_send_buf_cnt = 0; //缓冲区内已有图形数
@@ -216,21 +221,27 @@ void UI_Graph_Refresh(){
 
             if(graph_instance_group[i][j]->init_call && !graph_instance_group[i][j]->active_flag){
                 graph_instance_group[i][j]->init_call = 0;
+                graph_instance_group[i][j]->delete_call = 0;
                 UI_Graph_Setting(graph_instance_group[i][j], RefreshMode_ADD);
                 graph_instance_group[i][j]->active_flag = 1;
                 graph_instance_group[i][j]->send_flag = 1;
             }else if(graph_instance_group[i][j]->delete_call && graph_instance_group[i][j]->active_flag){
+                graph_instance_group[i][j]->init_call = 0;
                 graph_instance_group[i][j]->delete_call = 0;
                 UI_Graph_Setting(graph_instance_group[i][j], RefreshMode_DELETE);
                 graph_instance_group[i][j]->active_flag = 0;
                 graph_instance_group[i][j]->send_flag = 1;
+            }else if(graph_instance_group[i][j]->refresh_call){
+                graph_instance_group[i][j]->refresh_call = 0;
+                if(UI_Graph_Setting(graph_instance_group[i][j], graph_instance_group[i][j]->active_flag?RefreshMode_ADD:RefreshMode_DELETE))
+                    graph_instance_group[i][j]->send_flag = 1;
             }else if(graph_instance_group[i][j]->active_flag){
                 if(UI_Graph_Setting(graph_instance_group[i][j], RefreshMode_CHANGE))    graph_instance_group[i][j]->send_flag = 1;
             }
 
             if(graph_instance_group[i][j]->send_flag && --graph_instance_group[i][j]->delay<=0){
                 graph_instance_group[i][j]->send_flag = 0;
-                graph_instance_group[i][j]->delay = UI_Graph_Refresh_freq;
+                graph_instance_group[i][j]->delay = UI_Graph_Update_freq;
                 UI_Graph_send_buf[UI_Graph_send_buf_cnt++] = graph_instance_group[i][j]->graph;
                 if(UI_Graph_send_buf_cnt==7){
                     UI_Graph_send_buf_cnt = 0;
@@ -242,21 +253,24 @@ void UI_Graph_Refresh(){
         }
     }
     while(UI_Graph_send_buf_cnt < 7){
-        if(graph_instance[idle_refresh_idx]->active_flag==0)    {idle_refresh_idx++;continue;}
-        UI_Graph_Setting(graph_instance[idle_refresh_idx], RefreshMode_ADD);
+        UI_Graph_Setting(graph_instance[idle_refresh_idx], graph_instance[idle_refresh_idx]->active_flag?RefreshMode_ADD:RefreshMode_DELETE);
         UI_Graph_send_buf[UI_Graph_send_buf_cnt++] = graph_instance[idle_refresh_idx]->graph;
-        idle_refresh_idx++;
-        idle_refresh_idx %= graph_idx_total;
+        idle_refresh_idx++;idle_refresh_idx%=graph_idx_total;
     }
     UI_Graph_send_buf_cnt = 0;
     UIGraphRefresh(&referee_data->referee_id, 7, UI_Graph_send_buf[0], UI_Graph_send_buf[1], UI_Graph_send_buf[2], UI_Graph_send_buf[3], UI_Graph_send_buf[4], UI_Graph_send_buf[5], UI_Graph_send_buf[6]);
 }
 
 void UI_String_Refresh(){
+    //遍历所有UI字符串实例
+    for(int i = 0; i<string_idx_total; i++){
+        string_instance[i]->refresh_call = 1;
+    }
+}
+void UI_String_Update(){
     //按优先级遍历所有UI字符串实例
     for(int i = UI_String_PRIORITY_LEVEL-1; i >= 0; i--){
-        for(int j = 0; j < string_idx_priority[i]; j++){
-
+        for(int j = 0; j < string_idx_priority[i]; j++){    
             if(string_instance_group[i][j]->init_call && !string_instance_group[i][j]->active_flag){
                 string_instance_group[i][j]->init_call = 0;
                 UI_String_Setting(string_instance_group[i][j], RefreshMode_ADD);
@@ -267,6 +281,10 @@ void UI_String_Refresh(){
                 UI_String_Setting(string_instance_group[i][j], RefreshMode_DELETE);
                 string_instance_group[i][j]->active_flag = 0;
                 string_instance_group[i][j]->send_flag = 1;
+            }else if(string_instance_group[i][j]->refresh_call){
+                string_instance_group[i][j]->refresh_call = 0;
+                if(UI_String_Setting(string_instance_group[i][j], string_instance_group[i][j]->active_flag?RefreshMode_ADD:RefreshMode_DELETE))
+                    string_instance_group[i][j]->send_flag = 1;
             }else if(string_instance_group[i][j]->active_flag){
                 if(UI_String_Setting(string_instance_group[i][j], RefreshMode_CHANGE))
                     string_instance_group[i][j]->send_flag = 1;
@@ -274,7 +292,7 @@ void UI_String_Refresh(){
 
             if(string_instance_group[i][j]->send_flag && --string_instance_group[i][j]->delay<=0){
                 string_instance_group[i][j]->send_flag = 0;
-                string_instance_group[i][j]->delay = UI_String_Refresh_freq;
+                string_instance_group[i][j]->delay = UI_String_Update_freq;
                 UICharRefresh(&referee_data->referee_id, string_instance_group[i][j]->string);
                 return;
             }
@@ -339,6 +357,12 @@ void UI_BatchEnable_Graph(uint8_t cnt, ...){
     }
     va_end(ap);
 }
+void UI_DisableAll_Graph(){
+    for(int i=0; i<graph_idx_total; i++){
+        graph_instance[i]->init_call = 0;
+        graph_instance[i]->delete_call = 1;
+    }
+}
 void UI_BatchDisable_Graph(uint8_t cnt, ...){
     UI_GRAPH_INSTANCE* graph;
     va_list ap;		   // 创建一个 va_list 类型变量
@@ -349,6 +373,12 @@ void UI_BatchDisable_Graph(uint8_t cnt, ...){
         graph->delete_call = 1;
     }
     va_end(ap);
+}
+void UI_DisableAll_String(){
+    for(int i=0; i<string_idx_total; i++){
+        string_instance[i]->init_call = 0;
+        string_instance[i]->delete_call = 1;
+    }
 }
 void UI_BatchDisable_String(uint8_t cnt, ...){
     UI_STRING_INSTANCE* string_;

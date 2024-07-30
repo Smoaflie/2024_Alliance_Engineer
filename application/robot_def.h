@@ -226,6 +226,23 @@ typedef struct {
     float tail_motor_angle;
     float height;
 } arm_controller_data_s;
+typedef struct {
+    struct{
+        uint8_t bigyaw : 1;
+        uint8_t midyaw : 1;
+        uint8_t assortedyaw : 1;
+        uint8_t assortedroll : 1;
+        uint8_t tail : 1;
+        uint8_t height : 1;
+    }motor_state;
+
+    struct{
+        uint8_t bigyaw : 1;
+        uint8_t assortedyaw : 1;
+        uint8_t assortedroll : 1;
+        uint8_t tail : 1;
+    }encoder_state;
+}_joint_state;
 typedef struct{
     arm_controller_data_s current_data;
     arm_controller_data_s target_data;
@@ -236,6 +253,8 @@ typedef struct{
 
     uint8_t auto_mode_state;
     uint8_t arm_auto_mode_selecting;
+
+    _joint_state joint_state;
 }Arm_Data_s;
 
 typedef struct{
@@ -251,6 +270,8 @@ typedef struct{
     arm_mode_e contro_mode; // 臂臂控制模式
     uint8_t auto_mode; // 臂臂自动模式
 
+    uint8_t convertArmControlByController; //兑矿模式下使用遥控器控制臂
+
     struct{
         uint8_t optimize_signal : 2; // 优化信号（修正臂的yaw偏向和混合roll角度）
         uint8_t switch_custom_controller_mode_call : 1; //切换自定义控制器模式
@@ -260,13 +281,14 @@ typedef struct{
         uint8_t reset_init_flag : 1; // 软复位标志
         uint8_t reset_z_init_flag : 1; // z轴重置标定
         uint8_t z_slowly_down_call : 1; // z轴缓慢下降命令
+        uint8_t reset_convertArmPose_call : 1; //兑矿模式下重置臂姿态
     }call;
 
     struct{
         uint8_t reset_encoder_offset_value  : 1;
         uint8_t selected_encoder_id         : 3;
         int8_t modify_encoder_offset_value[4];
-        uint8_t selected_auto_mode_id       : 4;
+        uint8_t selected_auto_mode_id       : 8;
         uint8_t auto_mode_record_pause_call : 1;
         uint8_t auto_mode_record_start_call : 1;
         
@@ -296,6 +318,7 @@ typedef struct{
 
     uint8_t in_debug_call;
     uint8_t out_debug_call;
+    uint8_t debug_call;
 }Airpump_Cmd_Data_s;
 typedef struct{
     int8_t debug_flag : 1; //debug模式
@@ -323,34 +346,35 @@ typedef struct{
 
 typedef struct
 { 
-    int rc_connection_mode_t : 1;    //遥控器连接
-    int vision_connection_mode_t : 1;    //图传连接
-    int custom_contro_connection_mode_t : 1;    //自定义控制器连接
-    int pump_arm_mode_t : 1;    //臂气泵
-    int pump_valve_mode_t : 1;    //推杆气泵
-    int arm_mode : 3;   //臂状态圈 0-无动作 1-进行中 2-暂停
-    int valve_mode : 3; //推杆状态圈 0-无动作 1-进行中 2-暂停
+    uint8_t rc_connection_mode_t : 1;    //遥控器连接
+    uint8_t vision_connection_mode_t : 1;    //图传连接
+    uint8_t custom_contro_connection_mode_t : 1;    //自定义控制器连接
+    uint8_t pump_arm_mode_t : 1;    //臂气泵
+    uint8_t pump_valve_mode_t : 1;    //推杆气泵
+    uint8_t arm_mode : 3;   //臂状态圈 0-无动作 1-进行中 2-暂停
+    uint8_t valve_mode : 3; //推杆状态圈 0-无动作 1-进行中 2-暂停
 
-    int Contro_mode; //控制模式
-    int arm_selected_mode;
-    int arm_selected_mode_state : 1; // 0表示当前模式(运行/暂停中)，1为选中(待确认后覆盖当前模式)
-    int valve_selected_mode;
-    int valve_selected_mode_state : 1; // 0表示当前模式(运行/暂停中)，1为选中(待确认后覆盖当前模式)
+    uint8_t Contro_mode; //控制模式
+    uint8_t arm_selected_mode;
+    uint8_t arm_selected_mode_state : 1; // 0表示当前模式(运行/暂停中)，1为选中(待确认后覆盖当前模式)
+    uint8_t valve_selected_mode;
+    uint8_t valve_selected_mode_state : 1; // 0表示当前模式(运行/暂停中)，1为选中(待确认后覆盖当前模式)
     
-    int arm_temp_halt_selected : 1;
-    int valve_temp_halt_selected : 1;
+    uint8_t arm_temp_halt_selected : 1;
+    uint8_t valve_halt_selected : 1;
 
-    int relay_contr_state : 1; //臂继电器状态
-
+    uint8_t relay_contr_state : 1; //臂继电器状态
     float gimbal_offset_angle;
     arm_controller_data_s arm_current_data;
     arm_controller_data_s arm_target_data;
 
     int16_t pump_air_arm;
     int16_t pump_air_valve;
+    uint8_t selected_song;
 
     uint8_t UI_refresh_request;
-
+    _joint_state joint_state;
+    
     UI_debug_param debug;
 }UI_data_t;
 
@@ -371,11 +395,13 @@ typedef struct
 #define Arm_get_silvercube_right 9// 取小资源岛右侧矿
 #define Arm_fetch_gronded_cube 10 // 取地矿姿势
 #define Arm_ConvertCube 11 // 兑矿模式
-#define Arm_straighten 12 // 自动记录模式
-#define Arm_record1_auto_mode 12 // 自动记录模式
-#define Arm_record2_auto_mode 13 // 自动记录模式
-#define Arm_record3_auto_mode 14 // 自动记录模式
-#define Arm_record4_auto_mode 15 // 自动记录模式
+#define Arm_straighten 12 // 臂伸直
+#define Arm_block_front 13 // 挡前装甲板
+#define Arm_block_side 14 // 挡侧装甲板
+#define Arm_block_back 15 // 挡后装甲板
+#define Arm_place_cube_in_warehouse_up 16 // 放上矿仓
+#define Arm_place_cube_in_warehouse_down 17 // 放下矿仓
+#define Arm_straighten_ConvertMode 18 // 兑矿模式下伸直臂
 // 臂臂控制模式
 #define Arm_Control_with_Chassis 1// 控制底盘臂臂
 #define Arm_Control_only_Arm     2// 仅控制臂臂

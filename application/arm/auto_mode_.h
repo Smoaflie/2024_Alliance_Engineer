@@ -39,7 +39,7 @@ typedef struct{
 struct Arm_Data_s;
 struct arm_controller_data_s;
 
-#define AUTO_MODE_IDX 13
+#define AUTO_MODE_IDX 18
 #define arm_offset_   0x001F
 #define arm_setting   0x0000
 #define height_offset_ 0x0020
@@ -75,6 +75,7 @@ static void ArmTailRollOffset(int32_t outtime, float offset_angle);
         [in]selected_mode 选中的模式
     return:[out]code    0:未执行(id不匹配),1:开始执行,2:执行中,3:执行结束
 */
+// static float get_target_speed(float current_v, float length, max_v)
 uint8_t MonitorArmAutoRequest(const ARM_AUTO_MODE_* auto_mode, uint16_t selected_mode){
     uint16_t mode_id = auto_mode->id;
     uint16_t selected_mode_id = selected_mode;
@@ -91,9 +92,10 @@ uint8_t MonitorArmAutoRequest(const ARM_AUTO_MODE_* auto_mode, uint16_t selected
         memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
         auto_mode_step_id[mode_id] = current_auto_mode_step_id;
         step = &auto_mode->auto_mode_step[auto_mode_step_id[mode_id]];
+        /* 根据配置读取目标位置 */
         {   
-
             //在进行第一步时，先达到指定高度(±30cm)再移动臂
+                //臂先移到无障碍物的高度->变换成动作初始姿态->执行动作
             if(auto_mode_step_id[mode_id] == 0 && fabsf(step->height-arm_current_data_p->height) >= 30 && !(step->setting.setting_total&(height_offset_+height_range_))){
                 arm_auto_mode_data.height        = step->setting.height_offset ? arm_current_data_p->height+step->height :   step->height;
                 arm_height_outtime = step->delay_time;
@@ -121,10 +123,20 @@ uint8_t MonitorArmAutoRequest(const ARM_AUTO_MODE_* auto_mode, uint16_t selected
             else if(step->setting.arm_pump & 0x02)   airpump_arm_state = 0;
             if(step->setting.valve_pump & 0x01)  airpump_linear_state = 1;
             else if(step->setting.valve_pump & 0x02) airpump_linear_state = 0;
-            if(step->setting.airvalve_state & 0x03) arm_data_send_p->arm_to_airvalve = AIRVALVE_CLAW_LOOSE;
-            else if(step->setting.airvalve_state & 0x04) arm_data_send_p->arm_to_airvalve = AIRVALVE_CLAW_TIGHTEN;
+            if(step->setting.airvalve_state == 3) arm_data_send_p->arm_to_airvalve = AIRVALVE_CLAW_LOOSE;
+            else if(step->setting.airvalve_state == 4) arm_data_send_p->arm_to_airvalve = AIRVALVE_CLAW_TIGHTEN;
             if(step->setting.roll_rotate)    ArmTailRollOffset(step->delay_time, step->reserved);
         }
+        /* 根据目标位置设置关节速度 */
+        // {
+        //     float minimum_joint_speed = 20000;
+            
+        //     joint_target_speed.big_yaw = a b 
+        //     minimum_joint_speed = VAL_MIN(minimum_joint_speed,)
+        //     for(int i=0; i<5; i++){
+        //         joint_target_speed[i]
+        //     }
+        // }
         auto_mode_step_id[mode_id]++;
         if(auto_mode_step_id[mode_id] == 1 && auto_mode->step != 1)    return 1;
         if(auto_mode_step_id[mode_id] == auto_mode->step){
@@ -138,7 +150,7 @@ uint8_t MonitorArmAutoRequest(const ARM_AUTO_MODE_* auto_mode, uint16_t selected
     }
 }
 
-typedef struct{
+struct{
     AUTO_MODE_STEP_ Arm_get_goldcube_right_step[300];
     ARM_AUTO_MODE_ Arm_get_goldcube_right_func;
     AUTO_MODE_STEP_ Arm_fetch_cube_from_warehouse_up_step[100];
@@ -147,14 +159,23 @@ typedef struct{
     ARM_AUTO_MODE_ Arm_fetch_cube_from_warehouse_down_func;
     AUTO_MODE_STEP_ Arm_get_silvercube_left_step[100];
     ARM_AUTO_MODE_ Arm_get_silvercube_left_func;
-    AUTO_MODE_STEP_ Recycle_arm_in_step[70];
+    AUTO_MODE_STEP_ Recycle_arm_in_step[50];
     ARM_AUTO_MODE_ Recycle_arm_in_func;
-    AUTO_MODE_STEP_ Arm_get_silvercube_mid_step[100];
+    AUTO_MODE_STEP_ Arm_get_silvercube_mid_step[50];
     ARM_AUTO_MODE_ Arm_get_silvercube_mid_func;
-    AUTO_MODE_STEP_ Arm_get_silvercube_right_step[100];
+    AUTO_MODE_STEP_ Arm_get_silvercube_right_step[50];
     ARM_AUTO_MODE_ Arm_get_silvercube_right_func;
-}ARM_AUTO_MODE_DATA_s;
-static ARM_AUTO_MODE_DATA_s ARM_AUTO_MODE_DATA_;
+    AUTO_MODE_STEP_ Arm_block_front_step[30];
+    ARM_AUTO_MODE_ Arm_block_front_func;
+    AUTO_MODE_STEP_ Arm_block_side_step[30];
+    ARM_AUTO_MODE_ Arm_block_side_func;
+    AUTO_MODE_STEP_ Arm_block_back_step[30];
+    ARM_AUTO_MODE_ Arm_block_back_func;
+    AUTO_MODE_STEP_ Arm_place_cube_in_warehouse_up_step[50];
+    ARM_AUTO_MODE_ Arm_place_cube_in_warehouse_up_func;
+    AUTO_MODE_STEP_ Arm_place_cube_in_warehouse_down_step[50];
+    ARM_AUTO_MODE_ Arm_place_cube_in_warehouse_down_func;
+}ARM_AUTO_MODE_DATA_;
 
 const AUTO_MODE_STEP_ Arm_get_goldcube_right_step[] = {
     {{.setting_total = arm_offset_ | height_range_},  800, 0,      0,      0,      0,      0,    -224.54,   20},
@@ -181,58 +202,8 @@ const ARM_AUTO_MODE_ Arm_get_goldcube_right_func = {
     .step = 17
 };
 
-//todo z减速比变了，这里还没改
-// const AUTO_MODE_STEP_ Arm_fetch_cube_from_warehouse_up_step[] = {
-//     {{.setting_total = arm_offset_ | height_range_},  800, 0,      0,      0,      0,      0,    -20,   20},
-//     {{.setting_total = arm_setting | height_offset_}, 4000,39.6229019,87.8980637,50.4495468,0, 90.5},
-//     {{.setting_total = arm_offset_ | height_setting | func_delay_ | arm_pump_on_ | valve_loose_}, 1000, 0,      0,      0,      0,      0,    -100,   1000},
-//     {{.setting_total = arm_offset_ | height_setting}, 1000, 0,      0,      0,      0,      0,    0},
-//     {{.setting_total = arm_setting | height_offset_}, 2000,-80.4619751,87.8980637,50.4495468,0, 90.5},
-//     {{.setting_total = arm_setting | height_offset_}, 2000,-60,-80.4619751,-83.837616,0, 90.5},
-// };
-// const ARM_AUTO_MODE_ Arm_fetch_cube_from_warehouse_up_func = {
-//     .auto_mode_step = Arm_fetch_cube_from_warehouse_up_step,
-//     .id =  Arm_fetch_cube_from_warehouse_up,
-//     .step = 6
-// };
-
-// const AUTO_MODE_STEP_ Arm_fetch_cube_from_warehouse_down_step[] = {
-//     {{.setting_total = arm_offset_ | height_range_},  800, 0,      0,      0,      0,      0,    -80,   20},
-//     {{.setting_total = arm_setting | height_offset_}, 2000,-11.9717426,100.782181,34.6771965,0, 90.5},
-//     {{.setting_total = arm_offset_ | height_setting | func_delay_ | arm_pump_on_ | linear_pump_off_}, 1000, 0,      0,      0,      0,      0,    -220.332123,   1000},
-//     {{.setting_total = arm_offset_ | height_setting}, 600, 0,      0,      0,      0,      0,    0},
-//     {{.setting_total = arm_setting | height_offset_}, 2000,-60,-80.4619751,-83.837616,0, 90.5},
-// };
-// const ARM_AUTO_MODE_ Arm_fetch_cube_from_warehouse_down_func = {
-//     .auto_mode_step = Arm_fetch_cube_from_warehouse_down_step,
-//     .id =  Arm_fetch_cube_from_warehouse_down,
-//     .step = 5
-// };
-
-// const AUTO_MODE_STEP_ Arm_get_silvercube_left_step[] = {
-//     {{.setting_total = height_range_ | arm_offset_},  4000, 61.0629578,4.94228649,-57.9302979,0,90,    -160,   20},
-//     {{.setting_total = arm_offset_ | func_delay_ | arm_pump_on_}, 1000, 0,      0,      0,      0,      0,    -215,     1000},
-//     {{.setting_total = arm_offset_}, 1000, 0,      0,      0,      0,      0,    0},
-//     {{.setting_total = height_offset_ | roll_rotate_}, 4000,63.0299492,2.84913659,0,0,90,0,12819},
-//     {{.setting_total = height_offset_ | valve_forward_}, 2000,-60,-80.4619751,-83.837616,0, 90.5},
-//     {{.setting_total = height_offset_}, 2000,42.0428123,45.8032913,85.8326187,0, 90.5},
-//     {{.setting_total = height_offset_}, 2000,42.2840767,47.8979836,85.35012054,0, 90.5},
-//     {{.setting_total = height_offset_}, 2000,50.9057617,67.0916061,61.8424454,0, 90.5},
-//     {{.setting_total = arm_offset_ | valve_up_ | func_delay_}, 1000, 0,      0,      0,      0,      0,    -55,     1000},
-//     {{.setting_total = height_offset_ | arm_offset_ | valve_tighten_ | func_delay_}, 1000, 0,      0,      0,      0,      0,    0,     1000},
-//     {{.setting_total = height_offset_ | arm_offset_ | arm_pump_off_ | func_delay_}, 1000, 0,      0,      0,      0,      0,    0,     1000},
-//     {{.setting_total = height_offset_}, 2000,61.0565071,-26.2618942,-85.1202698,0, 90.5},
-//     {{.setting_total = height_offset_}, 4000,61.0565071,-26.2618942,-85.1202698,0, 90.5},
-//     {{.setting_total = arm_offset_}, 400, 0,      0,      0,      0,      0,    -150},
-// };
-// const ARM_AUTO_MODE_ Arm_get_silvercube_left_func = {
-//     .auto_mode_step = Arm_fetch_cube_from_warehouse_down_step,
-//     .id =  Arm_get_silvercube_left,
-//     .step = 14
-// };
-
 const AUTO_MODE_STEP_ Arm_ConvertCube_step[] = {
-    {{.setting_total = height_offset_ },  2000, -80,      0,      0,      0,      0,    0},
+    {{.setting_total = height_offset_ },  2000, -80.1485367,67.4480057,63.9944077,13.3702545,20.0491943,    0},
 };
 const ARM_AUTO_MODE_ Arm_ConvertCube_func = {
     .auto_mode_step = Arm_ConvertCube_step,
@@ -241,7 +212,7 @@ const ARM_AUTO_MODE_ Arm_ConvertCube_func = {
 };
 
 const AUTO_MODE_STEP_ Arm_fetch_gronded_cube_step[] = {
-    {{.setting_total = height_offset_},  1500,-2.65963554,9.99989223,91.1747589,0, 90.5,    0},
+    {{.setting_total = height_offset_},  1500,0,0,90,0, 90.5,    0},
 };
 const ARM_AUTO_MODE_ Arm_fetch_gronded_cube_func = {
     .auto_mode_step = Arm_fetch_gronded_cube_step,
@@ -258,12 +229,21 @@ const ARM_AUTO_MODE_ Arm_straighten_func = {
     .step = 1
 };
 
+const AUTO_MODE_STEP_ Arm_straighten_ConvertMode_step[] = {
+    {{.setting_total = height_offset_},  1500,-90,0,0,0,0,0},
+};
+const ARM_AUTO_MODE_ Arm_straighten_ConvertMode_func = {
+    .auto_mode_step = Arm_straighten_ConvertMode_step,
+    .id =  Arm_straighten_ConvertMode,
+    .step = 1
+};
+
 const AUTO_MODE_STEP_ Recycle_arm_out_step[] = {
-    {{.setting_total = arm_offset_ | height_offset_},  1000,0,0,0,0,0,30},
-    {{.setting_total = arm_offset_ | height_offset_},  2000,-19,0,0,0,0,0},
-    {{.setting_total = arm_offset_ | height_offset_},  1000,0,0,0,0,0,50},
-    {{.setting_total = arm_offset_ | height_offset_},  2000,-20,-60,3,0,0,0},
-    {{.setting_total = arm_offset_ | height_offset_},  1000,0,0,0,0,0,300},
+    {{.setting_total = arm_offset_ | height_offset_},  1000,0,0,0,0,0,55},
+    {{.setting_total = arm_offset_ | height_offset_},  2000,-18,-16,0,0,0,0},
+    {{.setting_total = arm_offset_ | height_offset_},  1000,-40,0,0,0,0,100},
+    {{.setting_total = height_offset_},  2000,-44,54,84,0,90.5,0},
+    {{.setting_total = height_offset_},  1000,-44,54,84,90,0,300},
 };
 const ARM_AUTO_MODE_ Recycle_arm_out_func = {
     .auto_mode_step = Recycle_arm_out_step,
@@ -272,14 +252,13 @@ const ARM_AUTO_MODE_ Recycle_arm_out_func = {
 };
 
 const AUTO_MODE_STEP_ Arm_walk_state_step[] = {
-    {{.setting_total = arm_offset_ | height_setting},  2000,0,0,0,0, 0, 0},
-    {{.setting_total = height_offset_},  2000,0,-100.68,-58.29,9.847, 90.5, 0},
-    {{.setting_total = 0},  2000,0,-84,-80,13, 90.5, -481.277954},
+    {{.setting_total = 0},  2000,95,-82.5,-85.4,0, 90.5, 0},
+    {{.setting_total = 0},  2000,95,-82.5,-85.4,0, 90.5, -38},
 };
 const ARM_AUTO_MODE_ Arm_walk_state_func = {
     .auto_mode_step = Arm_walk_state_step,
     .id =  Arm_walk_state,
-    .step = 3
+    .step = 2
 };
 
 // const AUTO_MODE_STEP_ Recycle_arm_in_step[] = {

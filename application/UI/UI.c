@@ -39,30 +39,52 @@ Flash_write_param_t get_UI_param(){
     data.len  = sizeof(user_defined_ui_config);
     return data;
 }
-static const char S_ControMode_None[] = "NONE       ";
-static const char S_ControMode_FetchCube[] = "FREE       ";
-static const char S_ControlMode_ConvertCube[] = "Convert    ";
-static const char S_ControlMode_Move[] = "Move       ";
-static const char S_ControlMode_ReverseMove[] = "ReverseMove";
-static const char S_ControlMode_RotateMove[] = "Rotate     ";
 
-static const char S_ArmMode_NONE[] = "NONE       ";
-static const char S_ArmMode_ArmWalk[] = "Walk       ";
-static const char S_ArmMode_ArmIn[] = "IN         ";
-static const char S_ArmMode_OUT[] = "OUT        ";
-static const char S_ArmMode_goldcube_right[] = "goldright  ";
-static const char S_ArmMode_warehouse1[] = "store_up   ";
-static const char S_ArmMode_warehouse2[] = "store_down ";
-static const char S_ArmMode_silvercube_left[] = "silve_left ";
-static const char S_ArmMode_silvercube_mid[] = "silve_mid  ";
-static const char S_ArmMode_silvercube_right[] = "silve_right";
-static const char S_ArmMode_gronded_cube[] = "grond      ";
-static const char S_ArmMode_ConvertCube[] = "Convert    ";
+static const char S_ControMode[][12] = {
+    "NONE       ",
+    "FREE       ",
+    "Convert    ",
+    "Move       ",
+    "ReverseMove",
+    "Rotate     "
+};
+static const char S_ArmMode[][12] = {
+    "NONE       ",
+    "Walk       ",
+    "IN         ",
+    "OUT        ",
+    "goldright  ",
+    "store_up   ",
+    "store_down ",
+    "silve_left ",
+    "silve_mid  ",
+    "silve_right",
+    "grond      ",
+    "Convert    ",
+    "straighten ",
+    "block_front",
+    "block_side ",
+    "block_back ",
+    "place_up   ",
+    "place_down "
+};
 
-static const char S_ValveMode_None[] = "NONE     ";
-static const char S_ValveMode_goldcube_mid[] = "gold_mid ";
-static const char S_ValveMode_goldcube_left[] = "gold_left";
-
+static const char S_ValveMode[][10] = {
+    "NONE     ",
+    "gold_mid ",
+    "gold_left",
+};
+static const char S_SongList[][16] = {
+    "StartUP",
+    "No_RC",
+    "You",
+    "Prepare",
+    "Test",
+    "DIDIDA",
+    "GuYongZhe",
+    "YongZheDouELong",
+    "DuoLaAMeng"
+};
 /*正常模式下UI*/
 static UI_GRAPH_INSTANCE* SIGN_pumpArm;
 static UI_GRAPH_INSTANCE* SIGN_pumpValve;
@@ -90,6 +112,8 @@ static UI_GRAPH_INSTANCE* float_target_asroll;
 static UI_GRAPH_INSTANCE* float_target_tail;
 static UI_GRAPH_INSTANCE* number_pump_air_arm;
 static UI_GRAPH_INSTANCE* number_pump_air_valve;
+static UI_GRAPH_INSTANCE* circle_jointMotorState[6];
+static UI_GRAPH_INSTANCE* circle_jointEncoderState[4];
 
 static UI_STRING_INSTANCE* string_controMode;
 static UI_STRING_INSTANCE* string_armAutoMode;
@@ -99,11 +123,9 @@ static UI_STRING_INSTANCE* string_valvePump;
 static UI_STRING_INSTANCE* string_controMode_;
 static UI_STRING_INSTANCE* string_armAutoMode_;
 static UI_STRING_INSTANCE* string_valveAutoMode_;
-static UI_STRING_INSTANCE* string_BIGYAW;
-static UI_STRING_INSTANCE* string_MIDYAW;
-static UI_STRING_INSTANCE* string_ASYAW;
-static UI_STRING_INSTANCE* string_ASROLL;
-static UI_STRING_INSTANCE* string_TAIL;
+static UI_STRING_INSTANCE* string_selectedSong;
+static UI_STRING_INSTANCE* string_jointMotorState;
+static UI_STRING_INSTANCE* string_jointEncoderState;
 
 
 
@@ -128,10 +150,9 @@ void get_referee_data(referee_info_t *referee_data)
     referee_data->referee_id.Cilent_ID         = 0x0100 + referee_data->referee_id.Robot_ID; // 计算客户端ID
     referee_data->referee_id.Receiver_Robot_ID = 0;
 }
-
 static void ui_reload(){
     /*自定义UI*/
-    // UserDefinedUI_init();
+    UserDefinedUI_init();
     /*UI注册-正常*/
     //圆
     circle_armAutoMode = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,1250,750,5);
@@ -139,23 +160,17 @@ static void ui_reload(){
     circle_customControConnection = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,310,850,15);
     circle_visitonConnection = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,230,850,15);
     circle_remoteConnection = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,150,850,15);
+    
     //静态字符串
     string_controMode = UI_String_Init(0,2,Graphic_Color_Purplish_red,25,3,1290,840,"Control:");
     string_armAutoMode = UI_String_Init(0,2,Graphic_Color_Purplish_red,25,3,1290,765,"ARM_AUTO:");
     string_valveAutoMode = UI_String_Init(0,2,Graphic_Color_Purplish_red,25,3,1290,700,"VALVE_AUTO:");
-    string_armPump = UI_String_Init(0,2,Graphic_Color_White,25,3,1090,465,"A");
-    string_valvePump = UI_String_Init(0,2,Graphic_Color_White,25,3,830,465,"V");
     
-    string_BIGYAW = UI_String_Init(0,2,Graphic_Color_Main,15,3,540,285,"BIGYAW");
-    string_MIDYAW = UI_String_Init(0,2,Graphic_Color_Main,15,3,540,255,"MIDYAW");
-    string_ASYAW = UI_String_Init(0,2,Graphic_Color_Main,15,3,540,225,"AS_YAW");
-    string_ASROLL = UI_String_Init(0,2,Graphic_Color_Main,15,3,540,195,"ASROLL");
-    string_TAIL = UI_String_Init(0,2,Graphic_Color_Main,15,3,540,165,"TAIL");
-    UI_BatchDisable_String(5,string_BIGYAW,string_MIDYAW,string_ASYAW,string_ASROLL,string_TAIL);
     //动态字符串    
-    string_controMode_ = UI_String_Init(0,3,Graphic_Color_Orange,25,3,1565,840,S_ControMode_None);
-    string_armAutoMode_ = UI_String_Init(0,3,Graphic_Color_Orange,25,3,1565,765,S_ArmMode_NONE);
-    string_valveAutoMode_ = UI_String_Init(0,3,Graphic_Color_Orange,25,3,1565,700,S_ValveMode_None);
+    string_controMode_ = UI_String_Init(0,3,Graphic_Color_Orange,25,3,1565,840,S_ControMode[0]);
+    string_armAutoMode_ = UI_String_Init(0,3,Graphic_Color_Orange,25,3,1565,765,S_ArmMode[0]);
+    string_valveAutoMode_ = UI_String_Init(0,3,Graphic_Color_Orange,25,3,1565,700,S_ValveMode[0]);
+    string_selectedSong = UI_String_Init(0,3,Graphic_Color_Orange,25,3,1565,635,S_SongList[0]);
     //矩形
     rectangle_Z = UI_Graph_Init(GraphType_Rect, 0, 1, Graphic_Color_Main, 2, height_makerLine.pos_x+130, height_makerLine.pos_y-310, 50, 310);
     //高度指示线(直线+浮点数)
@@ -178,19 +193,23 @@ static void ui_reload(){
     //臂动作
     //todo:
     //气泵状态
-    SIGN_pumpArm = UI_Graph_Init(GraphType_Arc, 2, 1, Graphic_Color_White,10,870,540,220,100,50,80);
-    SIGN_pumpValve = UI_Graph_Init(GraphType_Arc, 2, 1, Graphic_Color_White,10,1050,540,40,100,50,80);
-    number_pump_air_arm = UI_Graph_Init(GraphType_Number, 0, 5, Graphic_Color_White, 3, 1190, 540, 25, 0);
-    number_pump_air_valve = UI_Graph_Init(GraphType_Number, 0, 5, Graphic_Color_White, 3, 730, 540, 25, 0);
-
+    SIGN_pumpArm = UI_Graph_Init(GraphType_Arc, 2, 1, Graphic_Color_White,10,1050,540,40,100,50,80);
+    SIGN_pumpValve = UI_Graph_Init(GraphType_Arc, 2, 1, Graphic_Color_White,10,870,540,220,100,50,80);
+    number_pump_air_arm = UI_Graph_Init(GraphType_Number, 0, 5, Graphic_Color_White, 3, 1130, 465, 25, 0);
+    number_pump_air_valve = UI_Graph_Init(GraphType_Number, 0, 5, Graphic_Color_White, 3, 730, 465, 25, 0);
+    string_armPump = UI_String_Init(0,2,Graphic_Color_White,25,3,1090,465,"A");
+    string_valvePump = UI_String_Init(0,2,Graphic_Color_White,25,3,830,465,"V");
     //装甲板
     Arc_armour_1 = UI_Graph_Init(GraphType_Arc, 3, 1, Graphic_Color_Main, armour_maker.width, armour_maker.pos_x, armour_maker.pos_y, 335, 50, armour_maker.dx, armour_maker.dy);
     Arc_armour_2 = UI_Graph_Init(GraphType_Arc, 3, 1, Graphic_Color_Cyan, armour_maker.width, armour_maker.pos_x, armour_maker.pos_y, 65, 50, armour_maker.dx, armour_maker.dy);
     Arc_armour_3 = UI_Graph_Init(GraphType_Arc, 3, 1, Graphic_Color_Cyan, armour_maker.width, armour_maker.pos_x, armour_maker.pos_y, 155, 50, armour_maker.dx, armour_maker.dy);
     Arc_armour_4 = UI_Graph_Init(GraphType_Arc, 3, 1, Graphic_Color_Cyan, armour_maker.width, armour_maker.pos_x, armour_maker.pos_y, 245, 50, armour_maker.dx, armour_maker.dy);
     UI_BatchDisable_Graph(3, Arc_armour_2, Arc_armour_3,Arc_armour_4);
-    /*UI注册-调试模式*/
-
+    //关节状态
+    string_jointMotorState = UI_String_Init(0,3,Graphic_Color_Orange,25,3,540,130,"MOTOR");
+    string_jointEncoderState = UI_String_Init(0,3,Graphic_Color_Orange,25,3,540,95,"ENCODER");
+    for(int i=0; i<6; i++)  circle_jointMotorState[i] = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,650+i*8,130,2);
+    for(int i=0; i<4; i++)  circle_jointEncoderState[i] = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,650+i*8,95,2);
     //清除所有UI
     UIDelete(&referee_data->referee_id, UI_Data_Del_ALL, 0);
 }
@@ -230,23 +249,25 @@ static void UI_operate(){
         // 气路气压值
         number_pump_air_arm->param.Number.value = UI_data_recv.pump_air_arm;
         number_pump_air_valve->param.Number.value = UI_data_recv.pump_air_valve;
-        UI_StateSwitchDetect_Graph(number_pump_air_arm, 2, UI_data_recv.pump_air_arm<-300, Graphic_Color_White, Graphic_Color_Green);
-        UI_StateSwitchDetect_Graph(number_pump_air_valve, 2, UI_data_recv.pump_air_valve<-300, Graphic_Color_White, Graphic_Color_Green);
+        UI_StateSwitchDetect_Graph(number_pump_air_arm, 2, UI_data_recv.pump_air_arm<-250, Graphic_Color_White, Graphic_Color_Green);
+        UI_StateSwitchDetect_Graph(number_pump_air_valve, 2, UI_data_recv.pump_air_valve<-250, Graphic_Color_White, Graphic_Color_Green);
         // 气泵
-        UI_StateSwitchDetect_Graph(SIGN_pumpArm, 3, UI_data_recv.pump_arm_mode_t+UI_data_recv.pump_air_arm<-300, Graphic_Color_White, Graphic_Color_Green, Graphic_Color_Purplish_red);
-        UI_StateSwitchDetect_Graph(SIGN_pumpValve, 3, UI_data_recv.pump_valve_mode_t+UI_data_recv.pump_air_valve<-300, Graphic_Color_White, Graphic_Color_Green, Graphic_Color_Purplish_red);
+        UI_StateSwitchDetect_Graph(SIGN_pumpArm, 3, UI_data_recv.pump_arm_mode_t+(UI_data_recv.pump_air_arm<-250), Graphic_Color_White, Graphic_Color_Purplish_red, Graphic_Color_Green);
+        UI_StateSwitchDetect_Graph(SIGN_pumpValve, 3, UI_data_recv.pump_valve_mode_t+(UI_data_recv.pump_air_valve<-250), Graphic_Color_White, Graphic_Color_Purplish_red, Graphic_Color_Green);
     }
     {
         // 控制模式
-        UI_StringSwitchDetect_Char(string_controMode_, 6, UI_data_recv.Contro_mode, S_ControMode_None, S_ControMode_FetchCube, S_ControlMode_ConvertCube, S_ControlMode_Move, S_ControlMode_ReverseMove, S_ControlMode_RotateMove);
+        UI_StringSwitchDetect_Char(string_controMode_, 6, UI_data_recv.Contro_mode, S_ControMode[0],S_ControMode[1],S_ControMode[2],S_ControMode[3],S_ControMode[4],S_ControMode[5]);
         // 臂自动模式
         UI_WidthSwitchDetect_Char(string_armAutoMode_, 2, UI_data_recv.arm_temp_halt_selected, 3, 5);
         UI_ColorSwitchDetect_Char(string_armAutoMode_, 2, UI_data_recv.arm_selected_mode_state, Graphic_Color_Orange, Graphic_Color_Cyan);
-        UI_StringSwitchDetect_Char(string_armAutoMode_, 12, UI_data_recv.arm_selected_mode, S_ArmMode_NONE, S_ArmMode_ArmWalk, S_ArmMode_ArmIn, S_ArmMode_OUT, S_ArmMode_goldcube_right, S_ArmMode_warehouse1, S_ArmMode_warehouse2, S_ArmMode_silvercube_left, S_ArmMode_silvercube_mid, S_ArmMode_silvercube_right, S_ArmMode_gronded_cube, S_ArmMode_ConvertCube);
+        UI_StringSwitchDetect_Char(string_armAutoMode_, 18, UI_data_recv.arm_selected_mode, S_ArmMode[0],S_ArmMode[1],S_ArmMode[2],S_ArmMode[3],S_ArmMode[4],S_ArmMode[5],S_ArmMode[6],S_ArmMode[7],S_ArmMode[8],S_ArmMode[9],S_ArmMode[10],S_ArmMode[11],S_ArmMode[12],S_ArmMode[13],S_ArmMode[14],S_ArmMode[15],S_ArmMode[16],S_ArmMode[17]);
         // 推杆自动模式
-        UI_WidthSwitchDetect_Char(string_valveAutoMode_, 2, UI_data_recv.valve_temp_halt_selected, 3, 5);
+        UI_WidthSwitchDetect_Char(string_valveAutoMode_, 2, UI_data_recv.valve_halt_selected, 3, 5);
         UI_ColorSwitchDetect_Char(string_valveAutoMode_, 2, UI_data_recv.valve_selected_mode_state, Graphic_Color_Orange, Graphic_Color_Cyan);
-        UI_StringSwitchDetect_Char(string_valveAutoMode_, 3, UI_data_recv.valve_selected_mode, S_ValveMode_None, S_ValveMode_goldcube_mid, S_ValveMode_goldcube_left);
+        UI_StringSwitchDetect_Char(string_valveAutoMode_, 3, UI_data_recv.valve_selected_mode, S_ValveMode[0],S_ValveMode[1],S_ValveMode[2]);
+        //歌曲选择
+        UI_StringSwitchDetect_Char(string_selectedSong, sizeof(S_SongList)/sizeof(S_SongList[0]), UI_data_recv.selected_song, S_SongList[0],S_SongList[1],S_SongList[2],S_SongList[3],S_SongList[4],S_SongList[5],S_SongList[6],S_SongList[7],S_SongList[8]);
     }
     /* 多状态动态UI */
     {
@@ -288,14 +309,29 @@ static void UI_operate(){
         }
         // DEBUG
         {
-            float_current_bigyaw->param.Float.value = UI_debug_value[0];
-            float_current_midyaw->param.Float.value = UI_debug_value[1];
-            float_current_asyaw->param.Float.value = UI_debug_value[2];
+            // float_current_bigyaw->param.Float.value = UI_debug_value[0];
+            // float_current_midyaw->param.Float.value = UI_debug_value[1];
+            // float_current_asyaw->param.Float.value = UI_debug_value[2];
 
-            float_target_bigyaw->param.Float.value = UI_debug_value[3];
-            float_target_midyaw->param.Float.value = UI_debug_value[4];
-            float_target_asyaw->param.Float.value = UI_debug_value[5];
-            float_target_asroll->param.Float.value = UI_debug_value[6];
+            // float_target_bigyaw->param.Float.value = UI_debug_value[3];
+            // float_target_midyaw->param.Float.value = UI_debug_value[4];
+            // float_target_asyaw->param.Float.value = UI_debug_value[5];
+            // float_target_asroll->param.Float.value = UI_debug_value[6];
+        }
+        // 关节状态
+        {
+            //电机
+            UI_StateSwitchDetect_Graph(circle_jointMotorState[0], 2, UI_data_recv.joint_state.motor_state.bigyaw, Graphic_Color_White, Graphic_Color_Green);
+            UI_StateSwitchDetect_Graph(circle_jointMotorState[1], 2, UI_data_recv.joint_state.motor_state.midyaw, Graphic_Color_White, Graphic_Color_Green);
+            UI_StateSwitchDetect_Graph(circle_jointMotorState[2], 2, UI_data_recv.joint_state.motor_state.assortedyaw, Graphic_Color_White, Graphic_Color_Green);
+            UI_StateSwitchDetect_Graph(circle_jointMotorState[3], 2, UI_data_recv.joint_state.motor_state.assortedroll, Graphic_Color_White, Graphic_Color_Green);
+            UI_StateSwitchDetect_Graph(circle_jointMotorState[4], 2, UI_data_recv.joint_state.motor_state.tail, Graphic_Color_White, Graphic_Color_Green);
+            UI_StateSwitchDetect_Graph(circle_jointMotorState[5], 2, UI_data_recv.joint_state.motor_state.height, Graphic_Color_White, Graphic_Color_Green);
+            //编码器
+            UI_StateSwitchDetect_Graph(circle_jointEncoderState[0], 2, UI_data_recv.joint_state.encoder_state.bigyaw, Graphic_Color_White, Graphic_Color_Green);
+            UI_StateSwitchDetect_Graph(circle_jointEncoderState[1], 2, UI_data_recv.joint_state.encoder_state.assortedyaw, Graphic_Color_White, Graphic_Color_Green);
+            UI_StateSwitchDetect_Graph(circle_jointEncoderState[2], 2, UI_data_recv.joint_state.encoder_state.assortedroll, Graphic_Color_White, Graphic_Color_Green);
+            UI_StateSwitchDetect_Graph(circle_jointEncoderState[3], 2, UI_data_recv.joint_state.encoder_state.tail, Graphic_Color_White, Graphic_Color_Green);
         }
     }
 }
@@ -316,6 +352,11 @@ void MyUIRefresh(void)
         UI_operate();
     }
     
-    UI_String_Refresh();
-    UI_Graph_Refresh();
+    if(UI_data_recv.UI_refresh_request){
+        UI_Graph_Refresh();
+        UI_String_Refresh();
+    }
+
+    UI_String_Update();
+    UI_Graph_Update();
 }

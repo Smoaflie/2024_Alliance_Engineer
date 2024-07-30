@@ -99,3 +99,6 @@ EncoderInstance_s *EncoderInit(Encoder_Init_Config_s *config)
 
     return instance;
 }
+uint8_t isEncoderOnline(EncoderInstance_s *encoder){
+    return DaemonIsOnline(encoder->daemon);
+}

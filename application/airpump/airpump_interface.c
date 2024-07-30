@@ -31,6 +31,7 @@ static float sucker_zero_angle;
 static uint8_t sucker_motor_init_flag = 0;
 static uint16_t sucker_motor_init_cnt = 0;
 static uint8_t  sucker_motor_mode = 3;
+static uint8_t  sucker_motor_stop = 0;
 
 static uint8_t airvalve_tx_buf[8] = {0x11,0x88,0x99,0x00,0x00,0x00,0x00,0x00};
 static uint32_t airvalve_tx_coder = 0;
@@ -141,9 +142,21 @@ void AirpumpInit_Param()
     sucker_motor_mode = 3;
 }
 
+//吸盘失能
+static void airsucker_stop(){
+    sucker_motor_stop = 1;
+}
+//吸盘使能
+static void airsucker_enable(){
+    sucker_motor_stop = 0;
+}
 //吸盘朝前
 static void airsucker_forward(){
     sucker_motor_mode = 2;
+}
+//吸盘朝下
+static void airsucker_down(){
+    sucker_motor_mode = 4;
 }
 //吸盘朝上
 static void airsucker_up(){
@@ -156,7 +169,9 @@ static void airsucker_motor_init(){
 
 void AirpumpSubMessage()
 {
-    while(!SubGetMessage(airpump_cmd_data_sub, &airpump_cmd_rec));
+    while(!SubGetMessage(airpump_cmd_data_sub, &airpump_cmd_rec)){
+        DJIMotorStop(air_sucker_motor);
+    }
 }
 void AirpumpParamPretreatment()
 {
@@ -186,16 +201,16 @@ void AirpumpContro_Valve()
                 airvalve_state |= AIRVALVE_SEND_CODER;
                 switch(airvalve_mode_cnt){
                     //                          0b2X098765X3210987654321
-                    case 1: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_forward();airvalve_state_in_auto_mode=0;break;//初始状态
+                    case 1: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_down();airvalve_state_in_auto_mode=0;break;//初始状态
                     case 2: airvalve_tx_coder = 0b0000001101100101010110;airvalve_delay_time = 300;break;//下降+第一段前伸
-                    case 3: airvalve_tx_coder = 0b0000001101100110010110;airvalve_delay_time = 300;break;//旋转
+                    case 3: airvalve_tx_coder = 0b0000001101100110010110;airvalve_delay_time = 300;airsucker_forward();break;//旋转
                     case 4: airvalve_tx_coder = 0b1000001100011010010110;airvalve_delay_time = 1200;airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出
                     case 5: airvalve_tx_coder = 0b0000001101011010010110;airvalve_delay_time = 300;break;//小回
                     case 6: airvalve_tx_coder = 0b0000001101011010010101;airvalve_delay_time = 300;
                             // airvalve_state&=~AIRVALVE_LEFT_CUBE_DOING;
                             break;//抬升
-                    case 7: airvalve_tx_coder = 0b0000001100100110010101;airvalve_delay_time = 300;break;//缩回
-                    case 8: airvalve_tx_coder = 0b0000001100100101010101;airvalve_delay_time = 1000;break;//旋转
+                    case 7: airvalve_tx_coder = 0b0000001100100110010101;airvalve_delay_time = 300;airvalve_state&=~AIRVALVE_LEFT_CUBE_DOING;break;//缩回
+                    case 8: airvalve_tx_coder = 0b0000001100100101010101;airvalve_delay_time = 2000;break;//旋转
                     case 9: airvalve_tx_coder = 0b0000001100100101101001;airvalve_delay_time = 300;break;//第一段缩回
                     case 10:airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_up();airvalve_state_in_auto_mode=0;break;//初始状态
                 }
@@ -222,17 +237,19 @@ void AirpumpContro_Valve()
 
                 switch(airvalve_mode_cnt){
                     //                          0b2X098765X3210987654321
-                    case 1: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_forward();airvalve_state_in_auto_mode=0;break;//初始状态
-                    case 2: airvalve_tx_coder = 0b1000001100011001100110;airvalve_delay_time = 1500;airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出+下降
+                    case 1: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_down();airsucker_enable();airvalve_state_in_auto_mode=0;break;//初始状态
+                    case 2: airvalve_tx_coder = 0b1000001100011001100110;airvalve_delay_time = 1500;airsucker_forward();airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出+下降
                     case 3: airvalve_tx_coder = 0b0000001101011001100110;airvalve_delay_time = 300;break;//小回
                     case 4: airvalve_tx_coder = 0b0000001101011001100101;airvalve_delay_time = 1200;
                             // airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DOING;
                             break;//抬升
-                    case 5: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 800;break;//缩回
-                    case 6: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 500;break;//初始状态
-                    case 7: airvalve_delay_time = 600;airsucker_up();break;//夹爪前伸
-                    case 8: airvalve_tx_coder = 0b0011000001100101101001;airvalve_delay_time = 4000;break;//上抬
-                    case 9: airvalve_tx_coder = 0b0001001001100101101001;airvalve_delay_time = 1000;airvalve_state_in_auto_mode=0;airpump_linear_state=0;break;//夹爪夹
+                    case 5: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 800;airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DOING;break;//缩回
+                    case 6: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 900;airsucker_up();break;//初始状态
+                    case 7: 
+                            airvalve_tx_coder = 0b1000001100100101101001;
+                            airvalve_delay_time = 600;break;//夹爪前伸
+                    case 8: airvalve_tx_coder = 0b0011000001100101101001;airvalve_delay_time = 1000;airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DOING;break;//上抬
+                    case 9: airvalve_tx_coder = 0b0001001001100101101001;airvalve_delay_time = 300;airvalve_state_in_auto_mode=0;airpump_linear_state=0;break;//夹爪夹
                     case 10: airvalve_tx_coder =0b0000001101100101101001;airvalve_delay_time = 300;break;//夹爪后移
                     case 11: airvalve_tx_coder =0b0000001101100101101001;airvalve_delay_time = 300;break;//初始状态
                 }
@@ -309,7 +326,7 @@ void AirpumpContro_Sucker()
     if(sucker_motor_mode == 2 || airpump_cmd_rec.tmp_flag==1){ //forward
         DJIMotorEnable(air_sucker_motor);
         DJIMotorOuterLoop(air_sucker_motor,ANGLE_LOOP);
-        DJIMotorSetRef(air_sucker_motor,sucker_zero_angle+3337+airpump_cmd_rec.sucker_offset_angle);
+        DJIMotorSetRef(air_sucker_motor,sucker_zero_angle+2957+airpump_cmd_rec.sucker_offset_angle);
     }else if(sucker_motor_mode == 3 && !(airpump_cmd_rec.airvalve_mode & AIRVALVE_STOP)){ //init
         DJIMotorEnable(air_sucker_motor);
         if(sucker_motor_init_cnt > 300){
@@ -318,7 +335,7 @@ void AirpumpContro_Sucker()
                 air_sucker_motor->measure.total_round = 0;
                 air_sucker_motor->measure.last_ecd = air_sucker_motor->measure.ecd;
                 air_sucker_motor->measure.total_angle = air_sucker_motor->measure.angle_single_round;
-                sucker_zero_angle = air_sucker_motor->measure.total_angle+300;
+                sucker_zero_angle = air_sucker_motor->measure.total_angle+380;
             }
             DJIMotorOuterLoop(air_sucker_motor,ANGLE_LOOP);
             DJIMotorSetRef(air_sucker_motor,sucker_zero_angle);
@@ -330,9 +347,13 @@ void AirpumpContro_Sucker()
             if(air_sucker_motor->measure.speed_aps > -500)   sucker_motor_init_cnt++;
             else sucker_motor_init_cnt = 0;
         }
+    }else if(sucker_motor_mode == 4){ //down
+        DJIMotorEnable(air_sucker_motor);
+        DJIMotorOuterLoop(air_sucker_motor,ANGLE_LOOP);
+        DJIMotorSetRef(air_sucker_motor,sucker_zero_angle+2957+1000+airpump_cmd_rec.sucker_offset_angle);
     }
 
-    if(airpump_cmd_rec.airvalve_mode & AIRVALVE_STOP){
+    if(airpump_cmd_rec.airvalve_mode & AIRVALVE_STOP || sucker_motor_stop){
         DJIMotorStop(air_sucker_motor);
     }
 }
@@ -340,6 +361,7 @@ void AirpumpEmergencyHandler()
 {
     //强制暂停
     if(airpump_cmd_rec.halt_force_call == 1){
+        airvalve_tx_coder = 0b0000001101100101101001;//初始状态
         airvalve_state = 0;
         airvalve_mode_cnt = 0;
         air_data_send.air_auto_mode_selecting = 0;
@@ -351,7 +373,7 @@ void AirpumpEmergencyHandler()
     if(airpump_cmd_rec.halt_temp_call == 1 && !halt_temp_switch_flag){
         if(airvalve_state_log){
             airvalve_state = airvalve_state_log;
-            airvalve_state_log = 0;
+            airvalve_state_log = 0; 
         }else{
             airvalve_state_log = airvalve_state;
             airvalve_state = 0;
@@ -366,8 +388,8 @@ void AirpumpPubMessage()
         air_data_send.airvalve_mode = 1 + !(airvalve_state&(AIRVALVE_MIDDLE_CUBE_DOING|AIRVALVE_LEFT_CUBE_DOING));
     }
 
-    air_data_send.pump_air_valve = pumpair[0];
-    air_data_send.pump_air_arm = pumpair[1];
+    air_data_send.pump_air_valve = pumpair[1];
+    air_data_send.pump_air_arm = pumpair[0];
 
     PubPushMessage(air_data_pub,&air_data_send);
 }

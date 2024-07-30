@@ -7,8 +7,8 @@
 #include "UI_ref.h"
 #include "general_def.h"
 
-#define UI_String_Refresh_freq 1
-#define UI_Graph_Refresh_freq 1
+#define UI_String_Update_freq 1
+#define UI_Graph_Update_freq 1
 #define UI_Graph_PRIORITY_LEVEL 4
 #define UI_String_PRIORITY_LEVEL 1
 #define UI_GrathType_NUM 8
@@ -108,6 +108,7 @@ typedef struct{
     uint8_t active_flag : 1;  
     uint8_t init_call : 1;  
     uint8_t delete_call : 1;  
+    uint8_t refresh_call : 1;
     int8_t delay : 3;  
 }UI_GRAPH_INSTANCE;
 typedef struct{
@@ -140,6 +141,7 @@ typedef struct{
     uint8_t active_flag : 1;  
     uint8_t init_call : 1;  
     uint8_t delete_call : 1;  
+    uint8_t refresh_call : 1;
     int8_t delay : 3;
 }UI_STRING_INSTANCE;
 
@@ -169,8 +171,12 @@ UI_STRING_INSTANCE* UI_String_Init(
 uint8_t UI_Graph_Setting(UI_GRAPH_INSTANCE *instance, RefreshMode_ mode);
 void UI_Graph_Refresh();
 void UI_String_Refresh();
+void UI_Graph_Update();
+void UI_String_Update();
 
 void UI_StateSwitchDetect_Graph(UI_GRAPH_INSTANCE* instance, uint8_t cnt, int flag, ...);
+void UI_DisableAll_Graph();
+void UI_DisableAll_String();
 void UI_BatchEnable_Graph(uint8_t cnt, ...);
 void UI_BatchDisable_Graph(uint8_t cnt, ...);
 

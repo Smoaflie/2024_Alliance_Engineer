@@ -36,6 +36,45 @@ static void vision_to_rc(const uint8_t *rec_buf){
         vision_rc_data->key[KEY_PRESS_WITH_SHIFT] = vision_rc_data->key[KEY_PRESS];
     else
         memset(&vision_rc_data->key[KEY_PRESS_WITH_SHIFT], 0, sizeof(Key_t));
+
+    uint16_t key_now = vision_rc_data[TEMP].key[KEY_PRESS].keys,                   // 当前按键是否按下
+        key_last = vision_rc_data[LAST].key[KEY_PRESS].keys,                       // 上一次按键是否按下
+        key_with_ctrl = vision_rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].keys,        // 当前ctrl组合键是否按下
+        key_with_shift = vision_rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].keys,      //  当前shift组合键是否按下
+        key_last_with_ctrl = vision_rc_data[LAST].key[KEY_PRESS_WITH_CTRL].keys,   // 上一次ctrl组合键是否按下
+        key_last_with_shift = vision_rc_data[LAST].key[KEY_PRESS_WITH_SHIFT].keys; // 上一次shift组合键是否按下
+
+    for (uint16_t i = 0, j = 0x1; i < 16; j <<= 1, i++)
+    {
+        if (i == 4 || i == 5) // 4,5位为ctrl和shift,直接跳过
+            continue;
+        // 如果当前按键按下,上一次按键没有按下,且ctrl和shift组合键没有按下,则按键按下计数加1(检测到上升沿)
+        if ((key_now & j) && !(key_last & j) && !(key_with_ctrl & j) && !(key_with_shift & j))
+            vision_rc_data[TEMP].key_count[KEY_PRESS][i]++;
+        // 当前ctrl组合键按下,上一次ctrl组合键没有按下,则ctrl组合键按下计数加1(检测到上升沿)
+        if ((key_with_ctrl & j) && !(key_last_with_ctrl & j))
+            vision_rc_data[TEMP].key_count[KEY_PRESS_WITH_CTRL][i]++;
+        // 当前shift组合键按下,上一次shift组合键没有按下,则shift组合键按下计数加1(检测到上升沿)
+        if ((key_with_shift & j) && !(key_last_with_shift & j))
+            vision_rc_data[TEMP].key_count[KEY_PRESS_WITH_SHIFT][i]++;
+    }
+
+    memcpy(&vision_rc_data[LAST], &vision_rc_data[TEMP], sizeof(RC_ctrl_t)); // 保存上一次的数据,用于按键持续按下和切换的判断
+
+    static int16_t cnt = 0,sum = 0, init_flag = 0;
+    static int16_t input[10];
+    if(cnt < 10 && !init_flag){
+        input[cnt++] = vision_rc_data[TEMP].mouse.x;
+        sum += vision_rc_data[TEMP].mouse.x;
+        init_flag = 1;
+    }else{
+        int i = (cnt++)%10;
+        if(cnt > 30)    cnt = 0;
+        sum -= input[i];
+        sum += vision_rc_data[TEMP].mouse.x;
+        input[i] = vision_rc_data[TEMP].mouse.x;
+        vision_rc_data[TEMP].mouse.x_average = sum / 10;
+    }
 }
 //分析图传数据
 static void JudgeVisionReadData(uint8_t* buff){

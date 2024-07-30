@@ -36,12 +36,15 @@ const uint16_t Note_Freq[] = {0,
                               2093, 2217, 2349, 2489, 2637, 2794, 2960, 3136, 3322, 3520, 3729, 3951,
                               4186, 4435, 4699, 4978, 5274, 5588, 5920, 6272, 6645, 7040, 7459, 7902};
 // 音乐字符串 @todo（存入flash节省空间）
-char StartUP_sound[]      = "T240L4 O6cde L2g";
-char No_RC_sound[]        = "T200L8 O5ecececec";
-char RoboMaster_You[]     = "T75 L4O5ef g.L8e gL16eL8g.L4b O6c. O5L8cdeL4g L8a...L16gL8aL16gL8g.g L2d L4efL2g L8gL16eL8g.O6L4dc. O5L8cde O6L4c O5L8a...L16g L8aL16gL8a. O6L4cd. P8O5L8deL16d L1c";
-char RoboMaster_Prepare[] = "T140L8 O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa L2O5eL1O6c L2O5eL1O5a L2O5cL1O5f L2O4bL1O5e L2O5eL1O6c L2O5eL1O5a L2O5cL1O5f L2O4bL1O5e";
-char Test[]               = "T240L8 O5aO6dc O5aO6dc O5aO6dc L16dcdcdcdc";
-// char Di-Di[]              = "";
+const char StartUP_sound[]      = "T240L4 O6cde L2g";
+const char No_RC_sound[]        = "T200L8 O5ecececec";
+const char RoboMaster_You[]     = "T75 L4O5ef g.L8e gL16eL8g.L4b O6c. O5L8cdeL4g L8a...L16gL8aL16gL8g.g L2d L4efL2g L8gL16eL8g.O6L4dc. O5L8cde O6L4c O5L8a...L16g L8aL16gL8a. O6L4cd. P8O5L8deL16d L1c";
+const char RoboMaster_Prepare[] = "T140L8 O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5cc O4g#g#aa O4aaO5dd O4g#g#aa O4aaO5dd O4g#g#aa O4g#g#aa bbO5cc ddee O4bbO5aa L2O5eL1O6c L2O5eL1O5a L2O5cL1O5f L2O4bL1O5e L2O5eL1O6c L2O5eL1O5a L2O5cL1O5f L2O4bL1O5e";
+const char Test[]               = "T240L8 O5aO6dc O5aO6dc O5aO6dc L16dcdcdcdc";
+const char DIDIDA[]             = "t130L8 g.&a+64r64<f+16.&f+64r64>f+16.&f+64r64f+16.&f+64r64>c+16.&c+64r64<f+16.&f+64r64f+16.&f+64r64b16.&b64r64a+16.&a+64r64<g+16.&g+64r64>g+16.&g+64r64g+16.&g+64r64b16.&b64r64b16.&b64r64a+16.&a+64r64b16.&b64r64g+16.&g+64r64<f+16.&f+64r64>f+16.&f+64r64f+16.&f+64r64>d+16.&d+64r64<f+16.&f+64r64c+16.&c+64r64g+16.&g+64r64a+16.&a+64r64<e16.&e64r64>d+16.&d+64r64d+16.&d+64r64b16.";
+const char GuYongZhe[]          = "t65L4 <g+16>f+16g+8&g+32.r64g+16g+16f+16g+16f+16a+8&a+32.r64a+16a+16g+16a+8&a+32.r64g+8d+2&d+32r16.d+16f+16d+16c+8&c+32.r64d+16c+8&c+32.r64d+16c+8&c+32.r64d+16f+16d+16f+16d+16c+8&c+32.";
+const char YongZheDouELong[]    = "t65L4 @4v10o5l8d4a4g2.fed4c<b->c<a>e4d1.a4>c4<b2.gfe4fga1&a1d4a4g2.fed4c<b->c<a>e4d1.";
+const char DuoLaAMeng[]         = "t180l8 o6dc+<bab>c+dc+<bab>c+dc+<bab>c+dc+<ba4.>edc+c-c+dedc+c-c+dedc+c-c+dc+dd+e4.c-c+d<gababn73f+gagabef+gf+gadef+>ed+dc+c<ba+ag+gf+fe1&e2<a4>dd4f+b4f+a4.a4ba4f+g4f+e4.c-4ee4g>c+4c+<b4ag4gg4f+c-4c+4.de4.<ab>dc+del4<a.a>d8df+8bf+8a.ab8af+8gf+8e.c-e8eg8>c+.<ba8gg8f+e8c+.e.d<a8>f+e8dl8ef+gab4.b4agabl4a.ef+8g+e8a2.<b.a.ef+8g+e8a.a>e8ea8ag8b.a.g2.e.n73b8ab8ag2al8bf+2&f+ed1&d2>d4dc+4c+<b4ba4ab4b>c+4c+d4.<dc+de4<bb4.>e4<bb4.b4>c+d4c-e2.>d4dc+4c+<b4ba>def+4f+f+ef+g2&g<d<b4a+b4>dc+4dl4e.d2.d2.<a>d8df+8bf+8a.ab8af+8gf+8e.c-e8eg8>c+c+8<ba8gg8gf+8c-c+.d8e.l8<ab>dc+del4<a.a>d8df+8bf+8a.ab8af+8gf+8e.c-e8eg8>c+.<ba8gg8f+e8c+.e.d<a8>f+e8dl8ef+gab4.b4agabl4a.ef+8g+e8a2.<b.a.ef+8g+e8a.a>e8ea8ag8b.a.g2.e.n73b8ab8ag2al8bf+2&f+ed2.&d<ab>c+def+ff+d4<a>f+ff+d4<a>gf+ge4.<a4aa4.>gf+ge4<a>gf+ge4<a>f+gg+a4.a4aa4.ba+ba+ba+b4>c+d4<bag+ag+ag+a4>c+d4<a>c+cc+cc+cc+4dedc+d1&d2<<a4>dd4f+b4f+a4.a4ba4f+g4f+e4.c-4ee4g>c+4c+<b4ag4gg4f+c-4c+4.de4.<ab>dc+del4<a.a>d8df+8bf+8a.ab8af+8gf+8e.c-e8eg8>c+c+8<ba8gg8f+e8c+.e.d<a8>f+e8dl8ef+gab4.b4agabl4a.ef+8g+e8a2.<b.a.ef+8g+e8a.a>e8ea8ag8b.a.g2.e.n73b8ab8ag2ab8f+2&f+8e8d2.<de8f+a8>b.a.g2.e.n73b8ab8ag2al8bf+2&f+ed4.>d<af+d4de4f+gf+gf+4gf+4e4.ff+ff+f4f+l4ed2<b.b.>c+d8e.<b.b.>c+d8ed2.&d8d1&d1&d8&d64";
 /**
  * @brief :  蜂鸣器注册
  * @return  void
@@ -74,13 +77,13 @@ void BuzzerRegister(void)
  * @param *sound 音乐字符串
  * @return  void
  */
-void BuzzerPlay(char *sound)
+void BuzzerPlay(const char *sound)
 {
     // 如果蜂鸣器未注册，则注册
     if (buzzer == NULL) {
         BuzzerRegister();
     }
-    if (buzzer->busy) return;
+    // if (buzzer->busy) return;
     buzzer->sound      = sound;
     buzzer->_next_tune = sound;
     buzzer->busy       = 1;
@@ -119,11 +122,22 @@ inline static void NotePlay()
         PWMSetDutyRatio(buzzer->buzzer_pwm, 0.5f); // 音量
 #endif
     }
-    float note_delay = 1000 * (4.0f / (float)buzzer->_note_length) * 60 / (float)buzzer->_tempo;
+    float _note_length,note_delay;
+    if(buzzer->_note_length_single != 0){
+        _note_length = buzzer->_note_length_single;
+        buzzer->_note_length_single = 0;
+    }else{
+        _note_length = buzzer->_note_length;
+    }
+    note_delay = 1000 * (4.0f / _note_length) * 60 / (float)buzzer->_tempo;
     note_delay += note_delay / 2.0f * (float)buzzer->dots;
     osDelay((uint32_t)note_delay);
-    PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
-    osDelay(10);
+    if(buzzer->_slur){
+        buzzer->_slur = 0;
+    }else{
+        PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
+        // osDelay(10);
+    }
 }
 /**
  * @brief :  下一个字符
@@ -131,8 +145,8 @@ inline static void NotePlay()
  */
 inline static int next_char()
 {
-    char *next_tune = buzzer->_next_tune;
-    while (*next_tune == ' ') {
+    const char *next_tune = buzzer->_next_tune;
+    while (*next_tune == ' ' || *next_tune == '|') {
         next_tune++;
     }
     buzzer->_next_tune = next_tune;
@@ -181,25 +195,33 @@ inline static void Note_handle()
     int c = next_char();
     if (c >= 'A' && c <= 'G') { buzzer->note = _note_tab[c - 'A'] + (buzzer->_octave * 12) + 1; }
     buzzer->_next_tune++;
-    c = next_char();
-    switch (c) {
-        case '#': // Up a semitone.
-        case '+':
-            if (buzzer->note < 84) {
-                buzzer->note++;
-            }
-            buzzer->_next_tune++;
-            break;
-        case '-': // Down a semitone.
-            if (buzzer->note > 1) {
-                buzzer->note--;
-            }
-            buzzer->_next_tune++;
-            break;
-        default:
-            // 0 / No next char here is OK.
-            break;
+    uint8_t addNoteParam = 1;
+    while(addNoteParam){
+        c = next_char();
+        switch (c) {
+            case '#': // Up a semitone.
+            case '+':
+                if (buzzer->note < 84) {
+                    buzzer->note++;
+                }
+                buzzer->_next_tune++;
+                break;
+            case '-': // Down a semitone.
+                if (buzzer->note > 1) {
+                    buzzer->note--;
+                }
+                buzzer->_next_tune++;
+                break;
+            case '0' ... '9':
+                buzzer->_note_length_single = next_number();
+                break;
+            default:
+                addNoteParam = 0;
+                // 0 / No next char here is OK.
+                break;
+        }
     }
+        
     buzzer->dots = next_dots();
 #if 0
     // Shorthand length notation.
@@ -270,11 +292,13 @@ inline static void string_handle()
                 }
                 break;
             case '<': // Decrease octave.
+                buzzer->_next_tune++;
                 if (buzzer->_octave > 0) {
                     buzzer->_octave--;
                 }
                 break;
             case '>': // Increase octave.
+                buzzer->_next_tune++;
                 if (buzzer->_octave < 8) {
                     buzzer->_octave++;
                 }
@@ -299,6 +323,11 @@ inline static void string_handle()
                 }
                 break;
             }
+            case 'N': //不知道有什么用，可能是某种自定义标记，但扒下来的哆啦A梦谱有这东西
+            case 'R':   //休止符
+                buzzer->note = 0;
+                buzzer->_note_length_single = next_number();
+                break;
 #if 0
             case 'N': // Play an arbitrary note.
                 note = next_number();
@@ -317,6 +346,12 @@ inline static void string_handle()
 #endif
             case 'A' ... 'G': // Play a note in the current octave.
                 Note_handle();
+
+                if(*buzzer->_next_tune == '&'){
+                    buzzer->_next_tune++;
+                    buzzer->_slur = 1;
+                }
+                    
                 NotePlay();
                 break;
             default:
@@ -345,11 +380,12 @@ void buzzer_one_note(uint16_t Note, float delay)
     if (buzzer == NULL) {
         BuzzerRegister();
     }
+    BuzzerStop();
     PWMSetPeriod(buzzer->buzzer_pwm, 1.0f / (float)Note);
 #if (BUZZER_SILENCE == 1)
     PWMSetDutyRatio(buzzer->buzzer_pwm, 0);
 #else
-    PWMSetDutyRatio(buzzer->buzzer_pwm, 0.8f); // 音量
+    PWMSetDutyRatio(buzzer->buzzer_pwm, 0.9f); // 音量
 #endif
     buzzer_one_note_flag = 1;
     buzzer_one_note_time = delay;
