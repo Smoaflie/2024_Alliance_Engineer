@@ -114,6 +114,7 @@ void ChassisInit_Motor()
                           .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
                           .IntegralLimit = 0,
                           .MaxOut        = 20000,
+                          .DeadBand      = 2,
                       };
     chassis_follow_pid  = PIDRegister(&chassis_follow_pid_config);
 }
@@ -159,9 +160,9 @@ void MecanumCalculate()
     //根据当前速度对目标速度进行限制
     static float limit_add_speed_x,limit_add_speed_x_stop,limit_add_speed_y,limit_add_speed_y_stop;
     static float limit_add_speed_x_v[2] = {4000,2200};
-    static float limit_add_speed_y_v[2] = {15000, 2200};
-    static float limit_add_speed_x_stop_v[2] = {2000,900};
-    static float limit_add_speed_y_stop_v[2] = {3000,900};
+    static float limit_add_speed_y_v[2] = {10000, 2200};
+    static float limit_add_speed_x_stop_v[2] = {1000,900};
+    static float limit_add_speed_y_stop_v[2] = {2000,900};
 
     if(chassis_cmd_recv.chassis_mode != CHASSIS_ROTATE){
         if(chassis_cmd_recv.arm_height <= -490){

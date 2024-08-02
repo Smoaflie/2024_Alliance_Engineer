@@ -42,6 +42,7 @@ static Airpump_Data_s air_data_recv;// 气阀气泵任务发布的信息
 
 static RC_ctrl_t *rc_data;                  // 遥控器数据,初始化时返回
 RC_ctrl_t* vision_rc_data;           // 图传遥控数据
+DaemonInstance* vision_daemon[2];      //图传链路(图传与自定义控制器)
 
 static Robot_Status_e robot_state; // 机器人整体工作状态
 
@@ -53,7 +54,6 @@ static uint8_t zero_output_init_flag = 0; //防止忘记双下而写死的标志
 static uint8_t arm_auto_mode_id = 1;    //臂臂自动模式
 static uint8_t chassis_auto_mod_id = 1; //底盘自动模式
 
-// 地盘速度斜坡函数
 static GPIOInstance *relay_contro_gpio; //继电器io口
 
 _RobotControlMode ControlMode = ControlMode_FetchCube; //控制模式
@@ -72,6 +72,13 @@ void RobotCMDInit_VisionLine()
     vision_rc_data = malloc(sizeof(RC_ctrl_t));
     memset(vision_rc_data,0,sizeof(RC_ctrl_t));
     vision_usart       = USARTRegister(&vision_usart_conf);// 图传串口
+
+    Daemon_Init_Config_s daemon_config = {
+        .callback = NULL,
+        .reload_count = 10,
+    };
+    vision_daemon[0] = DaemonRegister(&daemon_config);
+    vision_daemon[1] = DaemonRegister(&daemon_config);
 }
 void RobotCMDInit_RC()
 {
@@ -128,6 +135,10 @@ static void arm_auto_mode_select(){
             arm_cmd_send.auto_mode = Arm_fetch_gronded_cube;break; // 地矿
         case 11:
             arm_cmd_send.auto_mode = Arm_straighten;break; //伸直臂
+        case 12:
+            arm_cmd_send.auto_mode = Arm_place_cube_in_warehouse_up;break; //放上矿仓
+        case 13:
+            arm_cmd_send.auto_mode = Arm_place_cube_in_warehouse_down;break; //放下矿仓
     }
 }
 static void chassis_auto_mode_select(){
@@ -143,7 +154,8 @@ static void chassis_auto_mode_select(){
  */
 static void RemoteControlSet_SwitchLeftMid()
 {
-    ControlMode = ControlMode_FetchCube;
+    if(ControlMode!=ControlMode_ConvertCube)
+        ControlMode = ControlMode_FetchCube;
 
     static uint8_t arm_contro_mode_id = 1; //标志控制方式
     switch(arm_contro_mode_id){
@@ -217,7 +229,7 @@ static void RemoteControlSet_SwitchLeftMid()
             ControlMode = ControlMode_FetchCube;
             switch_flag |= 0x01;
             arm_auto_mode_id++;
-            if(arm_auto_mode_id>11)   arm_auto_mode_id=1;
+            if(arm_auto_mode_id>13)   arm_auto_mode_id=1;
         }else if(!(dial_flag == 1)){
             switch_flag &= ~0x01;
         }
@@ -278,7 +290,7 @@ static void RemoteControlSet_SwitchLeftDown()
         if(dial_flag == 1 && !(switch_flag & 0x01)){
             switch_flag |= 0x01;
             chassis_auto_mod_id++;
-            if(chassis_auto_mod_id>4)   chassis_auto_mod_id=1;
+            if(chassis_auto_mod_id>2)   chassis_auto_mod_id=1;
         }else if(!(dial_flag == 1)){
             switch_flag &= ~0x01;
         }
@@ -394,7 +406,7 @@ static void MouseKeyControlSet_Normal()
     // wasd 控制底盘全向移动 中速/ctrl慢速/shift高速
     // 其中 云台自由模式下仅支持超低速和慢速
     const float speed[5] = {15000, 30000, 50000, 3000, 12000};
-    if(rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift && (ControlMode==ControlMode_ConvertCube || ControlMode==ControlMode_FetchCube)) {   //超低速
+    if(((rc_data->key[KEY_PRESS].ctrl && !rc_data->key[KEY_PRESS].shift)||(rc_data->key[KEY_PRESS].ctrl && rc_data->key[KEY_PRESS].shift)) && (ControlMode==ControlMode_ConvertCube || ControlMode==ControlMode_FetchCube)) {   //超低速
         chassis_cmd_send.vy = (rc_data->key[KEY_PRESS].w - rc_data->key[KEY_PRESS].s) * speed[3];
         chassis_cmd_send.vx = (rc_data->key[KEY_PRESS].a - rc_data->key[KEY_PRESS].d) * speed[3];
     }else if((ControlMode==ControlMode_ConvertCube || ControlMode==ControlMode_FetchCube)){
@@ -593,17 +605,17 @@ static void MouseKeyControlSet_Normal()
         UI_cmd_send.selected_song = selected_song;
         // ctrl+v+左键 放下矿仓
         if(rc_data->key[KEY_PRESS_WITH_CTRL].v && !rc_data->key[KEY_PRESS].shift){
-            UI_cmd_send.arm_selected_mode = Arm_place_cube_in_warehouse_up;
+            UI_cmd_send.arm_selected_mode = Arm_place_cube_in_warehouse_down;
             if(rc_data->mouse.press_l){
-                arm_cmd_send.auto_mode = Arm_place_cube_in_warehouse_up;
+                arm_cmd_send.auto_mode = Arm_place_cube_in_warehouse_down;
                 arm_cmd_send.contro_mode = ARM_AUTO_MODE;
             }
         }
         // shift+v+左键 放上矿仓
         if(rc_data->key[KEY_PRESS_WITH_SHIFT].v && !rc_data->key[KEY_PRESS].ctrl){
-            UI_cmd_send.arm_selected_mode = Arm_place_cube_in_warehouse_down;
+            UI_cmd_send.arm_selected_mode = Arm_place_cube_in_warehouse_up;
             if(rc_data->mouse.press_l){
-                arm_cmd_send.auto_mode = Arm_place_cube_in_warehouse_down;
+                arm_cmd_send.auto_mode = Arm_place_cube_in_warehouse_up;
                 arm_cmd_send.contro_mode = ARM_AUTO_MODE;
             }
         }
@@ -648,7 +660,7 @@ static void MouseKeyControlSet_Normal()
     /* 鼠标左键 */
         // 切换为取矿模式(云台自由模式)
         if(rc_data->mouse.press_l && !rc_data->mouse.press_r && (!(rc_data->key[KEY_PRESS].keys & ~0x00cf) || rc_data->key[KEY_PRESS].ctrl))
-            ControlMode = ControlMode_FetchCube;
+            ControlMode = ControlMode == ControlMode_ConvertCube ? ControlMode_ConvertCube : ControlMode_FetchCube;
     /* 鼠标右键 */
         // 右键+左键 底盘小陀螺
         static uint8_t chassis_rotate_switch = 0;
@@ -762,8 +774,10 @@ static void MessageCenterDispose(){
     }
     UI_cmd_send.Contro_mode = (robot_state == ROBOT_STOP ? 0 : (int)ControlMode);
     UI_cmd_send.rc_connection_mode_t = RemoteControlIsOnline();
-    UI_cmd_send.vision_connection_mode_t = vision_connection_state;
-    UI_cmd_send.custom_contro_connection_mode_t = custom_contro_connection_state;
+    UI_cmd_send.vision_connection_mode_t = DaemonIsOnline(vision_daemon[0]);
+    UI_cmd_send.custom_contro_connection_mode_t = DaemonIsOnline(vision_daemon[1]);
+    UI_cmd_send.host_connection_mode_t = arm_data_recv.host_working_state;
+
     UI_cmd_send.gimbal_offset_angle = (chassis_cmd_send.offset_angle>0?chassis_cmd_send.offset_angle:chassis_cmd_send.offset_angle+360);
     UI_cmd_send.pump_arm_mode_t = airpump_arm_state;
     UI_cmd_send.pump_valve_mode_t = airpump_linear_state;
@@ -777,14 +791,16 @@ static void MessageCenterDispose(){
 static void extra_Control(){
     //todo: 为了避免该函数覆盖掉键鼠操作，此函数必须在键鼠操作前调用
     //      但其未来仍可能触发奇怪的错误，最好能改进
+    
+    static uint8_t convertModeUseControllerActive = 0;
+    if(ControlMode != ControlMode_ConvertCube)  convertModeUseControllerActive = 0;
+
     //左拨杆为[上]，右拨杆为[下]时
     if(switch_is_down(rc_data->rc.switch_right)){
         //拨轮向上时，修正混合roll偏差角
             /* 该功能源于臂安装的编码器与实际角度存在1:2的比值，上电位置不同会导致整个臂臂的结算异常，需手动修正 */
         if(dial_flag==1)
             arm_cmd_send.call.optimize_signal |= 0x02;
-        else
-            arm_cmd_send.call.optimize_signal &= ~0x02;
         //拨轮向下时，控制开关气泵
         static uint8_t pump_switch_state[4] = {0};
         if(dial_flag==-1){
@@ -794,44 +810,49 @@ static void extra_Control(){
             //左摇杆水平控制推杆气泵
             if(detect_edge(&pump_switch_state[2], rc_data->rc.rocker_l_ > 650) == EDGE_RISING)  airpump_linear_state = 1;
             if(detect_edge(&pump_switch_state[3], rc_data->rc.rocker_l_ < -650) == EDGE_RISING)  airpump_linear_state = 0; 
-        }           
+        }  
+
+        convertModeUseControllerActive = 1;         
     }
 
-    //左拨杆为[上]，右拨杆为[中]时，控制兑矿模式下臂姿态
-    if(switch_is_mid(rc_data->rc.switch_right) && ControlMode == ControlMode_ConvertCube){
-        //左摇杆控制位置，右摇杆控制姿态
-        arm_cmd_send.convertArmControlByController = 1;
-        arm_cmd_send.Translation_x = rc_data->rc.rocker_l_ / 660.0f / 100.0f;
-        arm_cmd_send.Translation_y = rc_data->rc.rocker_l1 / 660.0f / 100.0f;
-        arm_cmd_send.Roatation_Horizontal = rc_data->rc.rocker_r_ / 660.0f * 2.0f;
-        arm_cmd_send.Roatation_Vertical = rc_data->rc.rocker_r1 / 660.0f * 2.0f;
-        //拨轮向上时，在兑矿模式下重置臂姿态(伸直)
-        static uint8_t reset_convertArmPose = 0;
-        if(detect_edge(&reset_convertArmPose, dial_flag==1) == EDGE_RISING)
-            arm_cmd_send.call.reset_convertArmPose_call = 1;
-        //拨轮向下时，在兑矿模式下使左摇杆直接控制臂位置，右摇杆直接控制关节角度
-        if(dial_flag == -1){
-            arm_cmd_send.Rotation_mode = 1;
-            arm_cmd_send.Translation_mode = 1;
-        }else{
-            arm_cmd_send.Rotation_mode = 0;
-            arm_cmd_send.Translation_mode = 0;
+    if(convertModeUseControllerActive){
+        //左拨杆为[上]，右拨杆为[中]时，控制兑矿模式下臂姿态
+        if(switch_is_mid(rc_data->rc.switch_right) && ControlMode == ControlMode_ConvertCube){
+            //左摇杆控制位置，右摇杆控制姿态
+            arm_cmd_send.convertArmControlByController = 1;
+            arm_cmd_send.Translation_x = rc_data->rc.rocker_l1 / 660.0f / 200.0f;
+            arm_cmd_send.Translation_y = rc_data->rc.rocker_l_ / 660.0f / 200.0f;
+            arm_cmd_send.Roatation_Horizontal = rc_data->rc.rocker_r_ / 660.0f * 3.0f ;
+            arm_cmd_send.Roatation_Vertical = -rc_data->rc.rocker_r1 / 660.0f * 3.0f ;
+            //拨轮向上时，在兑矿模式下重置臂姿态(伸直)
+            static uint8_t reset_convertArmPose = 0;
+            if(dial_flag==1)
+                arm_cmd_send.call.reset_convertArmPose_call = 1;
+            else arm_cmd_send.call.reset_convertArmPose_call = 0;
+            //拨轮向下时，在兑矿模式下使左摇杆直接控制臂位置，右摇杆直接控制关节角度
+            if(dial_flag == -1){
+                arm_cmd_send.Rotation_mode = 1;
+                arm_cmd_send.Translation_mode = 1;
+            }else{
+                arm_cmd_send.Rotation_mode = 0;
+                arm_cmd_send.Translation_mode = 0;
+            }
         }
-    }
 
-    //左拨杆为[上]，右拨杆为[上]时
-    //仅兑矿模式下，左摇杆控制底盘，右摇杆控制大Yaw和Z轴，拨轮控制吸盘Roll
-    if(switch_is_up(rc_data->rc.switch_right) && ControlMode == ControlMode_ConvertCube){
-        chassis_cmd_send.vx = 10.0f * rc_data->rc.rocker_l_; // 底盘水平方向
-        chassis_cmd_send.vy = 10.0f * rc_data->rc.rocker_l1; // 底盘竖值方向
-        arm_cmd_send.Position_z = 0.5 * rc_data->rc.rocker_r1 / 660.0; // 臂竖直平移
-        arm_cmd_send.Rotation_yaw = 0.06 * rc_data->rc.rocker_r_ / 660.0; // 臂的旋转
-        if(dial_flag==1)
-            arm_cmd_send.call.sucker_call = 1;
-        else if(dial_flag==-1)
-            arm_cmd_send.call.sucker_call = 2;
-        else
-            arm_cmd_send.call.sucker_call = 0;
+        //左拨杆为[上]，右拨杆为[上]时
+        //仅兑矿模式下，左摇杆控制底盘，右摇杆控制大Yaw和Z轴，拨轮控制吸盘Roll
+        if(switch_is_up(rc_data->rc.switch_right) && ControlMode == ControlMode_ConvertCube){
+            chassis_cmd_send.vx = 10.0f * rc_data->rc.rocker_l_; // 底盘水平方向
+            chassis_cmd_send.vy = 10.0f * rc_data->rc.rocker_l1; // 底盘竖值方向
+            arm_cmd_send.Position_z = 0.5 * rc_data->rc.rocker_r1 / 660.0; // 臂竖直平移
+            arm_cmd_send.Rotation_yaw = 0.06 * rc_data->rc.rocker_r_ / 660.0; // 臂的旋转
+            if(dial_flag==1)
+                arm_cmd_send.call.sucker_call = 1;
+            else if(dial_flag==-1)
+                arm_cmd_send.call.sucker_call = 2;
+            else
+                arm_cmd_send.call.sucker_call = 0;
+        }
     }
 }
 void RobotActive()
@@ -964,8 +985,8 @@ void RobotCMDDebugInterface()
                 // case 3:DM_board_LEDSet(0xffee46);debug_switch_arm_auto_mode=Arm_block_back;break;// 黄色
                 case 1:DM_board_LEDSet(0xff0000);debug_switch_arm_auto_mode=Arm_get_goldcube_right;break;// 红色
                 // case 2:DM_board_LEDSet(0xffa308);debug_switch_arm_auto_mode=Recycle_arm_in;break;// 橙色
-                // case 2:DM_board_LEDSet(0xffa308);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_up;break;// 橙色
-                // case 3:DM_board_LEDSet(0xffee46);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_down;break;// 黄色
+                case 2:DM_board_LEDSet(0xffa308);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_up;break;// 橙色
+                case 3:DM_board_LEDSet(0xffee46);debug_switch_arm_auto_mode=Arm_fetch_cube_from_warehouse_down;break;// 黄色
                 case 4:DM_board_LEDSet(0x444444);debug_switch_arm_auto_mode=Arm_get_silvercube_left;break;// 白色
                 case 5:DM_board_LEDSet(0x43c9b0);debug_switch_arm_auto_mode=Arm_get_silvercube_mid;break;// 青色
                 case 6:DM_board_LEDSet(0x2b74ce);debug_switch_arm_auto_mode=Arm_get_silvercube_right;break;// 蓝色

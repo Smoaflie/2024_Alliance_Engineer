@@ -133,7 +133,7 @@ void AirpumpInit_Communication()
 void AirpumpInit_Param()
 {
     // 推杆初始状态
-    airvalve_tx_coder = 0b0000001101100101101001;
+    airvalve_tx_coder = 0b0000001101100101101010;
     memcpy(airvalve_tx_buf+3,(uint8_t*)&airvalve_tx_coder,4);
     airvalve_tx_buf[7]=(uint8_t)(airvalve_tx_buf[3] + airvalve_tx_buf[4] + airvalve_tx_buf[5] + airvalve_tx_buf[6]);
     memcpy(airvalve_can_instance->tx_buff,airvalve_tx_buf,8);
@@ -189,9 +189,12 @@ void AirpumpContro_Valve()
     其中0001标示左侧矿，0010标示中间矿，0100作保留位，1000作发送准备位
     对于延时位，已知该任务以1000Hz频率运行，另设变量airvalve_delay_time标示推杆每个动作的间隔时间，通过if-else实现延时
     具体流程直接看代码*/
+    /*
+        10下落/抬升 32一级缩回/伸出 45? 76旋转/恢复 98二级伸出/缩回 10/11三级伸出/缩回
+    */
     //取左侧矿
     if((!(airvalve_state&(AIRVALVE_MIDDLE_CUBE_DOING))  &&  ((airpump_cmd_rec.airvalve_mode&AIRVALVE_LEFT_CUBE))) || (airvalve_state&AIRVALVE_LEFT_CUBE_DOING)){ //(过程未完成&&未进行其他推杆任务)&&(cmd切换为该模式||模式进行标志位置位)
-        if(airvalve_mode_cnt < 10){//共10个步骤
+        if(airvalve_mode_cnt < 11){//共10个步骤
             air_data_send.air_auto_mode_selecting = 2;
             airvalve_state |= AIRVALVE_LEFT_CUBE_DOING; //设置进行标志位，防\\\止中途模式被切换
             airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DONE; // 状态切换，清相关标志位
@@ -201,7 +204,7 @@ void AirpumpContro_Valve()
                 airvalve_state |= AIRVALVE_SEND_CODER;
                 switch(airvalve_mode_cnt){
                     //                          0b2X098765X3210987654321
-                    case 1: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_down();airvalve_state_in_auto_mode=0;break;//初始状态
+                    case 1: airvalve_tx_coder = 0b0000001101100101101010;airvalve_delay_time = 300;airsucker_down();airvalve_state_in_auto_mode=0;break;//初始状态
                     case 2: airvalve_tx_coder = 0b0000001101100101010110;airvalve_delay_time = 300;break;//下降+第一段前伸
                     case 3: airvalve_tx_coder = 0b0000001101100110010110;airvalve_delay_time = 300;airsucker_forward();break;//旋转
                     case 4: airvalve_tx_coder = 0b1000001100011010010110;airvalve_delay_time = 1200;airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出
@@ -210,9 +213,10 @@ void AirpumpContro_Valve()
                             // airvalve_state&=~AIRVALVE_LEFT_CUBE_DOING;
                             break;//抬升
                     case 7: airvalve_tx_coder = 0b0000001100100110010101;airvalve_delay_time = 300;airvalve_state&=~AIRVALVE_LEFT_CUBE_DOING;break;//缩回
-                    case 8: airvalve_tx_coder = 0b0000001100100101010101;airvalve_delay_time = 2000;break;//旋转
+                    case 8: airvalve_tx_coder = 0b0000001100100101010101;airvalve_delay_time = 800;break;//旋转
                     case 9: airvalve_tx_coder = 0b0000001100100101101001;airvalve_delay_time = 300;break;//第一段缩回
-                    case 10:airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_up();airvalve_state_in_auto_mode=0;break;//初始状态
+                    case 10:airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 800;airsucker_up();airvalve_state_in_auto_mode=0;break;//初始状态
+                    case 11: airvalve_tx_coder = 0b0000001100100101101010;airvalve_delay_time = 300;break;//第一段缩回
                 }
             }else{
                 airvalve_delay_time--;//计数-1，延时1ms
@@ -237,21 +241,21 @@ void AirpumpContro_Valve()
 
                 switch(airvalve_mode_cnt){
                     //                          0b2X098765X3210987654321
-                    case 1: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 300;airsucker_down();airsucker_enable();airvalve_state_in_auto_mode=0;break;//初始状态
+                    case 1: airvalve_tx_coder = 0b0000001101100101101010;airvalve_delay_time = 300;airsucker_down();airsucker_enable();airvalve_state_in_auto_mode=0;break;//初始状态
                     case 2: airvalve_tx_coder = 0b1000001100011001100110;airvalve_delay_time = 1500;airsucker_forward();airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出+下降
                     case 3: airvalve_tx_coder = 0b0000001101011001100110;airvalve_delay_time = 300;break;//小回
                     case 4: airvalve_tx_coder = 0b0000001101011001100101;airvalve_delay_time = 1200;
                             // airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DOING;
                             break;//抬升
                     case 5: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 800;airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DOING;break;//缩回
-                    case 6: airvalve_tx_coder = 0b0000001101100101101001;airvalve_delay_time = 900;airsucker_up();break;//初始状态
+                    case 6: airvalve_tx_coder = 0b1000001100100101101001;airvalve_delay_time = 900;airsucker_up();break;//初始状态
                     case 7: 
-                            airvalve_tx_coder = 0b1000001100100101101001;
+                            airvalve_tx_coder = 0b1011000000100101101010;
                             airvalve_delay_time = 600;break;//夹爪前伸
-                    case 8: airvalve_tx_coder = 0b0011000001100101101001;airvalve_delay_time = 1000;airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DOING;break;//上抬
-                    case 9: airvalve_tx_coder = 0b0001001001100101101001;airvalve_delay_time = 300;airvalve_state_in_auto_mode=0;airpump_linear_state=0;break;//夹爪夹
-                    case 10: airvalve_tx_coder =0b0000001101100101101001;airvalve_delay_time = 300;break;//夹爪后移
-                    case 11: airvalve_tx_coder =0b0000001101100101101001;airvalve_delay_time = 300;break;//初始状态
+                    case 8: airvalve_tx_coder = 0b0011000001100101101010;airvalve_delay_time = 1000;airvalve_state&=~AIRVALVE_MIDDLE_CUBE_DOING;break;//上抬
+                    case 9: airvalve_tx_coder = 0b0001001001100101101010;airvalve_delay_time = 1500;airvalve_state_in_auto_mode=0;airpump_linear_state=0;break;//夹爪夹
+                    case 10: airvalve_tx_coder =0b0000001101100101101010;airvalve_delay_time = 300;break;//夹爪后移
+                    case 11: airvalve_tx_coder =0b0000001101100101101010;airvalve_delay_time = 300;break;//初始状态
                 }
             }else{
                 airvalve_delay_time--;//计数-1，延时1ms
@@ -361,7 +365,7 @@ void AirpumpEmergencyHandler()
 {
     //强制暂停
     if(airpump_cmd_rec.halt_force_call == 1){
-        airvalve_tx_coder = 0b0000001101100101101001;//初始状态
+        airvalve_tx_coder = 0b0000001101100101101010;//初始状态
         airvalve_state = 0;
         airvalve_mode_cnt = 0;
         air_data_send.air_auto_mode_selecting = 0;

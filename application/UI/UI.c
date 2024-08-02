@@ -91,6 +91,7 @@ static UI_GRAPH_INSTANCE* SIGN_pumpValve;
 static UI_GRAPH_INSTANCE* circle_armAutoMode;
 static UI_GRAPH_INSTANCE* circle_valveAutoMode;
 static UI_GRAPH_INSTANCE* circle_customControConnection;
+static UI_GRAPH_INSTANCE* circle_hostConnection;
 static UI_GRAPH_INSTANCE* circle_visitonConnection;
 static UI_GRAPH_INSTANCE* circle_remoteConnection;
 static UI_GRAPH_INSTANCE* rectangle_Z;
@@ -158,6 +159,7 @@ static void ui_reload(){
     circle_armAutoMode = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,1250,750,5);
     circle_valveAutoMode = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,1250,680,5);
     circle_customControConnection = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,310,850,15);
+    circle_hostConnection = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,390,850,15);
     circle_visitonConnection = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,230,850,15);
     circle_remoteConnection = UI_Graph_Init(GraphType_Round, 2, 1,Graphic_Color_White,15,150,850,15);
     
@@ -242,6 +244,8 @@ static void UI_operate(){
         UI_StateSwitchDetect_Graph(circle_visitonConnection, 2, UI_data_recv.vision_connection_mode_t, Graphic_Color_White, Graphic_Color_Green);
         // 自定义控制器连接 
         UI_StateSwitchDetect_Graph(circle_customControConnection, 2, UI_data_recv.custom_contro_connection_mode_t, Graphic_Color_White, Graphic_Color_Green);
+        // 上位机连接
+        UI_StateSwitchDetect_Graph(circle_hostConnection, 2, UI_data_recv.host_connection_mode_t, Graphic_Color_White, Graphic_Color_Green);
         // 臂模式
         UI_StateSwitchDetect_Graph(circle_armAutoMode, 3, UI_data_recv.arm_mode, Graphic_Color_White, Graphic_Color_Green, Graphic_Color_Yellow);
         // 推杆模式

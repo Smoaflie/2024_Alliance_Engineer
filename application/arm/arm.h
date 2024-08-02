@@ -32,6 +32,7 @@ typedef struct {
     uint8_t recv_package_flag;     // 接收包标识
     ARM_TRANSLATE_PARAM translate_param; //平移操作参数
     ARM_ROTATE_PARAM rotate_param;    //旋转操作参数
+    DaemonInstance *daemon;
 }HOST_ARM_COMM;
 
 /**

@@ -60,7 +60,7 @@ struct arm_controller_data_s;
 /* 自动模式相关 */
 static int32_t arm_height_outtime,arm_joint_outtime,arm_sucker_outtime; //自动模式最大执行时间
 static uint16_t auto_mode_step_id[AUTO_MODE_IDX] = {0};//各自动模式所进行到的步骤id
-static uint16_t auto_mode_doing_state = 0; //各自动模式进行时标志位 
+static uint32_t auto_mode_doing_state = 0; //各自动模式进行时标志位 
 static uint16_t auto_mode_delay_time; //自动模式步骤延时时间
 static arm_controller_data_s arm_auto_mode_data; // 臂臂自动模式目标值
 
@@ -100,7 +100,7 @@ uint8_t MonitorArmAutoRequest(const ARM_AUTO_MODE_* auto_mode, uint16_t selected
                 arm_auto_mode_data.height        = step->setting.height_offset ? arm_current_data_p->height+step->height :   step->height;
                 arm_height_outtime = step->delay_time;
                 (*Arm_goto_target_position_flag_p) |= Arm_height_ramp_flag;
-                return 1;
+                return 4;
             }
 
             arm_auto_mode_data.big_yaw_angle = step->setting.bigyaw_offset ? arm_current_data_p->big_yaw_angle+step->bigyaw : step->bigyaw;
@@ -118,7 +118,11 @@ uint8_t MonitorArmAutoRequest(const ARM_AUTO_MODE_* auto_mode, uint16_t selected
             arm_height_outtime = step->delay_time;
             (*Arm_goto_target_position_flag_p) |= (Arm_height_ramp_flag|Arm_joint_ramp_flag);
 
-            if(step->setting.func_deley) auto_mode_delay_time = step->reserved;
+            if(step->setting.func_deley) {
+                if(step->reserved > 10000)  auto_mode_doing_state = 0;
+                else    auto_mode_delay_time = step->reserved;    
+            }
+                
             if(step->setting.arm_pump & 0x01)    airpump_arm_state = 1;
             else if(step->setting.arm_pump & 0x02)   airpump_arm_state = 0;
             if(step->setting.valve_pump & 0x01)  airpump_linear_state = 1;
@@ -229,26 +233,18 @@ const ARM_AUTO_MODE_ Arm_straighten_func = {
     .step = 1
 };
 
-const AUTO_MODE_STEP_ Arm_straighten_ConvertMode_step[] = {
-    {{.setting_total = height_offset_},  1500,-90,0,0,0,0,0},
-};
-const ARM_AUTO_MODE_ Arm_straighten_ConvertMode_func = {
-    .auto_mode_step = Arm_straighten_ConvertMode_step,
-    .id =  Arm_straighten_ConvertMode,
-    .step = 1
-};
-
 const AUTO_MODE_STEP_ Recycle_arm_out_step[] = {
     {{.setting_total = arm_offset_ | height_offset_},  1000,0,0,0,0,0,55},
-    {{.setting_total = arm_offset_ | height_offset_},  2000,-18,-16,0,0,0,0},
-    {{.setting_total = arm_offset_ | height_offset_},  1000,-40,0,0,0,0,100},
-    {{.setting_total = height_offset_},  2000,-44,54,84,0,90.5,0},
+    {{.setting_total = arm_offset_ | height_offset_},  2000,-19,-14,0,0,0,0},
+    {{.setting_total = arm_offset_ | height_offset_},  1000,0,0,0,0,0,100},
+    {{.setting_total = arm_offset_ | height_offset_},  1000,-40,0,0,0,0,0},
+    {{.setting_total = height_offset_},  2000,-44,54,84,90,0,0},
     {{.setting_total = height_offset_},  1000,-44,54,84,90,0,300},
 };
 const ARM_AUTO_MODE_ Recycle_arm_out_func = {
     .auto_mode_step = Recycle_arm_out_step,
     .id =  Recycle_arm_out,
-    .step = 5
+    .step = 6
 };
 
 const AUTO_MODE_STEP_ Arm_walk_state_step[] = {

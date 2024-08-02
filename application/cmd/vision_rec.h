@@ -17,6 +17,8 @@ int vision_connection_state = 0;
 int custom_contro_connection_state = 0;
 // 图传控制数据
 extern RC_ctrl_t* vision_rc_data;
+// 看门狗
+extern DaemonInstance* vision_daemon[2];      //图传链路(图传与自定义控制器)
 
 //图传数据解析为控制数据
 static void vision_to_rc(const uint8_t *rec_buf){
@@ -104,6 +106,7 @@ static void JudgeVisionReadData(uint8_t* buff){
 				switch (referee_vision_info.CmdID)
 				{
                     case 0x0302: //自定义控制器
+                        DaemonReload(vision_daemon[1]);//喂狗
                         memcpy(&vision_recv_data, (buff + DATA_Offset), 30);
                         memcpy((uint8_t*)&custom_controller_comm_recv,(uint8_t*)vision_recv_data+1,1);
 
@@ -120,6 +123,7 @@ static void JudgeVisionReadData(uint8_t* buff){
 						custom_contro_connection_state = 1;
 					    break;
 					case 0x0304://键鼠遥控数据
+                        DaemonReload(vision_daemon[0]);//喂狗
 						vision_to_rc(buff + DATA_Offset);
 						vision_connection_state = 1;
 						break;

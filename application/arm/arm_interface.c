@@ -143,7 +143,10 @@ static void HOST_RECV_CALLBACK()
     uint8_t rec_buf[28];
     memcpy(rec_buf,(uint8_t*)host_comm.host_instance->recv_buff,host_comm.host_instance->recv_buff_size);
     if(rec_buf[0]==0xFF&&rec_buf[1]==0x52){
+        DaemonReload(host_comm.daemon); //喂狗
         nuc_flag = rec_buf[2];
+        if(nuc_flag ==0) return;
+        
         memcpy((uint8_t*)&arm_recv_host_data, rec_buf+3, sizeof(arm_controller_data_s));
         arm_recv_host_data.big_yaw_angle *= 1;
         float height = arm_recv_host_data.mid_yaw_angle;
@@ -503,6 +506,13 @@ void ArmInit_Communication()
 
     host_comm.host_send_buf[0]=0xff;host_comm.host_send_buf[1]=0x52;
     host_comm.sent_package_flag = 0;
+    // 注册守护线程
+    Daemon_Init_Config_s daemon_config = {
+        .callback     = NULL,
+        .owner_id     = &host_comm,
+        .reload_count = 10, // 100ms未收到数据则丢失
+    };
+    host_comm.daemon = DaemonRegister(&daemon_config);
 }
 void ArmInit_IO()
 {
@@ -741,7 +751,9 @@ static void ArmSetAutoMode(){
         //从下矿仓取矿
         MonitorArmAutoRequest(&ARM_AUTO_MODE_DATA_.Arm_fetch_cube_from_warehouse_down_func, arm_cmd_recv.auto_mode);
         //取左侧银矿
-        MonitorArmAutoRequest(&ARM_AUTO_MODE_DATA_.Arm_get_silvercube_left_func, arm_cmd_recv.auto_mode);
+        if(MonitorArmAutoRequest(&ARM_AUTO_MODE_DATA_.Arm_get_silvercube_left_func, arm_cmd_recv.auto_mode) == 1){
+            auto_mode_doing_state = 0;
+        };
         //取中间银矿
         MonitorArmAutoRequest(&ARM_AUTO_MODE_DATA_.Arm_get_silvercube_mid_func, arm_cmd_recv.auto_mode);
         //取右侧银矿
@@ -756,8 +768,6 @@ static void ArmSetAutoMode(){
         MonitorArmAutoRequest(&ARM_AUTO_MODE_DATA_.Arm_block_back_func, arm_cmd_recv.auto_mode);
         //挡侧装甲板
         MonitorArmAutoRequest(&ARM_AUTO_MODE_DATA_.Arm_block_side_func, arm_cmd_recv.auto_mode);
-        //兑矿模式下伸直臂
-        MonitorArmAutoRequest(&Arm_straighten_ConvertMode_func, arm_cmd_recv.auto_mode);
     }
 }
 static uint8_t ArmJointInPlace(float Tolerance, arm_controller_data_s* current_data, arm_controller_data_s* target_data){
@@ -871,7 +881,7 @@ static void host_control(){
         custom_control_mode_switch = 1;
     }else if(!arm_cmd_recv.call.switch_custom_controller_mode_call)custom_control_mode_switch = 0;
     
-    VAL_LIMIT(arm_custom_control_origin_height, -620, 30);
+    VAL_LIMIT(arm_custom_control_origin_height, -620, 40);
     VAL_LIMIT(custom_control_bigyaw_angle_offset, -180, 180);
     
     static uint8_t switch_flag = 0;
@@ -886,9 +896,17 @@ static void host_control(){
     //兑矿模式-开关自定义控制器模式
     if(custom_control_enable){
         if(custom_control_position) host_comm.sent_package_flag = 2; //控制位置
-        else    host_comm.sent_package_flag = 1;    //控制位姿(默认)
-        
-        if(host_comm.host_rec_flag){
+        else    host_comm.sent_package_flag = 1;    //控制位姿(默认)        
+    }else if(arm_cmd_recv.convertArmControlByController){
+        host_comm.sent_package_flag = 3;
+    }else{
+        custom_control_bigyaw_angle_offset = -90;
+        host_comm.sent_package_flag = 0;
+        custom_control_position = 0;
+        arm_custom_control_origin_height = arm_current_data.height - arm_recv_host_data.height;
+    }
+
+    if(host_comm.host_rec_flag){
             memcpy(&arm_auto_mode_data,&arm_recv_host_data,sizeof(arm_controller_data_s));
             arm_auto_mode_data.height = arm_recv_host_data.height + arm_custom_control_origin_height;
             arm_auto_mode_data.big_yaw_angle += custom_control_bigyaw_angle_offset;
@@ -897,12 +915,6 @@ static void host_control(){
             Arm_goto_target_position_flag |= Arm_height_ramp_flag;
             host_comm.host_rec_flag = 0;
         }
-    }else{
-        custom_control_bigyaw_angle_offset = -90;
-        host_comm.sent_package_flag = arm_cmd_recv.convertArmControlByController ? 3 : 0;
-        custom_control_position = 0;
-        arm_custom_control_origin_height = arm_current_data.height;
-    }
 }
 
 // 控制末端吸盘roll
@@ -976,16 +988,6 @@ void ArmParamPretreatment()
         assorted_detected_speed = assorted_up_encoder->measure.speed_aps / 2.0f;
         assorted_detected_last_speed = assorted_up_encoder->measure.last_speed_aps / 2.0f;
     }
-
-    //对"兑矿模式下重置臂姿态"的命令作出反应
-    if(arm_cmd_recv.call.reset_convertArmPose_call){
-        arm_cmd_recv.contro_mode = ARM_AUTO_MODE;
-        Arm_goto_target_position_flag = 0;
-        auto_mode_delay_time = 0;
-        memset(auto_mode_step_id,0,sizeof(auto_mode_step_id));
-        auto_mode_doing_state = 0;
-        arm_cmd_recv.auto_mode = Arm_straighten_ConvertMode;
-    }
 }
 //异常检测与处理
 void ArmErrorDetectAndHandle(){
@@ -1044,9 +1046,12 @@ void ArmControInterface()
             /* 先识别自动模式 */
             if(arm_cmd_recv.contro_mode == ARM_AUTO_MODE || auto_mode_doing_state){
                 //如果上次执行的自动模式有延时需求（比如移动夹爪），将等待
-                if(auto_mode_delay_time!=0)
-                    auto_mode_delay_time--;
-                else
+                if(auto_mode_delay_time!=0){
+                    if(auto_mode_doing_state == 0)
+                        auto_mode_delay_time = 0;
+                    else
+                        auto_mode_delay_time--;
+                }else
                     //监测自动操作请求
                     ArmSetAutoMode();
             }else if(arm_cmd_recv.contro_mode == ARM_CUSTOM_CONTRO)
@@ -1126,7 +1131,7 @@ void ArmCommunicateHOST()
                 host_comm.host_send_buf[2] = 0;
                 break;
             case 4:
-                host_comm.host_send_buf[2] = 0x01<<3;                
+                host_comm.host_send_buf[2]  = 0x01<<3;                
                 memcpy(host_comm.host_send_buf+3, &arm_current_data, sizeof(arm_controller_data_s));
                 break;
             case 1:
@@ -1141,11 +1146,14 @@ void ArmCommunicateHOST()
                 break;
             case 3:
                 host_comm.host_send_buf[2] = 0x01<<2;
-                memcpy(host_comm.host_send_buf+3, (uint8_t*)&host_comm.translate_param, sizeof(ARM_TRANSLATE_PARAM));
-                memcpy(host_comm.host_send_buf+15, (uint8_t*)&host_comm.rotate_param, sizeof(ARM_ROTATE_PARAM));
+                memcpy(host_comm.host_send_buf+3, (uint8_t*)&host_comm.translate_param, sizeof(float)*2);
+                memcpy(host_comm.host_send_buf+11, (uint8_t*)&host_comm.translate_param.translateMode, 1);
+                memcpy(host_comm.host_send_buf+15, (uint8_t*)&host_comm.rotate_param.rotationMode, 1);
+                memcpy(host_comm.host_send_buf+16, (uint8_t*)&host_comm.rotate_param.rotationUp_Down, sizeof(float)*3);
                 
                 break;
         }
+        host_comm.host_send_buf[2] |= arm_cmd_recv.call.reset_convertArmPose_call<<6; 
         host_comm.host_send_buf[2] |= (arm_cmd_recv.call.optimize_signal & 0x01)<<7;
         HostSend(host_comm.host_instance, host_comm.host_send_buf, sizeof(host_comm.host_send_buf));
     }
@@ -1185,7 +1193,8 @@ void ArmPubMessage()
     arm_data_send.joint_state.motor_state.assortedroll = DaemonIsOnline(assorted_motor_down->daemon);
     arm_data_send.joint_state.motor_state.tail = DaemonIsOnline(tail_motor->daemon);
     arm_data_send.joint_state.motor_state.height = DaemonIsOnline(z_motor->daemon);
-
+    //上位机运行状态
+    arm_data_send.host_working_state = DaemonIsOnline(host_comm.daemon);
     PubPushMessage(arm_data_sub,&arm_data_send);
 }
 static uint8_t Arm_move_detect(arm_controller_data_s* state){

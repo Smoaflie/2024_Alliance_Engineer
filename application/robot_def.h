@@ -255,6 +255,7 @@ typedef struct{
     uint8_t arm_auto_mode_selecting;
 
     _joint_state joint_state;
+    uint8_t host_working_state; //上位机运行状态
 }Arm_Data_s;
 
 typedef struct{
@@ -349,6 +350,7 @@ typedef struct
     uint8_t rc_connection_mode_t : 1;    //遥控器连接
     uint8_t vision_connection_mode_t : 1;    //图传连接
     uint8_t custom_contro_connection_mode_t : 1;    //自定义控制器连接
+    uint8_t host_connection_mode_t : 1;    //上位机通讯连接
     uint8_t pump_arm_mode_t : 1;    //臂气泵
     uint8_t pump_valve_mode_t : 1;    //推杆气泵
     uint8_t arm_mode : 3;   //臂状态圈 0-无动作 1-进行中 2-暂停
@@ -401,7 +403,6 @@ typedef struct
 #define Arm_block_back 15 // 挡后装甲板
 #define Arm_place_cube_in_warehouse_up 16 // 放上矿仓
 #define Arm_place_cube_in_warehouse_down 17 // 放下矿仓
-#define Arm_straighten_ConvertMode 18 // 兑矿模式下伸直臂
 // 臂臂控制模式
 #define Arm_Control_with_Chassis 1// 控制底盘臂臂
 #define Arm_Control_only_Arm     2// 仅控制臂臂
