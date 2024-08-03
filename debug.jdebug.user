@@ -35,15 +35,15 @@ OpenDocument="daemon.h", FilePath="d:/Documents/github/2024_Engineer/modules/dae
 OpenDocument="UI_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/UI/UI_interface.c", Line=91
 OpenToolbar="File", Floating=0, x=1, y=0
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=1, w=426, h=260, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Source Files", DockArea=LEFT, x=0, y=1, w=310, h=375, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=2, w=426, h=173, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=0, w=310, h=247, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
-OpenWindow="Memory 1", DockArea=RIGHT, x=0, y=0, w=426, h=188, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x2401916C
-OpenWindow="Watched Data 1", DockArea=FLOATING, x=1377, y=37, w=426, h=680, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=1, w=426, h=256, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Source Files", DockArea=LEFT, x=0, y=1, w=310, h=371, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=2, w=426, h=176, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=0, w=310, h=251, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
+OpenWindow="Memory 1", DockArea=RIGHT, x=0, y=0, w=426, h=189, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x24019F54
+OpenWindow="Watched Data 1", DockArea=FLOATING, x=975, y=23, w=426, h=680, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Terminal", DockArea=BOTTOM, x=2, y=0, w=763, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Data Sampling", DockArea=BOTTOM, x=1, y=0, w=423, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
-OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=531, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="5 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="16;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="70;20", CodeGraphLegendShown=0, CodeGraphLegendPosition="80;20"
+OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=531, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="5 s / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="16;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="321;-1", CodeGraphLegendShown=0, CodeGraphLegendPosition="335;0"
 OpenWindow="Console", DockArea=BOTTOM, x=3, y=0, w=200, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
 TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;500]
@@ -64,7 +64,7 @@ WatchedExpression="encoder_offset", Window=Watched Data 1
 WatchedExpression="switch_num", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="ARM_AUTO_MODE_DATA_", RefreshRate=1, Window=Watched Data 1
 WatchedExpression="step", Window=Watched Data 1
-WatchedExpression="auto_mode_step_id[4]", RefreshRate=1, Window=Watched Data 1
+WatchedExpression="auto_mode_step_id[7]", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="ControlMode", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="arm_recv_host_data", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="nuc_flag", RefreshRate=2, Window=Watched Data 1

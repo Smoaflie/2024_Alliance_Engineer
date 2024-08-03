@@ -32,6 +32,9 @@ typedef struct
     DaemonInstance *daemon;
     uint32_t feed_cnt;
     float dt;
+
+    uint8_t reboot_call;    //复位请求，置位时停止电机发送
+    uint8_t reboot_delay_cnt;
 } DRMotorInstance;
 
 /**

@@ -209,7 +209,7 @@ void AirpumpContro_Valve()
                     case 3: airvalve_tx_coder = 0b0000001101100110010110;airvalve_delay_time = 300;airsucker_forward();break;//旋转
                     case 4: airvalve_tx_coder = 0b1000001100011010010110;airvalve_delay_time = 1200;airvalve_state_in_auto_mode=1;airpump_linear_state=1;break;//伸出
                     case 5: airvalve_tx_coder = 0b0000001101011010010110;airvalve_delay_time = 300;break;//小回
-                    case 6: airvalve_tx_coder = 0b0000001101011010010101;airvalve_delay_time = 300;
+                    case 6: airvalve_tx_coder = 0b0000001101011010010101;airvalve_delay_time = 1000;
                             // airvalve_state&=~AIRVALVE_LEFT_CUBE_DOING;
                             break;//抬升
                     case 7: airvalve_tx_coder = 0b0000001100100110010101;airvalve_delay_time = 300;airvalve_state&=~AIRVALVE_LEFT_CUBE_DOING;break;//缩回

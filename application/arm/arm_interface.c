@@ -47,7 +47,7 @@ static float tail_roll_stuck_current = 6000;
 static float z_stuck_current = 10000;   /* 各关节堵转电流 */
 static float assorted_detected_speed, assorted_detected_last_speed;
 // 编码器实例
-static uint32_t encoder_offset[4] = {111119, 158767, 97303, 6207};
+static uint32_t encoder_offset[4] = {120894, 158767, 92856, 106791};
 static EncoderInstance_s *joint_motor_encoder[4],*assorted_up_encoder, *assorted_yaw_encoder, *tail_motor_encoder, *big_yaw_encoder; // 四个编码器，大YAW不另设编码器
 
 // PID实例
@@ -98,6 +98,7 @@ static uint8_t custom_control_enable = 0;
 
 static float roll_offset_angle;
 static float custom_control_bigyaw_angle_offset = -90;
+
 
 static uint8_t nuc_flag;
 // 定义静态内联函数，用于其他文件访问相关变量

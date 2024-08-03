@@ -244,14 +244,14 @@ static uint8_t Reset_Param(uint8_t bool_){
     static uint16_t reset_press_cnt = 0;
     if(bool_){
         reset_press_cnt++;
-        if(reset_press_cnt==1){
+        if(reset_press_cnt%10 == 1){
             arm_cmd_send.call.reset_init_flag = 1;
             airpump_cmd_send.init_call = 1;
         }else{
             arm_cmd_send.call.reset_init_flag = 0;
             airpump_cmd_send.init_call = 0;
         }
-            
+
         if(reset_press_cnt > 1000){
             __set_FAULTMASK(1);
             NVIC_SystemReset();

@@ -148,8 +148,13 @@ void DRMotorControl()
         motor_controller = &motor->motor_controller;
         pid_ref = motor_controller->pid_ref;
 
+        //复位请求处理（延时100ms不发送信息)
+        if(motor->reboot_call){
+            if(motor->reboot_delay_cnt==0)  motor->reboot_call = 0;
+            else    motor->reboot_delay_cnt--;
+        }
         // DR_B0x电机不支持实施状态反馈，需要自己发送查询命令
-        if (motor->motor_type == DR_B0X) {
+        if (motor->motor_type == DR_B0X && !motor->reboot_call) {
             static uint8_t tx_buf_B0X_recall[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
             CANTransmit_once(motor->motor_can_instance->can_handle,
                              (motor->motor_can_instance->tx_id & (0x1f << 5)) + 0x1e,
@@ -298,8 +303,21 @@ void DRMotorErrorDetection(DRMotorInstance *motor)
 
 //大然电机软重启
 void DRMotorReset(DRMotorInstance* motor){
-    static uint8_t tx_buf_DRmotor_reboot[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    CANTransmit_once(motor->motor_can_instance->can_handle,
-                        (motor->motor_can_instance->tx_id & (0x1f << 5)) + 0x08,
-                        tx_buf_DRmotor_reboot, 2);
+    motor->reboot_call = 1;
+    motor->reboot_delay_cnt = 100;
+    if(motor->motor_type == DR_PDA04){
+        static uint8_t tx_buf_DRmotor_reboot[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        CANTransmit_once(motor->motor_can_instance->can_handle,
+                            (motor->motor_can_instance->tx_id & (0x1f << 5)) + 0x08,
+                            tx_buf_DRmotor_reboot, 10);
+    }else if(motor->motor_type == DR_B0X){
+        static uint8_t tx_buf_DRmotor_clearError[] = {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        CANTransmit_once(motor->motor_can_instance->can_handle,
+                            (motor->motor_can_instance->tx_id & (0x1f << 5)) + 0x08,
+                            tx_buf_DRmotor_clearError, 10);
+        static uint8_t tx_buf_reset_mode[] = {0x33, 0x75, 0x03, 0x00, 0x08, 0x00, 0x00, 0x00};
+        CANTransmit_once(motor->motor_can_instance->can_handle,
+                         (motor->motor_can_instance->tx_id & (0x1f << 5)) + 0x1f,
+                         tx_buf_reset_mode, 2);    
+    }
 }
