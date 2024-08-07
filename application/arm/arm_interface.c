@@ -47,7 +47,7 @@ static float tail_roll_stuck_current = 6000;
 static float z_stuck_current = 10000;   /* 各关节堵转电流 */
 static float assorted_detected_speed, assorted_detected_last_speed;
 // 编码器实例
-static uint32_t encoder_offset[4] = {120894, 158767, 92856, 106791};
+static uint32_t encoder_offset[4] = {132015, 158767, 91999, 106791};
 static EncoderInstance_s *joint_motor_encoder[4],*assorted_up_encoder, *assorted_yaw_encoder, *tail_motor_encoder, *big_yaw_encoder; // 四个编码器，大YAW不另设编码器
 
 // PID实例
@@ -575,6 +575,7 @@ void ArmInit_Param(){
     // init_arm_auto_mode_func(&ARM_AUTO_MODE_DATA_.Arm_get_silvercube_left_func, &Arm_get_silvercube_left_func, ARM_AUTO_MODE_DATA_.Arm_get_silvercube_left_step);
     // init_arm_auto_mode_func(&ARM_AUTO_MODE_DATA_.Recycle_arm_in_func, &Recycle_arm_in_func, ARM_AUTO_MODE_DATA_.Recycle_arm_in_step);
 #endif
+    // for(int i = 3; i < 49; i++) ARM_AUTO_MODE_DATA_.Arm_get_goldcube_right_step[i].delay_time = (ARM_AUTO_MODE_DATA_.Arm_get_goldcube_right_step[i].delay_time > 10) ? ARM_AUTO_MODE_DATA_.Arm_get_goldcube_right_step[i].delay_time-10 : 10; 
 }
 
 /* 一些私有函数 */
@@ -1376,7 +1377,7 @@ void ArmDebugInterface()
     // static float debug_limit_output = 1;
     // assorted_motor_up->motor_controller.speed_PID.MaxOut = debug_limit_output;
     // assorted_motor_down->motor_controller.speed_PID.MaxOut = debug_limit_output;
-
+    
     ArmDebug_ModifyEncoderParam();
     ArmDebug_ModifyAutoModeParam();
     PubPushMessage(arm_data_sub,&arm_data_send);

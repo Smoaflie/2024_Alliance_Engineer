@@ -1,8 +1,9 @@
 
 
-Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm_interface.c:144, State=BP_STATE_DISABLED
+Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm_interface.c:145:39, State=BP_STATE_DISABLED
 Breakpoint=d:/Documents/github/2024_Engineer/application/arm/arm_interface.c:1141, State=BP_STATE_DISABLED
 GraphedExpression="((host_comm).rotate_param).rotationLeft_Right", Color=#e56a6f
+OpenDocument="_default_types.h", FilePath="d:/program files/arm-gnu-toolchain-12.3.rel1-mingw-w64-i686-arm-none-eabi/arm-none-eabi/include/machine/_default_types.h", Line=0
 OpenDocument="vision_rec.h", FilePath="d:/Documents/github/2024_Engineer/application/cmd/vision_rec.h", Line=84
 OpenDocument="main.c", FilePath="d:/Documents/github/2024_Engineer/Core/Src/main.c", Line=69
 OpenDocument="airpump_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/airpump/airpump_interface.c", Line=107
@@ -35,11 +36,11 @@ OpenDocument="daemon.h", FilePath="d:/Documents/github/2024_Engineer/modules/dae
 OpenDocument="UI_interface.c", FilePath="d:/Documents/github/2024_Engineer/application/UI/UI_interface.c", Line=91
 OpenToolbar="File", Floating=0, x=1, y=0
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=1, w=426, h=256, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Source Files", DockArea=LEFT, x=0, y=1, w=310, h=371, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=2, w=426, h=176, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=0, w=310, h=251, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
-OpenWindow="Memory 1", DockArea=RIGHT, x=0, y=0, w=426, h=189, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x24019F54
+OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=1, w=426, h=253, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Source Files", DockArea=LEFT, x=0, y=1, w=310, h=368, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=2, w=426, h=178, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=0, w=310, h=254, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
+OpenWindow="Memory 1", DockArea=RIGHT, x=0, y=0, w=426, h=190, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x2401809C
 OpenWindow="Watched Data 1", DockArea=FLOATING, x=975, y=23, w=426, h=680, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Terminal", DockArea=BOTTOM, x=2, y=0, w=763, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Data Sampling", DockArea=BOTTOM, x=1, y=0, w=423, h=323, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
@@ -64,10 +65,12 @@ WatchedExpression="encoder_offset", Window=Watched Data 1
 WatchedExpression="switch_num", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="ARM_AUTO_MODE_DATA_", RefreshRate=1, Window=Watched Data 1
 WatchedExpression="step", Window=Watched Data 1
-WatchedExpression="auto_mode_step_id[7]", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="auto_mode_step_id[4]", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="ControlMode", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="arm_recv_host_data", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="nuc_flag", RefreshRate=2, Window=Watched Data 1
 WatchedExpression="host_comm", RefreshRate=5, Window=Watched Data 1
 WatchedExpression="(uint8_t[32])host_comm.host_instance->recv_buff", RefreshRate=1, Window=Watched Data 1
 WatchedExpression="motor_rb", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="arm_auto_mode_id", RefreshRate=1, Window=Watched Data 1
+WatchedExpression="tail_motor_encoder", RefreshRate=5, Window=Watched Data 1
