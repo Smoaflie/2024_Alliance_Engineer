@@ -90,6 +90,8 @@ void Error_Handler(void);
 #define key_2_GPIO_Port GPIOB
 #define CS1_GYRO_Pin GPIO_PIN_0
 #define CS1_GYRO_GPIO_Port GPIOB
+#define key_3_Pin GPIO_PIN_15
+#define key_3_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

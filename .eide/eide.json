@@ -69,7 +69,6 @@
           "Drivers/CMSIS/Device/ST/STM32F4xx/Include",
           "Drivers/CMSIS/Include",
           "Middlewares/ST/ARM/DSP/Inc",
-          ".eide/deps",
           "bsp",
           "bsp/dwt",
           "bsp/can",
@@ -118,13 +117,42 @@
           "Middlewares/ST/ARM/DSP/Lib",
           "modules/algorithm"
         ],
-        "sourceDirList": [],
         "defineList": [
           "DEBUG",
           "USE_HAL_DRIVER",
           "STM32F407xx",
           "ARM_MATH_CM4"
         ]
+      },
+      "builderOptions": {
+        "GCC": {
+          "version": 5,
+          "beforeBuildTasks": [],
+          "afterBuildTasks": [],
+          "global": {
+            "$float-abi-type": "hard",
+            "output-debug-info": "enable"
+          },
+          "c/cpp-compiler": {
+            "language-c": "gnu17",
+            "language-cpp": "gnu++17",
+            "optimization": "level-0",
+            "warnings": "all-warnings",
+            "one-elf-section-per-function": true,
+            "one-elf-section-per-data": true,
+            "C_FLAGS": "-Wall -Wextra -Wshadow -Wno-error=unused-variable -Wno-error=unused-but-set-variable -Wno-unused-parameter -fmessage-length=0 -Wno-error=type-limits"
+          },
+          "asm-compiler": {
+            "ASM_FLAGS": "-DDEBUG"
+          },
+          "linker": {
+            "output-format": "elf",
+            "remove-unused-input-sections": true,
+            "LD_FLAGS": "-TSTM32F407IGHX_FLASH.ld",
+            "LIB_FLAGS": "-lCMSISDSP -larm_cortexM4lf_math modules/algorithm/AHRS.lib",
+            "$toolName": "auto"
+          }
+        }
       }
     },
     "Release": {
@@ -173,10 +201,40 @@
           "USE_HAL_DRIVER",
           "STM32F407xx"
         ],
-        "sourceDirList": [],
         "libList": []
+      },
+      "builderOptions": {
+        "GCC": {
+          "version": 5,
+          "beforeBuildTasks": [],
+          "afterBuildTasks": [],
+          "global": {
+            "$float-abi-type": "softfp",
+            "output-debug-info": "enable",
+            "misc-control": []
+          },
+          "c/cpp-compiler": {
+            "language-c": "c11",
+            "language-cpp": "c++11",
+            "optimization": "level-debug",
+            "warnings": "all-warnings",
+            "one-elf-section-per-function": true,
+            "one-elf-section-per-data": true,
+            "C_FLAGS": "",
+            "CXX_FLAGS": ""
+          },
+          "asm-compiler": {
+            "ASM_FLAGS": ""
+          },
+          "linker": {
+            "output-format": "elf",
+            "remove-unused-input-sections": true,
+            "LD_FLAGS": "",
+            "LIB_FLAGS": "-l:libarm_cortexM4lf_math.a"
+          }
+        }
       }
     }
   },
-  "version": "3.3"
+  "version": "3.5"
 }

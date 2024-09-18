@@ -12,7 +12,6 @@
 #include "referee_init.h"
 #include "master_process.h"
 #include "daemon.h"
-#include "HT04.h"
 #include "buzzer.h"
 
 #include "bsp_log.h"
@@ -20,7 +19,6 @@
 #include "led.h"
 #include "buzzer.h"
 #include "ins_task.h"
-#include "chassis.h"
 #include "user_lib.h"
 
 __attribute__((noreturn)) void StartINSTASK(void *argument)
