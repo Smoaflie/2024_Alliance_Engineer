@@ -6,11 +6,11 @@
 
 > - master 电控代码-下位机
 
-> - hardware 硬件代码-自定义磁编代码
-
-> - custom 电控代码-自定义控制器
+> - hardware-encoder 硬件代码-自定义磁编代码
 
 > - hardware-relay 硬件代码-自定义22路继电器代码
+
+> - custom 电控代码-自定义控制器
 
 > - u3d 算法代码-U3D机械臂正逆解脚本
 
