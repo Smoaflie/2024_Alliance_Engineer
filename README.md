@@ -1,12 +1,28 @@
-框架修改自湖大开源：
+# 介绍
 
-[HNUYueLuRM/basic_framework: framework for developing RoboMaster Electric Control programmes (github.com)](https://github.com/HNUYueLuRM/basic_framework)
+本仓库为`南京理工大学Alliance战队RM2024复活赛版本工程机器人代码开源资料汇总`
+
+设有四个分支：
+
+> - master 电控代码-下位机
+
+> - hardware 硬件代码-自定义磁编代码
+
+> - custom 电控代码-自定义控制器
+
+> - u3d 算法代码-U3D机械臂正逆解脚本
+
+该分支为`电控代码-下位机`
 
 **简介** 
 
 本开源资料为南京理工大学Alliance战队RM2024复活赛版本工程机器人代码。此机器人的详细设计方案和设计思路见论坛内“RM工程机器人技术开源报告“开源文档。
 
-**文件树参考（主要代码）**
+框架修改自湖大开源：[HNUYueLuRM/basic_framework: framework for developing RoboMaster Electric Control programmes (github.com)](https://github.com/HNUYueLuRM/basic_framework)
+
+
+
+**结构分析**
 
 > application/
 >
@@ -74,18 +90,6 @@
 >
 > └─robot.h
 
-**注意事项**
-
-1.本开源仅限于RoboMaster参赛队之间队内交流使用，不得用于任何商用行为，开源者保留采取一切法律措施的权利；
-
-2.开源目的在于加强参赛队之间交流，有助于提高自身和其他参赛队的水平；
-
-3.本开源的最终解释权归南京理工大学Alliance战队所有。
-
-**通讯信息：**
-
-> qq:1373987167
-
 **（摘自技术开源报告）：**
 
 > 1. app层间各应用无法直接通信，需要通过module层中的消息中转`message_center模块`进行发布/订阅数据，以此来避免潜在的内存错误。
@@ -127,3 +131,14 @@
 
 机械臂的自动模式需要在关键帧的记录再进行优化，同时轨迹跟随的时候应通过算法来`优化机械臂的末端摆动放大效应`，获取更高的` 精度`，同时让`拖动示教`功能更加实用。（目前的拖动示教通过设定关键帧之间一个较大的延迟来确保轨迹跟随时的精度，这会使机械臂的运动非常不丝滑)
 
+**注意事项**
+
+1.本开源仅限于RoboMaster参赛队之间队内交流使用，不得用于任何商用行为，开源者保留采取一切法律措施的权利；
+
+2.开源目的在于加强参赛队之间交流，有助于提高自身和其他参赛队的水平；
+
+3.本开源的最终解释权归南京理工大学Alliance战队所有。
+
+**通讯信息：**
+
+> qq:1373987167
