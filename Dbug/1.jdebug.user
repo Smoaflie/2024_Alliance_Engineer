@@ -1,24 +1,32 @@
 
 
+
+Breakpoint=c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Task/Src/KeyTask.c:13, State=BP_STATE_DISABLED
+Breakpoint=c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Task/Src/KeyTask.c:31, State=BP_STATE_DISABLED
+OpenDocument="main.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Core/Src/main.c", Line=58
+OpenDocument="stm32f1xx_hal_can.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_can.c", Line=1376
+OpenDocument="_default_types.h", FilePath="c:/studying/rm/code/arm-gnu-toolchain-12.3.rel1-mingw-w64-i686-arm-none-eabi/arm-gnu-toolchain-12.3.rel1-mingw-w64-i686-arm-none-eabi/arm-none-eabi/include/machine/_default_types.h", Line=0
+OpenDocument="LedTask.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Task/Src/LedTask.c", Line=0
+OpenDocument="KeyTask.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Task/Src/KeyTask.c", Line=0
+OpenDocument="stm32f1xx_hal_gpio.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio.c", Line=541
 OpenDocument="Task.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Task/Src/Task.c", Line=0
-OpenDocument="main.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Core/Src/main.c", Line=73
-OpenDocument="stm32f1xx_hal_flash.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash.c", Line=695
+OpenDocument="stm32f1xx_hal_flash.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_flash.c", Line=677
 OpenDocument="FlashTask.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Task/Src/FlashTask.c", Line=0
 OpenDocument="CanSendTask.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Task/Src/CanSendTask.c", Line=3
-OpenDocument="stm32f1xx_it.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Core/Src/stm32f1xx_it.c", Line=78
 OpenDocument="stm32f1xx_hal.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c", Line=295
+OpenDocument="CanInstance.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Hardware/src/CanInstance.c", Line=39
 OpenDocument="gpio.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Core/Src/gpio.c", Line=33
-OpenDocument="AngleEncoder.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Hardware/src/AngleEncoder.c", Line=26
+OpenDocument="LedTask.h", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Task/Inc/LedTask.h", Line=0
 OpenDocument="FlashInstance.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Hardware/src/FlashInstance.c", Line=0
-OpenDocument="CanInstance.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Hardware/src/CanInstance.c", Line=34
+OpenDocument="stm32f1xx_it.c", FilePath="c:/studying/rm/code/AngleEncoder/code/AngleEncoder/Core/Src/stm32f1xx_it.c", Line=201
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=2, w=842, h=232, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
-OpenWindow="Source Files", DockArea=LEFT, x=0, y=1, w=497, h=272, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=842, h=248, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=2, w=842, h=230, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
+OpenWindow="Source Files", DockArea=LEFT, x=0, y=1, w=497, h=267, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=842, h=245, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Memory 1", DockArea=BOTTOM, x=2, y=0, w=482, h=333, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x800FBD0
 OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=2, w=497, h=206, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Functions", DockArea=LEFT, x=0, y=0, w=497, h=133, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Data Sampling", DockArea=RIGHT, x=0, y=0, w=842, h=131, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Functions", DockArea=LEFT, x=0, y=0, w=497, h=138, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=RIGHT, x=0, y=0, w=842, h=136, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
 OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=960, h=333, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="500 ms / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="772;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="787;0", CodeGraphLegendShown=0, CodeGraphLegendPosition="793;0"
 OpenWindow="Console", DockArea=BOTTOM, x=1, y=0, w=476, h=333, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
@@ -30,5 +38,20 @@ TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols
 TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Description"], ColWidths=[100;105;620]
 TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh"], ColWidths=[100;226;100;100]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
+TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[200;100;100;359]
 WatchedExpression="AngleEncoder", RefreshRate=5, DisplayFormat=DISPLAY_FORMAT_DEC, Window=Watched Data 1
 WatchedExpression="FlashData_", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="IsSetId", Window=Watched Data 1
+WatchedExpression="IsCanRxFLag", Window=Watched Data 1
+WatchedExpression="IsAngleEncoder", Window=Watched Data 1
+WatchedExpression="SetIdFlag", Window=Watched Data 1
+WatchedExpression="uwTick", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="IsAngleEncoder", Window=Watched Data 1
+WatchedExpression="IsCanRxFLag", Window=Watched Data 1
+WatchedExpression="CanRTxInstance", Window=Watched Data 1
+WatchedExpression="SetId", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="SetIdFlag", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="NowKeyTime", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="LastKeyTime", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="FlashData_", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="CanRTxInstance", RefreshRate=5, Window=Watched Data 1

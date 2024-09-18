@@ -42,25 +42,29 @@ void CanDataProcess(uint8_t *data)
 {
 }
 
+
+
 uint8_t CanTransimit(uint8_t *data)
 {
-    while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0) // 等待邮箱空闲
+    if(HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0)
     {
-    }
-
-    CAN_TxHeaderTypeDef txconf = {0};
-    txconf.StdId               = CanRTXValue.txid;
-    txconf.IDE                 = CAN_ID_STD;
-    txconf.RTR                 = CAN_RTR_DATA;
-    txconf.DLC                 = 0x08;
-    uint32_t tx_mailbox        = 0;
-
-    if (HAL_CAN_AddTxMessage(&hcan, &txconf, data, &tx_mailbox)) {
-
         return 0;
     }
-    return 1; // 发送成功
-}
+    else
+    {
+        CAN_TxHeaderTypeDef txconf = {0};
+        txconf.StdId               = CanRTXValue.txid;
+        txconf.IDE                 = CAN_ID_STD;
+        txconf.RTR                 = CAN_RTR_DATA;
+        txconf.DLC                 = 0x08;
+        uint32_t tx_mailbox        = 0;
+
+    if (HAL_CAN_AddTxMessage(&hcan, &txconf, data, &tx_mailbox) == HAL_OK) {
+         return 1; // 发送成功
+    }
+    }
+    return 1;
+}                           
 
 /**
  * @brief 此函数会被下面两个函数调用,用于处理FIFO0和FIFO1溢出中断(说明收到了新的数据)
@@ -112,6 +116,7 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
     CANFIFOxCallback(hcan, CAN_RX_FIFO1); // 调用我们自己写的函数来处理消息
     CanRxFlag = 1;
 }
+
 
 void CanReset(CanRTx *CanRTXPtr)
 {

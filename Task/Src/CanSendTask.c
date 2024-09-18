@@ -17,10 +17,15 @@ void CanTimeInitInstance()
 {
 
     FlashDataRW = FlashDataRead();
-    // FlashDataWrite(FlashDataRW);
+
     CanRTx CanRTXData;
-    CanRTXData.rxid = FlashDataRW->CanRTxData.rxid;
-    CanRTXData.txid = FlashDataRW->CanRTxData.txid;
+    CanRTXData.rxid = 0;
+    // CanRTXData.rxid = FlashDataRW->CanRTxData.rxid;
+    CanRTXData.txid = 0x1fb;
+
+    FlashDataRW->frequence = 1000;
+
+    FlashDataWrite(FlashDataRW);
 
     CanInit(&CanRTXData);
 
@@ -55,13 +60,43 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         memcpy(CanSendData, &AngleEncoderData_.Angle, sizeof(AngleEncoderData_.Angle));
         memcpy(CanSendData + sizeof(AngleEncoderData_.Angle), &AngleEncoderData_.Error, sizeof(AngleEncoderData_.Error));
 
-        CanTransimit(CanSendData);
+        
+        if(!CanTransimit(CanSendData)){
+            static uint8_t error_cnt = 0;
+            error_cnt++;
+            if(error_cnt > 1000){
+                __set_FAULTMASK(1);
+                NVIC_SystemReset();
+            }
+        }
     }
 
     if (htim == &htim3) // spi采集
     {
-        // static AngleEncoderData AngleEncoderDataLast_ = {0};
         AngleEncoderData_ = RecieveData();
-        // AngleEncoderDataLast_                         = AngleEncoderData_;
+        if(AngleEncoderData_.Error){
+            static uint8_t error_cnt = 0;
+            error_cnt++;
+            if(error_cnt > 1000){
+                __set_FAULTMASK(1);
+                NVIC_SystemReset();
+            }
+        }
+    }
+}
+
+void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hcan);
+
+  /* NOTE : This function Should not be modified, when the callback is needed,
+            the HAL_CAN_ErrorCallback could be implemented in the user file
+   */
+  static uint8_t error_cnt = 0;
+    error_cnt++;
+    if(error_cnt > 1000){
+        __set_FAULTMASK(1);
+        NVIC_SystemReset();
     }
 }

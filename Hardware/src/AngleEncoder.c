@@ -47,7 +47,7 @@ AngleEncoderData RecieveData(void)
 
         uint32_t RawData = (RecieveData[3] >> 4) | ((RecieveData[2] & 0b11111100) << 2) | ((RecieveData[1] << 10));
 
-        // AngleEncoder.Angle = (double)(RawData) / 262144.0 * 360.0;
+        AngleEncoder.AngleDouble = (double)(RawData) / 262144.0 * 360.0;
 
         AngleEncoder.Angle = RawData;
 
